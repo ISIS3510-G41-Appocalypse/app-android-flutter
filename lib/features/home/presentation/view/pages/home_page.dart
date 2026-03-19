@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../../../core/theme/app_colors.dart';
+import '../widgets/brand_header_section.dart';
+import '../widgets/hero_section.dart';
+import '../widgets/primary_action_button.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -6,11 +10,40 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Home'),
-      ),
-      body: const Center(
-        child: Text('Pantalla Home'),
+      backgroundColor: AppColors.slate900,
+      body: SafeArea(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final contentWidth = constraints.maxWidth * 0.80;
+            final height = constraints.maxHeight;
+            final spaceM  = height * 0.04;
+            final spaceL  = height * 0.06;
+            final spaceXL = height * 0.08;
+
+            return Center(
+              child: SingleChildScrollView(
+                child: SizedBox(
+                  width: contentWidth,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const BrandHeaderSection(),
+                      SizedBox(height: spaceL),
+                      const HeroSection(),
+                      SizedBox(height: spaceXL),
+                      PrimaryActionButton(
+                        label: 'Iniciar sesión',
+                        onPressed: () {
+                        },
+                      ),
+                      SizedBox(height: spaceM),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
