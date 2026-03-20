@@ -6,7 +6,7 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../view_model/ride_offers_cubit.dart';
 import '../../view_model/ride_offers_state.dart';
 import '../widgets/ride_offers_filter_section.dart';
-import '../widgets/ride_offers_intro_section.dart';
+import '../widgets/ride_offers_header_section.dart';
 import '../widgets/ride_offers_list_section.dart';
 
 class RideOffersPage extends StatefulWidget {
@@ -72,7 +72,7 @@ class _RideOffersPageState extends State<RideOffersPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const RideOffersIntroSection(),
+                      const RideOffersHeaderSection(),
                       const SizedBox(height: 24),
                       RideOffersFiltersSection(
                         zones: state.zones,
