@@ -34,31 +34,26 @@ class RideOfferCard extends StatelessWidget {
                 child: _DriverInfo(
                   driverName: offer.driverName,
                   rating: offer.ratingText,
-                  tripsText: offer.tripsText,
                 ),
               ),
               const SizedBox(width: 12),
-              _PriceInfo(price: offer.priceText),
+              _OfferSummary(
+                departureTimeLabel: offer.departureTimeLabel,
+                price: offer.priceText,
+              ),
             ],
           ),
           const SizedBox(height: 16),
-          SizedBox(
-            height: 94,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const _RouteTimeline(),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _RouteDetails(
-                    origin: offer.source,
-                    originTimeLabel: offer.departureTimeLabel,
-                    destination: offer.destination,
-                    destinationDetail: offer.typeLabel,
-                  ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _RouteDetails(
+                  origin: offer.source,
+                  destination: offer.destination,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           const Divider(height: 1, color: Color(0xFFF1F5F9)),
@@ -86,80 +81,92 @@ class RideOfferCard extends StatelessWidget {
 }
 
 class _DriverInfo extends StatelessWidget {
-  const _DriverInfo({
-    required this.driverName,
-    required this.rating,
-    required this.tripsText,
-  });
+  const _DriverInfo({required this.driverName, required this.rating});
 
   final String driverName;
   final String rating;
-  final String tripsText;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final nameParts = _splitDriverName(driverName);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        CircleAvatar(
-          radius: 24,
-          backgroundColor: const Color(0xFF334155),
-          child: Text(
-            _getInitials(driverName),
-            style: AppTextStyles.primary.copyWith(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
+        Text(
+          nameParts.firstLine,
+          style: AppTextStyles.primary.copyWith(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: AppColors.slate900,
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                driverName,
-                maxLines: 1,
+        if (nameParts.secondLine != null) ...[
+          const SizedBox(height: 2),
+          Text(
+            nameParts.secondLine!,
+            style: AppTextStyles.primary.copyWith(
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: AppColors.slate900,
+            ),
+          ),
+        ],
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            const Icon(Icons.star_rounded, size: 20, color: AppColors.amber700),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                rating,
                 overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.primary.copyWith(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.slate900,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF64748B),
                 ),
               ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  const Icon(
-                    Icons.star_rounded,
-                    size: 16,
-                    color: AppColors.amber700,
-                  ),
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: Text(
-                      '$rating ($tripsText)',
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.primary.copyWith(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: const Color(0xFF64748B),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ],
     );
   }
 }
 
-class _PriceInfo extends StatelessWidget {
-  const _PriceInfo({required this.price});
+_DriverNameParts _splitDriverName(String fullName) {
+  final parts = fullName
+      .trim()
+      .split(' ')
+      .where((part) => part.isNotEmpty)
+      .toList();
 
+  if (parts.isEmpty) {
+    return const _DriverNameParts(firstLine: '');
+  }
+
+  if (parts.length == 1) {
+    return _DriverNameParts(firstLine: parts.first);
+  }
+
+  return _DriverNameParts(
+    firstLine: parts.sublist(0, parts.length - 1).join(' '),
+    secondLine: parts.last,
+  );
+}
+
+class _DriverNameParts {
+  const _DriverNameParts({required this.firstLine, this.secondLine});
+
+  final String firstLine;
+  final String? secondLine;
+}
+
+class _OfferSummary extends StatelessWidget {
+  const _OfferSummary({required this.departureTimeLabel, required this.price});
+
+  final String departureTimeLabel;
   final String price;
 
   @override
@@ -168,15 +175,25 @@ class _PriceInfo extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Text(
-          price,
+          departureTimeLabel,
           style: AppTextStyles.primary.copyWith(
-            fontSize: 24,
+            fontSize: 18,
             fontWeight: FontWeight.w700,
             color: AppColors.amber700,
           ),
         ),
+        const SizedBox(height: 6),
         Text(
-          'POR ASIENTO',
+          price,
+          style: AppTextStyles.primary.copyWith(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: AppColors.slate900,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'POR CUPO',
           style: AppTextStyles.primary.copyWith(
             fontSize: 10,
             fontWeight: FontWeight.w700,
@@ -188,33 +205,26 @@ class _PriceInfo extends StatelessWidget {
   }
 }
 
-class _RouteTimeline extends StatelessWidget {
-  const _RouteTimeline();
-
-  @override
-  Widget build(BuildContext context) {
-    return const SizedBox(width: 12, height: 94);
-  }
-}
-
 class _RouteDetails extends StatelessWidget {
-  const _RouteDetails({
-    required this.origin,
-    required this.originTimeLabel,
-    required this.destination,
-    required this.destinationDetail,
-  });
+  const _RouteDetails({required this.origin, required this.destination});
 
   final String origin;
-  final String originTimeLabel;
   final String destination;
-  final String destinationDetail;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text(
+          'Inicio',
+          style: AppTextStyles.primary.copyWith(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF64748B),
+          ),
+        ),
+        const SizedBox(height: 4),
         Text(
           origin,
           style: AppTextStyles.primary.copyWith(
@@ -223,16 +233,22 @@ class _RouteDetails extends StatelessWidget {
             color: const Color(0xFF1E293B),
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 6),
+        const Icon(
+          Icons.arrow_downward_rounded,
+          size: 18,
+          color: Color(0xFF64748B),
+        ),
+        const SizedBox(height: 6),
         Text(
-          originTimeLabel,
+          'Destino',
           style: AppTextStyles.primary.copyWith(
             fontSize: 12,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
             color: const Color(0xFF64748B),
           ),
         ),
-        const Spacer(),
+        const SizedBox(height: 4),
         Text(
           destination,
           style: AppTextStyles.primary.copyWith(
@@ -241,38 +257,9 @@ class _RouteDetails extends StatelessWidget {
             color: const Color(0xFF1E293B),
           ),
         ),
-        const SizedBox(height: 4),
-        Text(
-          destinationDetail,
-          style: AppTextStyles.primary.copyWith(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF64748B),
-          ),
-        ),
       ],
     );
   }
-}
-
-String _getInitials(String fullName) {
-  final parts = fullName
-      .trim()
-      .split(' ')
-      .where((part) => part.isNotEmpty)
-      .toList();
-
-  if (parts.isEmpty) {
-    return '?';
-  }
-
-  if (parts.length == 1) {
-    return parts.first.substring(0, 1).toUpperCase();
-  }
-
-  final firstInitial = parts.first.substring(0, 1).toUpperCase();
-  final lastInitial = parts.last.substring(0, 1).toUpperCase();
-  return '$firstInitial$lastInitial';
 }
 
 class _MiniInfo extends StatelessWidget {

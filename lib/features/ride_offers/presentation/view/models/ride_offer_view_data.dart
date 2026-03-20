@@ -40,7 +40,7 @@ class RideOfferViewData {
       priceText: _formatCurrency(offer.price),
       source: offer.source,
       destination: offer.destination,
-      departureTimeLabel: 'Hora de salida: ${_formatTime(offer.departureTime)}',
+      departureTimeLabel: 'Salida: ${_formatTime(offer.departureTime)}',
       slotsText: offer.slots == 1 ? '1 cupo' : '${offer.slots} cupos',
       carModel: offer.carModel,
       zoneName: offer.zoneName,
