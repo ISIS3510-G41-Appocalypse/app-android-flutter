@@ -60,6 +60,8 @@ class TestSessionPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   Text('ID: ${user.id}'),
+                  Text('Rider ID: ${user.riderId ?? 'No es rider'}'),
+                  Text('Driver ID: ${user.driverId ?? 'No es driver'}'),
                   Text('Nombre: ${user.firstName} ${user.lastName}'),
                   Text('Email: ${user.email}'),
                   Text('Zona: ${user.zoneId}'),
