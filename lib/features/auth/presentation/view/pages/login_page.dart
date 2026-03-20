@@ -13,25 +13,17 @@ class LoginPage extends StatelessWidget {
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state.status == AuthStatus.authenticated) {
-          Navigator.pushReplacementNamed(
-            context,
-            AppRoutes.testSession,
-          );
+          Navigator.pushReplacementNamed(context, AppRoutes.rideOffers);
         }
 
-        if (state.status == AuthStatus.error &&
-            state.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.errorMessage!),
-            ),
-          );
+        if (state.status == AuthStatus.error && state.errorMessage != null) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
         }
       },
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Login'),
-        ),
+        appBar: AppBar(title: const Text('Login')),
         body: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 400),

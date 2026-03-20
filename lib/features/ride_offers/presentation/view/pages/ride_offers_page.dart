@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 
 import '../../../../../core/theme/app_colors.dart';
+import '../../../../auth/presentation/view/widgets/auth_session_listener.dart';
 import '../../view_model/ride_offers_cubit.dart';
 import '../../view_model/ride_offers_state.dart';
 import '../widgets/ride_offers_filter_section.dart';
@@ -37,86 +38,88 @@ class _RideOffersPageState extends State<RideOffersPage> {
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _cubit,
-      child: Scaffold(
-        backgroundColor: AppColors.slate900,
-        appBar: AppBar(
+      child: AuthSessionListener(
+        child: Scaffold(
           backgroundColor: AppColors.slate900,
-          elevation: 0,
-          centerTitle: true,
-          title: const Text(
-            'Happy Ride',
-            style: TextStyle(color: AppColors.gray50),
-          ),
-          actions: const [
-            Padding(
-              padding: EdgeInsets.only(right: 16),
-              child: Icon(
-                Icons.directions_car_rounded,
-                color: AppColors.amber700,
-              ),
+          appBar: AppBar(
+            backgroundColor: AppColors.slate900,
+            elevation: 0,
+            centerTitle: true,
+            title: const Text(
+              'Happy Ride',
+              style: TextStyle(color: AppColors.gray50),
             ),
-          ],
-        ),
-        body: SafeArea(
-          top: false,
-          child: BlocBuilder<RideOffersCubit, RideOffersState>(
-            builder: (context, state) {
-              final cubit = context.read<RideOffersCubit>();
-
-              return ScrollConfiguration(
-                behavior: const MaterialScrollBehavior().copyWith(
-                  overscroll: false,
+            actions: const [
+              Padding(
+                padding: EdgeInsets.only(right: 16),
+                child: Icon(
+                  Icons.directions_car_rounded,
+                  color: AppColors.amber700,
                 ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const RideOffersHeaderSection(),
-                      const SizedBox(height: 24),
-                      RideOffersFiltersSection(
-                        zones: state.zones,
-                        zoneId: state.filters.zoneId,
-                        date: state.filters.date,
-                        time: state.filters.time,
-                        type: state.filters.type,
-                        onZoneChanged: cubit.updateZoneId,
-                        onDateChanged: cubit.updateDate,
-                        onTimeChanged: cubit.updateTime,
-                        onTypeChanged: cubit.updateType,
-                        onApply: cubit.applyFilters,
-                        onClear: cubit.clearFilters,
-                      ),
-                      const SizedBox(height: 24),
-                      RideOffersListSection(state: state),
-                    ],
-                  ),
-                ),
-              );
-            },
+              ),
+            ],
           ),
-        ),
-        bottomNavigationBar: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
-          ),
-          child: const SafeArea(
+          body: SafeArea(
             top: false,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _BottomItem(
-                  icon: Icons.home_rounded,
-                  label: 'Home',
-                  selected: true,
-                ),
-                _BottomItem(
-                  icon: Icons.directions_car_outlined,
-                  label: 'Viajes',
-                ),
-              ],
+            child: BlocBuilder<RideOffersCubit, RideOffersState>(
+              builder: (context, state) {
+                final cubit = context.read<RideOffersCubit>();
+
+                return ScrollConfiguration(
+                  behavior: const MaterialScrollBehavior().copyWith(
+                    overscroll: false,
+                  ),
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const RideOffersHeaderSection(),
+                        const SizedBox(height: 24),
+                        RideOffersFiltersSection(
+                          zones: state.zones,
+                          zoneId: state.filters.zoneId,
+                          date: state.filters.date,
+                          time: state.filters.time,
+                          type: state.filters.type,
+                          onZoneChanged: cubit.updateZoneId,
+                          onDateChanged: cubit.updateDate,
+                          onTimeChanged: cubit.updateTime,
+                          onTypeChanged: cubit.updateType,
+                          onApply: cubit.applyFilters,
+                          onClear: cubit.clearFilters,
+                        ),
+                        const SizedBox(height: 24),
+                        RideOffersListSection(state: state),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          bottomNavigationBar: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+            ),
+            child: const SafeArea(
+              top: false,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _BottomItem(
+                    icon: Icons.home_rounded,
+                    label: 'Home',
+                    selected: true,
+                  ),
+                  _BottomItem(
+                    icon: Icons.directions_car_outlined,
+                    label: 'Viajes',
+                  ),
+                ],
+              ),
             ),
           ),
         ),
