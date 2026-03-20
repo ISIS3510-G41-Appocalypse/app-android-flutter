@@ -1,41 +1,13 @@
 import 'package:flutter/material.dart';
+
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
-
-class RideOfferUiModel {
-  const RideOfferUiModel({
-    required this.driverName,
-    required this.rating,
-    required this.tripsText,
-    required this.price,
-    required this.priceLabel,
-    required this.origin,
-    required this.originTimeLabel,
-    required this.destination,
-    required this.destinationTimeLabel,
-    required this.seatsText,
-    required this.carModel,
-    required this.imageUrl,
-  });
-
-  final String driverName;
-  final String rating;
-  final String tripsText;
-  final String price;
-  final String priceLabel;
-  final String origin;
-  final String originTimeLabel;
-  final String destination;
-  final String destinationTimeLabel;
-  final String seatsText;
-  final String carModel;
-  final String imageUrl;
-}
+import '../models/ride_offer_view_data.dart';
 
 class RideOfferCard extends StatelessWidget {
   const RideOfferCard({super.key, required this.offer});
 
-  final RideOfferUiModel offer;
+  final RideOfferViewData offer;
 
   @override
   Widget build(BuildContext context) {
@@ -61,13 +33,12 @@ class RideOfferCard extends StatelessWidget {
               Expanded(
                 child: _DriverInfo(
                   driverName: offer.driverName,
-                  rating: offer.rating,
+                  rating: offer.ratingText,
                   tripsText: offer.tripsText,
-                  imageUrl: offer.imageUrl,
                 ),
               ),
               const SizedBox(width: 12),
-              _PriceInfo(price: offer.price, priceLabel: offer.priceLabel),
+              _PriceInfo(price: offer.priceText),
             ],
           ),
           const SizedBox(height: 16),
@@ -80,10 +51,10 @@ class RideOfferCard extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _RouteDetails(
-                    origin: offer.origin,
-                    originTimeLabel: offer.originTimeLabel,
+                    origin: offer.source,
+                    originTimeLabel: offer.departureTimeLabel,
                     destination: offer.destination,
-                    destinationTimeLabel: offer.destinationTimeLabel,
+                    destinationDetail: _formatTripType(offer.tripType),
                   ),
                 ),
               ],
@@ -99,7 +70,7 @@ class RideOfferCard extends StatelessWidget {
                   spacing: 12,
                   runSpacing: 8,
                   children: [
-                    _MiniInfo(label: offer.seatsText),
+                    _MiniInfo(label: offer.availableSeatsText),
                     _MiniInfo(label: offer.carModel),
                   ],
                 ),
@@ -119,13 +90,11 @@ class _DriverInfo extends StatelessWidget {
     required this.driverName,
     required this.rating,
     required this.tripsText,
-    required this.imageUrl,
   });
 
   final String driverName;
   final String rating;
   final String tripsText;
-  final String imageUrl;
 
   @override
   Widget build(BuildContext context) {
@@ -134,7 +103,14 @@ class _DriverInfo extends StatelessWidget {
         CircleAvatar(
           radius: 24,
           backgroundColor: const Color(0xFF334155),
-          backgroundImage: NetworkImage(imageUrl),
+          child: Text(
+            _getInitials(driverName),
+            style: AppTextStyles.primary.copyWith(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
+          ),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -182,10 +158,9 @@ class _DriverInfo extends StatelessWidget {
 }
 
 class _PriceInfo extends StatelessWidget {
-  const _PriceInfo({required this.price, required this.priceLabel});
+  const _PriceInfo({required this.price});
 
   final String price;
-  final String priceLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -201,7 +176,7 @@ class _PriceInfo extends StatelessWidget {
           ),
         ),
         Text(
-          priceLabel.toUpperCase(),
+          'POR ASIENTO',
           style: AppTextStyles.primary.copyWith(
             fontSize: 10,
             fontWeight: FontWeight.w700,
@@ -227,13 +202,13 @@ class _RouteDetails extends StatelessWidget {
     required this.origin,
     required this.originTimeLabel,
     required this.destination,
-    required this.destinationTimeLabel,
+    required this.destinationDetail,
   });
 
   final String origin;
   final String originTimeLabel;
   final String destination;
-  final String destinationTimeLabel;
+  final String destinationDetail;
 
   @override
   Widget build(BuildContext context) {
@@ -268,7 +243,7 @@ class _RouteDetails extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          destinationTimeLabel,
+          destinationDetail,
           style: AppTextStyles.primary.copyWith(
             fontSize: 12,
             fontWeight: FontWeight.w600,
@@ -278,6 +253,41 @@ class _RouteDetails extends StatelessWidget {
       ],
     );
   }
+}
+
+String _getInitials(String fullName) {
+  final parts = fullName
+      .trim()
+      .split(' ')
+      .where((part) => part.isNotEmpty)
+      .toList();
+
+  if (parts.isEmpty) {
+    return '?';
+  }
+
+  if (parts.length == 1) {
+    return parts.first.substring(0, 1).toUpperCase();
+  }
+
+  final firstInitial = parts.first.substring(0, 1).toUpperCase();
+  final lastInitial = parts.last.substring(0, 1).toUpperCase();
+  return '$firstInitial$lastInitial';
+}
+
+String _formatTripType(String value) {
+  if (value.isEmpty) {
+    return '';
+  }
+
+  return value
+      .split('_')
+      .map(
+        (word) => word.isEmpty
+            ? word
+            : '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}',
+      )
+      .join(' ');
 }
 
 class _MiniInfo extends StatelessWidget {

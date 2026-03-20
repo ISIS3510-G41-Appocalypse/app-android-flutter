@@ -1,112 +1,135 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../../../../core/network/dio_client.dart';
+import '../../../../../core/storage/token_storage.dart';
 import '../../../../../core/theme/app_colors.dart';
-import '../widgets/ride_offer_card.dart';
+import '../../../data/data_sources/ride_offers_remote_datasource.dart';
+import '../../../data/repositories/ride_offers_repository_impl.dart';
+import '../../../domain/usecases/get_ride_offers.dart';
+import '../../view_model/ride_offers_cubit.dart';
+import '../../view_model/ride_offers_state.dart';
 import '../widgets/ride_offers_filter_section.dart';
 import '../widgets/ride_offers_intro_section.dart';
+import '../widgets/ride_offers_list_section.dart';
 
-class RideOffersPage extends StatelessWidget {
+class RideOffersPage extends StatefulWidget {
   const RideOffersPage({super.key});
 
-  static const List<RideOfferUiModel> _offers = [
-    RideOfferUiModel(
-      driverName: 'Carlos Méndez',
-      rating: '4.9',
-      tripsText: '124 viajes',
-      price: '\$4.500',
-      priceLabel: 'por asiento',
-      origin: 'CC Parque Colina',
-      originTimeLabel: 'Hora de salida: 08:15 AM',
-      destination: 'Universidad de los Andes',
-      destinationTimeLabel: 'Llegada estimada: 09:00 AM',
-      seatsText: '3 disponibles',
-      carModel: 'Mazda 2',
-      imageUrl:
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuAOMEihq676rKEmU5UaFIIpF_oPvFByHkvKjJnjCVtXfaM-HjOWAty79NwPE6S1gXHDf9zsOu7VXy8ZwvgILTB3_WGcFqSbc9W9qOhEXoW84H1asJfy8aZ7c87noazbpzNpYyUzdmYugwy2yesn4f9f3tnosFGyg0Artx89N4al5gasLziboKNUUATZgyjoZVWshXNzXvtXa9EhH9b-FAQD4sxbmD_YrCuvI43mYO5yxaKoq6OPOFN3W5DGKpLH-t3Q3uIQRadRtgo',
-    ),
-    RideOfferUiModel(
-      driverName: 'Ana María Silva',
-      rating: '5.0',
-      tripsText: '82 viajes',
-      price: '\$5.000',
-      priceLabel: 'por asiento',
-      origin: 'Estación Mazurén',
-      originTimeLabel: 'Hora de salida: 07:45 AM',
-      destination: 'Universidad de los Andes',
-      destinationTimeLabel: 'Llegada estimada: 08:45 AM',
-      seatsText: '1 disponible',
-      carModel: 'Kia Picanto',
-      imageUrl:
-          'https://lh3.googleusercontent.com/aida-public/AB6AXuADtJ02vcuI87o9jLoPsSus5w0w4Ppb5Z_O5tGTCfwFEzGL2czCBwOxBj4mysO4q6T8IHfjHz8e9RT_fRvGzL0pzvsntHSq6CQlhA4FCUOjGf32Vs9atNB0VEOFevBIIgtxJKdRId-kVOF03nr1c7jKC8Fliw100ceKLa-ii2rG2nXFJ0q9pteYnLHEelue_2TilADeZQgPc5DOQb54adbrfKXAAkNISlhHUwchu5TpdvUQQFlgwqibp-No2gMZkDfRCxvw3vOxyCs',
-    ),
-  ];
+  @override
+  State<RideOffersPage> createState() => _RideOffersPageState();
+}
+
+class _RideOffersPageState extends State<RideOffersPage> {
+  late final RideOffersCubit _cubit;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final tokenStorage = TokenStorage();
+    final dioClient = DioClient(tokenStorage: tokenStorage);
+    final remoteDataSource = RideOffersRemoteDataSourceImpl(dio: dioClient.dio);
+    final repository = RideOffersRepositoryImpl(
+      remoteDataSource: remoteDataSource,
+    );
+    final getRideOffers = GetRideOffers(repository);
+
+    _cubit = RideOffersCubit(getRideOffers: getRideOffers)..loadRideOffers();
+  }
+
+  @override
+  void dispose() {
+    _cubit.close();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.gray50,
-      appBar: AppBar(
-        backgroundColor: AppColors.slate900,
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          'Happy Ride',
-          style: TextStyle(color: AppColors.gray50),
-        ),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: Icon(
-              Icons.directions_car_rounded,
-              color: AppColors.amber700,
-            ),
+    return BlocProvider.value(
+      value: _cubit,
+      child: Scaffold(
+        backgroundColor: AppColors.gray50,
+        appBar: AppBar(
+          backgroundColor: AppColors.slate900,
+          elevation: 0,
+          centerTitle: true,
+          title: const Text(
+            'Happy Ride',
+            style: TextStyle(color: AppColors.gray50),
           ),
-        ],
-      ),
-      body: SafeArea(
-        top: false,
-        child: ScrollConfiguration(
-          behavior: const MaterialScrollBehavior().copyWith(overscroll: false),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const RideOffersIntroSection(),
-                const SizedBox(height: 24),
-                const RideOffersFiltersSection(),
-                const SizedBox(height: 24),
-                ...List.generate(
-                  _offers.length,
-                  (index) => Padding(
-                    padding: EdgeInsets.only(
-                      bottom: index == _offers.length - 1 ? 0 : 24,
-                    ),
-                    child: RideOfferCard(offer: _offers[index]),
+          actions: const [
+            Padding(
+              padding: EdgeInsets.only(right: 16),
+              child: Icon(
+                Icons.directions_car_rounded,
+                color: AppColors.amber700,
+              ),
+            ),
+          ],
+        ),
+        body: SafeArea(
+          top: false,
+          child: BlocBuilder<RideOffersCubit, RideOffersState>(
+            builder: (context, state) {
+              final cubit = context.read<RideOffersCubit>();
+
+              return ScrollConfiguration(
+                behavior: const MaterialScrollBehavior().copyWith(
+                  overscroll: false,
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const RideOffersIntroSection(),
+                      const SizedBox(height: 24),
+                      RideOffersFiltersSection(
+                        zoneId: state.filters.zoneId,
+                        date: state.filters.date,
+                        tripType: state.filters.tripType,
+                        sortBy: state.filters.sortBy,
+                        quickFilters: state.filters.quickFilters,
+                        onZoneChanged: cubit.updateZoneId,
+                        onDateChanged: cubit.updateDate,
+                        onTripTypeChanged: cubit.updateTripType,
+                        onSortByChanged: cubit.updateSortBy,
+                        onQuickFilterToggled: cubit.toggleQuickFilter,
+                        onApply: cubit.applyFilters,
+                        onClear: cubit.clearFilters,
+                      ),
+                      const SizedBox(height: 24),
+                      RideOffersListSection(state: state),
+                    ],
                   ),
+                ),
+              );
+            },
+          ),
+        ),
+        bottomNavigationBar: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+          ),
+          child: const SafeArea(
+            top: false,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _BottomItem(
+                  icon: Icons.home_rounded,
+                  label: 'Home',
+                  selected: true,
+                ),
+                _BottomItem(
+                  icon: Icons.directions_car_outlined,
+                  label: 'Viajes',
                 ),
               ],
             ),
-          ),
-        ),
-      ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
-        ),
-        child: const SafeArea(
-          top: false,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _BottomItem(
-                icon: Icons.home_rounded,
-                label: 'Home',
-                selected: true,
-              ),
-              _BottomItem(icon: Icons.directions_car_outlined, label: 'Viajes'),
-            ],
           ),
         ),
       ),
