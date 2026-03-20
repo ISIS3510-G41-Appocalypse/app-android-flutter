@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 
 import '../../../../../core/theme/app_colors.dart';
+import '../../../../auth/presentation/view_model/auth_cubit.dart';
 import '../../../../auth/presentation/view/widgets/auth_session_listener.dart';
 import '../../view_model/ride_offers_cubit.dart';
 import '../../view_model/ride_offers_state.dart';
@@ -25,7 +26,15 @@ class _RideOffersPageState extends State<RideOffersPage> {
   void initState() {
     super.initState();
 
-    _cubit = _sl<RideOffersCubit>()..loadInitialData();
+    final preferredZoneId = context
+        .read<AuthCubit>()
+        .state
+        .user
+        ?.zoneId
+        .toString();
+
+    _cubit = _sl<RideOffersCubit>()
+      ..loadInitialData(preferredZoneId: preferredZoneId);
   }
 
   @override

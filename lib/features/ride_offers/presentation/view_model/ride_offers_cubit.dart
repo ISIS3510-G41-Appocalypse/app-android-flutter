@@ -9,11 +9,22 @@ import 'ride_offers_state.dart';
 class RideOffersCubit extends Cubit<RideOffersState> {
   final GetRideOffers getRideOffers;
   final GetZones getZones;
+  String? _preferredZoneId;
 
   RideOffersCubit({required this.getRideOffers, required this.getZones})
     : super(RideOffersState.initial());
 
-  Future<void> loadInitialData() async {
+  Future<void> loadInitialData({String? preferredZoneId}) async {
+    _preferredZoneId = preferredZoneId;
+
+    if (preferredZoneId != null) {
+      emit(
+        state.copyWith(
+          filters: state.filters.copyWith(zoneId: preferredZoneId),
+        ),
+      );
+    }
+
     await _loadZones();
     await loadRideOffers();
   }
@@ -133,7 +144,7 @@ class RideOffersCubit extends Cubit<RideOffersState> {
   }
 
   Future<void> clearFilters() async {
-    emit(state.copyWith(filters: const RideOfferFilters()));
+    emit(state.copyWith(filters: RideOfferFilters(zoneId: _preferredZoneId)));
 
     await loadRideOffers();
   }
