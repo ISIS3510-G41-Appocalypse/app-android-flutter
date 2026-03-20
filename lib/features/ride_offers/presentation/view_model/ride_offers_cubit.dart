@@ -85,6 +85,14 @@ class RideOffersCubit extends Cubit<RideOffersState> {
     );
   }
 
+  void updateTime(String? time) {
+    emit(
+      state.copyWith(
+        filters: state.filters.copyWith(time: time, clearTime: time == null),
+      ),
+    );
+  }
+
   void updateType(String? type) {
     emit(
       state.copyWith(

@@ -10,14 +10,12 @@ class RideOffersFiltersSection extends StatelessWidget {
     required this.zones,
     required this.zoneId,
     required this.date,
+    required this.time,
     required this.type,
-    required this.sortBy,
-    required this.quickFilters,
     required this.onZoneChanged,
     required this.onDateChanged,
+    required this.onTimeChanged,
     required this.onTypeChanged,
-    required this.onSortByChanged,
-    required this.onQuickFilterToggled,
     required this.onApply,
     required this.onClear,
   });
@@ -25,14 +23,12 @@ class RideOffersFiltersSection extends StatelessWidget {
   final List<Zone> zones;
   final String? zoneId;
   final DateTime? date;
+  final String? time;
   final String? type;
-  final String? sortBy;
-  final List<String> quickFilters;
   final ValueChanged<String?> onZoneChanged;
   final ValueChanged<DateTime?> onDateChanged;
+  final ValueChanged<String?> onTimeChanged;
   final ValueChanged<String?> onTypeChanged;
-  final ValueChanged<String?> onSortByChanged;
-  final ValueChanged<String> onQuickFilterToggled;
   final VoidCallback onApply;
   final VoidCallback onClear;
 
@@ -82,11 +78,11 @@ class RideOffersFiltersSection extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const _SectionLabel(text: 'Tipo de viaje'),
+                    const _SectionLabel(text: 'Hora'),
                     const SizedBox(height: 6),
                     _SelectField(
-                      value: _typeLabel(type),
-                      onTap: () => _selectType(context),
+                      value: _timeLabel(time),
+                      onTap: () => _selectTime(context),
                     ),
                   ],
                 ),
@@ -94,40 +90,11 @@ class RideOffersFiltersSection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          const _SectionLabel(text: 'Ordenar por'),
+          const _SectionLabel(text: 'Tipo de viaje'),
           const SizedBox(height: 6),
           _SelectField(
-            value: _sortByLabel(sortBy),
-            onTap: () => _selectSortBy(context),
-          ),
-          const SizedBox(height: 16),
-          const _SectionLabel(text: 'Filtros'),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _FilterChip(
-                label: 'Hora',
-                selected: quickFilters.contains('departure_time'),
-                onTap: () => onQuickFilterToggled('departure_time'),
-              ),
-              _FilterChip(
-                label: 'Precio',
-                selected: quickFilters.contains('price'),
-                onTap: () => onQuickFilterToggled('price'),
-              ),
-              _FilterChip(
-                label: 'Cupos',
-                selected: quickFilters.contains('slots'),
-                onTap: () => onQuickFilterToggled('slots'),
-              ),
-              _FilterChip(
-                label: 'Calificación',
-                selected: quickFilters.contains('driver_rating'),
-                onTap: () => onQuickFilterToggled('driver_rating'),
-              ),
-            ],
+            value: _typeLabel(type),
+            onTap: () => _selectType(context),
           ),
           const SizedBox(height: 16),
           Row(
@@ -199,6 +166,17 @@ class RideOffersFiltersSection extends StatelessWidget {
     }
   }
 
+  Future<void> _selectTime(BuildContext context) async {
+    final selectedTime = await showTimePicker(
+      context: context,
+      initialTime: _initialTime(),
+    );
+
+    if (selectedTime != null) {
+      onTimeChanged(_formatTimeValue(selectedTime));
+    }
+  }
+
   Future<void> _selectType(BuildContext context) async {
     final selectedOption = await _showOptionsSheet<String?>(
       context: context,
@@ -218,24 +196,6 @@ class RideOffersFiltersSection extends StatelessWidget {
 
     if (selectedOption != null) {
       onTypeChanged(selectedOption.value);
-    }
-  }
-
-  Future<void> _selectSortBy(BuildContext context) async {
-    final selectedOption = await _showOptionsSheet<String?>(
-      context: context,
-      title: 'Ordenar por',
-      options: const [
-        _FilterOption(label: 'Sin ordenar', value: null),
-        _FilterOption(label: 'Hora de salida', value: 'departure_time'),
-        _FilterOption(label: 'Precio', value: 'price'),
-        _FilterOption(label: 'Cupos', value: 'slots'),
-        _FilterOption(label: 'Calificación', value: 'driver_rating'),
-      ],
-    );
-
-    if (selectedOption != null) {
-      onSortByChanged(selectedOption.value);
     }
   }
 
@@ -312,19 +272,42 @@ class RideOffersFiltersSection extends StatelessWidget {
     }
   }
 
-  String _sortByLabel(String? value) {
-    switch (value) {
-      case 'departure_time':
-        return 'Hora de salida';
-      case 'price':
-        return 'Precio';
-      case 'slots':
-        return 'Cupos';
-      case 'driver_rating':
-        return 'Calificación';
-      default:
-        return 'Sin ordenar';
+  String _timeLabel(String? value) {
+    if (value == null) {
+      return 'Todas las horas';
     }
+
+    final parts = value.split(':');
+
+    if (parts.length < 2) {
+      return value;
+    }
+
+    return '${parts[0]}:${parts[1]}';
+  }
+
+  TimeOfDay _initialTime() {
+    if (time == null) {
+      return TimeOfDay.now();
+    }
+
+    final parts = time!.split(':');
+
+    if (parts.length < 2) {
+      return TimeOfDay.now();
+    }
+
+    final hour = int.tryParse(parts[0]) ?? TimeOfDay.now().hour;
+    final minute = int.tryParse(parts[1]) ?? TimeOfDay.now().minute;
+
+    return TimeOfDay(hour: hour, minute: minute);
+  }
+
+  String _formatTimeValue(TimeOfDay selectedTime) {
+    final hour = selectedTime.hour.toString().padLeft(2, '0');
+    final minute = selectedTime.minute.toString().padLeft(2, '0');
+
+    return '$hour:$minute:00';
   }
 }
 
@@ -386,43 +369,6 @@ class _SelectField extends StatelessWidget {
                 color: Color(0xFF64748B),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  const _FilterChip({
-    required this.label,
-    required this.onTap,
-    this.selected = false,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.teal600 : Colors.white,
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: selected ? AppColors.teal600 : const Color(0xFFE2E8F0),
-          ),
-        ),
-        child: Text(
-          label,
-          style: AppTextStyles.primary.copyWith(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: selected ? Colors.white : const Color(0xFF64748B),
           ),
         ),
       ),

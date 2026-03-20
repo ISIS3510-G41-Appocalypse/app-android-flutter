@@ -40,6 +40,11 @@ class RideOffersRepositoryImpl implements RideOffersRepository {
           }
         }
 
+        if (filters.time != null &&
+            row['departure_time']?.toString() != filters.time) {
+          return false;
+        }
+
         if (filters.type != null && row['type']?.toString() != filters.type) {
           return false;
         }
