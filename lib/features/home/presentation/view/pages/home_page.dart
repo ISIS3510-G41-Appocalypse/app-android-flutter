@@ -3,6 +3,7 @@ import '../../../../../core/theme/app_colors.dart';
 import '../widgets/brand_header_section.dart';
 import '../widgets/hero_section.dart';
 import '../widgets/primary_action_button.dart';
+import '../../../../../../app/routes.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -34,6 +35,7 @@ class HomePage extends StatelessWidget {
                       PrimaryActionButton(
                         label: 'Iniciar sesión',
                         onPressed: () {
+                          Navigator.pushNamed(context, AppRoutes.login);
                         },
                       ),
                       SizedBox(height: spaceM),
