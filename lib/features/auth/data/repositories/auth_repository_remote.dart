@@ -4,14 +4,14 @@ import '../../../../core/errors/failures.dart';
 import '../../../../core/storage/token_storage.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
-import '../datasources/auth_remote_datasource.dart';
+import '../datasources/auth_datasource_remote.dart';
 
-class AuthRepositoryImpl implements AuthRepository {
-  final AuthRemoteDataSource remoteDataSource;
+class AuthRepositoryRemote implements AuthRepository {
+  final AuthDataSourceRemote dataSourceRemote;
   final TokenStorage tokenStorage;
 
-  AuthRepositoryImpl({
-    required this.remoteDataSource,
+  AuthRepositoryRemote({
+    required this.dataSourceRemote,
     required this.tokenStorage,
   });
 
@@ -21,15 +21,10 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
   }) async {
     try {
-      final authResponse = await remoteDataSource.login(
+      final user = await dataSourceRemote.login(
         email: email,
         password: password,
       );
-
-      final user = await remoteDataSource.getUserByAuthId(
-        authResponse: authResponse,
-      );
-
       return Right(user);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

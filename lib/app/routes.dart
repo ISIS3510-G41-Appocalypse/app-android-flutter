@@ -22,9 +22,7 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const MainNav()); // ← apunta a MainNav
       default:
         return MaterialPageRoute(
-          builder: (_) => const Scaffold(
-            body: Center(child: Text('Ruta no encontrada')),
-          ),
+          builder: (context) => const HomePage(),
         );
     }
   }

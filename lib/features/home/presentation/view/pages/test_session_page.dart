@@ -1,31 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
-import '../../../../../app/routes.dart';
 import '../../../../auth/presentation/view_model/auth_cubit.dart';
 import '../../../../auth/presentation/view_model/auth_state.dart';
+import '../../../../auth/presentation/view/widgets/auth_session_listener.dart';
 
 class TestSessionPage extends StatelessWidget {
   const TestSessionPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<AuthCubit, AuthState>(
-      listener: (context, state) {
-        if (state.status == AuthStatus.unauthenticated) {
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            AppRoutes.home,
-            (route) => false,
-          );
-        }
-
-        if (state.status == AuthStatus.error && state.errorMessage != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.errorMessage!)),
-          );
-        }
-      },
+    return AuthSessionListener(
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Sesión iniciada'),
@@ -60,6 +44,8 @@ class TestSessionPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   Text('ID: ${user.id}'),
+                  Text('Rider ID: ${user.riderId ?? 'No es rider'}'),
+                  Text('Driver ID: ${user.driverId ?? 'No es driver'}'),
                   Text('Nombre: ${user.firstName} ${user.lastName}'),
                   Text('Email: ${user.email}'),
                   Text('Zona: ${user.zoneId}'),
