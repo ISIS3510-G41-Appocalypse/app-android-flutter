@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../features/home/presentation/view/pages/home_page.dart';
 import '../features/auth/presentation/view/pages/login_page.dart';
 import '../features/home/presentation/view/pages/test_session_page.dart';
+import '../features/auth/presentation/view/widgets/auth_gate.dart';
 
 class AppRoutes {
   static const String home = '/home';
@@ -18,7 +19,7 @@ class AppRoutes {
         return MaterialPageRoute(builder: (context) => const TestSessionPage());
       default:
         return MaterialPageRoute(
-          builder: (context) => const HomePage(),
+          builder: (context) => const AuthGate(),
         );
     }
   }
