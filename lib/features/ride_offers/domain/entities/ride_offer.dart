@@ -6,11 +6,12 @@ class RideOffer {
   final int price;
   final String source;
   final String destination;
-  final DateTime departureDateTime;
-  final int availableSeats;
+  final DateTime date;
+  final String departureTime;
+  final int slots;
   final String carModel;
   final String zoneName;
-  final String tripType;
+  final String type;
 
   const RideOffer({
     required this.id,
@@ -20,10 +21,11 @@ class RideOffer {
     required this.price,
     required this.source,
     required this.destination,
-    required this.departureDateTime,
-    required this.availableSeats,
+    required this.date,
+    required this.departureTime,
+    required this.slots,
     required this.carModel,
     required this.zoneName,
-    required this.tripType,
+    required this.type,
   });
 }

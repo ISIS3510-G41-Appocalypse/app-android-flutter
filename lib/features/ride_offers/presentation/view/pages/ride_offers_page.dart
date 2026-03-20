@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../../core/network/dio_client.dart';
-import '../../../../../core/storage/token_storage.dart';
 import '../../../../../core/theme/app_colors.dart';
-import '../../../data/data_sources/ride_offers_remote_datasource_impl.dart';
-import '../../../data/repositories/ride_offers_repository_impl.dart';
-import '../../../domain/usecases/get_ride_offers.dart';
+import '../../../injection/ride_offers_injection.dart';
 import '../../view_model/ride_offers_cubit.dart';
 import '../../view_model/ride_offers_state.dart';
 import '../widgets/ride_offers_filter_section.dart';
@@ -27,15 +23,7 @@ class _RideOffersPageState extends State<RideOffersPage> {
   void initState() {
     super.initState();
 
-    final tokenStorage = TokenStorage();
-    final dioClient = DioClient(tokenStorage: tokenStorage);
-    final remoteDataSource = RideOffersRemoteDataSourceImpl(dio: dioClient.dio);
-    final repository = RideOffersRepositoryImpl(
-      remoteDataSource: remoteDataSource,
-    );
-    final getRideOffers = GetRideOffers(repository);
-
-    _cubit = RideOffersCubit(getRideOffers: getRideOffers)..loadRideOffers();
+    _cubit = RideOffersInjection.createCubit()..loadRideOffers();
   }
 
   @override
@@ -88,12 +76,12 @@ class _RideOffersPageState extends State<RideOffersPage> {
                       RideOffersFiltersSection(
                         zoneId: state.filters.zoneId,
                         date: state.filters.date,
-                        tripType: state.filters.tripType,
+                        type: state.filters.type,
                         sortBy: state.filters.sortBy,
                         quickFilters: state.filters.quickFilters,
                         onZoneChanged: cubit.updateZoneId,
                         onDateChanged: cubit.updateDate,
-                        onTripTypeChanged: cubit.updateTripType,
+                        onTypeChanged: cubit.updateType,
                         onSortByChanged: cubit.updateSortBy,
                         onQuickFilterToggled: cubit.toggleQuickFilter,
                         onApply: cubit.applyFilters,

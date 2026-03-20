@@ -71,13 +71,10 @@ class RideOffersCubit extends Cubit<RideOffersState> {
     );
   }
 
-  void updateTripType(String? tripType) {
+  void updateType(String? type) {
     emit(
       state.copyWith(
-        filters: state.filters.copyWith(
-          tripType: tripType,
-          clearTripType: tripType == null,
-        ),
+        filters: state.filters.copyWith(type: type, clearType: type == null),
       ),
     );
   }

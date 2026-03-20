@@ -9,10 +9,10 @@ class RideOfferViewData {
   final String source;
   final String destination;
   final String departureTimeLabel;
-  final String availableSeatsText;
+  final String slotsText;
   final String carModel;
   final String zoneName;
-  final String tripType;
+  final String typeLabel;
 
   const RideOfferViewData({
     required this.id,
@@ -23,10 +23,10 @@ class RideOfferViewData {
     required this.source,
     required this.destination,
     required this.departureTimeLabel,
-    required this.availableSeatsText,
+    required this.slotsText,
     required this.carModel,
     required this.zoneName,
-    required this.tripType,
+    required this.typeLabel,
   });
 
   factory RideOfferViewData.fromEntity(RideOffer offer) {
@@ -40,14 +40,11 @@ class RideOfferViewData {
       priceText: _formatCurrency(offer.price),
       source: offer.source,
       destination: offer.destination,
-      departureTimeLabel:
-          'Hora de salida: ${_formatTime(offer.departureDateTime)}',
-      availableSeatsText: offer.availableSeats == 1
-          ? '1 disponible'
-          : '${offer.availableSeats} disponibles',
+      departureTimeLabel: 'Hora de salida: ${_formatTime(offer.departureTime)}',
+      slotsText: offer.slots == 1 ? '1 cupo' : '${offer.slots} cupos',
       carModel: offer.carModel,
       zoneName: offer.zoneName,
-      tripType: offer.tripType,
+      typeLabel: _formatType(offer.type),
     );
   }
 
@@ -65,10 +62,24 @@ class RideOfferViewData {
     return '\$${buffer.toString().split('').reversed.join()}';
   }
 
-  static String _formatTime(DateTime value) {
-    final hour = value.hour % 12 == 0 ? 12 : value.hour % 12;
-    final minute = value.minute.toString().padLeft(2, '0');
-    final period = value.hour >= 12 ? 'PM' : 'AM';
+  static String _formatTime(String value) {
+    final parts = value.split(':');
+    final parsedHour = int.tryParse(parts.first) ?? 0;
+    final parsedMinute = parts.length > 1 ? int.tryParse(parts[1]) ?? 0 : 0;
+    final hour = parsedHour % 12 == 0 ? 12 : parsedHour % 12;
+    final minute = parsedMinute.toString().padLeft(2, '0');
+    final period = parsedHour >= 12 ? 'PM' : 'AM';
     return '$hour:$minute $period';
+  }
+
+  static String _formatType(String value) {
+    switch (value) {
+      case 'TO_UNIVERSITY':
+        return 'Llegada a la universidad';
+      case 'FROM_UNIVERSITY':
+        return 'Salida de la universidad';
+      default:
+        return value;
+    }
   }
 }

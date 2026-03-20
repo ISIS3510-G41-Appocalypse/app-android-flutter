@@ -8,11 +8,12 @@ class RideOfferModel {
   final int price;
   final String source;
   final String destination;
-  final DateTime departureDateTime;
-  final int availableSeats;
+  final DateTime date;
+  final String departureTime;
+  final int slots;
   final String carModel;
   final String zoneName;
-  final String tripType;
+  final String type;
 
   const RideOfferModel({
     required this.id,
@@ -22,11 +23,12 @@ class RideOfferModel {
     required this.price,
     required this.source,
     required this.destination,
-    required this.departureDateTime,
-    required this.availableSeats,
+    required this.date,
+    required this.departureTime,
+    required this.slots,
     required this.carModel,
     required this.zoneName,
-    required this.tripType,
+    required this.type,
   });
 
   factory RideOfferModel.fromJson(Map<String, dynamic> json) {
@@ -38,11 +40,12 @@ class RideOfferModel {
       price: _toInt(json['price']),
       source: json['source'] as String,
       destination: json['destination'] as String,
-      departureDateTime: DateTime.parse(json['departure_datetime'] as String),
-      availableSeats: _toInt(json['available_seats']),
+      date: DateTime.parse(json['date'] as String),
+      departureTime: json['departure_time'] as String,
+      slots: _toInt(json['slots']),
       carModel: json['car_model'] as String,
       zoneName: json['zone_name'] as String,
-      tripType: json['trip_type'] as String,
+      type: json['type'] as String,
     );
   }
 
@@ -55,11 +58,12 @@ class RideOfferModel {
       price: price,
       source: source,
       destination: destination,
-      departureDateTime: departureDateTime,
-      availableSeats: availableSeats,
+      date: date,
+      departureTime: departureTime,
+      slots: slots,
       carModel: carModel,
       zoneName: zoneName,
-      tripType: tripType,
+      type: type,
     );
   }
 

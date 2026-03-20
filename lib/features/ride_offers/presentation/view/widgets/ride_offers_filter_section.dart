@@ -8,12 +8,12 @@ class RideOffersFiltersSection extends StatelessWidget {
     super.key,
     required this.zoneId,
     required this.date,
-    required this.tripType,
+    required this.type,
     required this.sortBy,
     required this.quickFilters,
     required this.onZoneChanged,
     required this.onDateChanged,
-    required this.onTripTypeChanged,
+    required this.onTypeChanged,
     required this.onSortByChanged,
     required this.onQuickFilterToggled,
     required this.onApply,
@@ -22,12 +22,12 @@ class RideOffersFiltersSection extends StatelessWidget {
 
   final String? zoneId;
   final DateTime? date;
-  final String? tripType;
+  final String? type;
   final String? sortBy;
   final List<String> quickFilters;
   final ValueChanged<String?> onZoneChanged;
   final ValueChanged<DateTime?> onDateChanged;
-  final ValueChanged<String?> onTripTypeChanged;
+  final ValueChanged<String?> onTypeChanged;
   final ValueChanged<String?> onSortByChanged;
   final ValueChanged<String> onQuickFilterToggled;
   final VoidCallback onApply;
@@ -82,8 +82,8 @@ class RideOffersFiltersSection extends StatelessWidget {
                     const _SectionLabel(text: 'Tipo de viaje'),
                     const SizedBox(height: 6),
                     _SelectField(
-                      value: _tripTypeLabel(tripType),
-                      onTap: () => _selectTripType(context),
+                      value: _typeLabel(type),
+                      onTap: () => _selectType(context),
                     ),
                   ],
                 ),
@@ -115,9 +115,9 @@ class RideOffersFiltersSection extends StatelessWidget {
                 onTap: () => onQuickFilterToggled('price'),
               ),
               _FilterChip(
-                label: 'Asientos',
-                selected: quickFilters.contains('available_seats'),
-                onTap: () => onQuickFilterToggled('available_seats'),
+                label: 'Cupos',
+                selected: quickFilters.contains('slots'),
+                onTap: () => onQuickFilterToggled('slots'),
               ),
               _FilterChip(
                 label: 'Calificación',
@@ -174,9 +174,9 @@ class RideOffersFiltersSection extends StatelessWidget {
       title: 'Zona',
       options: const [
         _FilterOption(label: 'Todas las zonas', value: null),
-        _FilterOption(label: 'Colina', value: 'colina'),
-        _FilterOption(label: 'Mazuren', value: 'mazuren'),
-        _FilterOption(label: 'Cedritos', value: 'cedritos'),
+        _FilterOption(label: 'Colina', value: '1'),
+        _FilterOption(label: 'Mazuren', value: '2'),
+        _FilterOption(label: 'Cedritos', value: '3'),
       ],
     );
 
@@ -198,7 +198,7 @@ class RideOffersFiltersSection extends StatelessWidget {
     }
   }
 
-  Future<void> _selectTripType(BuildContext context) async {
+  Future<void> _selectType(BuildContext context) async {
     final selectedOption = await _showOptionsSheet<String?>(
       context: context,
       title: 'Tipo de viaje',
@@ -206,17 +206,17 @@ class RideOffersFiltersSection extends StatelessWidget {
         _FilterOption(label: 'Todos', value: null),
         _FilterOption(
           label: 'Llegada a la universidad',
-          value: 'arrival_to_university',
+          value: 'TO_UNIVERSITY',
         ),
         _FilterOption(
           label: 'Salida de la universidad',
-          value: 'departure_from_university',
+          value: 'FROM_UNIVERSITY',
         ),
       ],
     );
 
     if (selectedOption != null) {
-      onTripTypeChanged(selectedOption.value);
+      onTypeChanged(selectedOption.value);
     }
   }
 
@@ -228,7 +228,7 @@ class RideOffersFiltersSection extends StatelessWidget {
         _FilterOption(label: 'Sin ordenar', value: null),
         _FilterOption(label: 'Hora de salida', value: 'departure_time'),
         _FilterOption(label: 'Precio', value: 'price'),
-        _FilterOption(label: 'Asientos', value: 'available_seats'),
+        _FilterOption(label: 'Cupos', value: 'slots'),
         _FilterOption(label: 'Calificación', value: 'driver_rating'),
       ],
     );
@@ -277,11 +277,11 @@ class RideOffersFiltersSection extends StatelessWidget {
 
   String _zoneLabel(String? value) {
     switch (value) {
-      case 'colina':
+      case '1':
         return 'Colina';
-      case 'mazuren':
+      case '2':
         return 'Mazuren';
-      case 'cedritos':
+      case '3':
         return 'Cedritos';
       default:
         return 'Todas las zonas';
@@ -299,11 +299,11 @@ class RideOffersFiltersSection extends StatelessWidget {
     return '$day/$month/$year';
   }
 
-  String _tripTypeLabel(String? value) {
+  String _typeLabel(String? value) {
     switch (value) {
-      case 'arrival_to_university':
+      case 'TO_UNIVERSITY':
         return 'Llegada a la universidad';
-      case 'departure_from_university':
+      case 'FROM_UNIVERSITY':
         return 'Salida de la universidad';
       default:
         return 'Todos';
@@ -316,8 +316,8 @@ class RideOffersFiltersSection extends StatelessWidget {
         return 'Hora de salida';
       case 'price':
         return 'Precio';
-      case 'available_seats':
-        return 'Asientos';
+      case 'slots':
+        return 'Cupos';
       case 'driver_rating':
         return 'Calificación';
       default:

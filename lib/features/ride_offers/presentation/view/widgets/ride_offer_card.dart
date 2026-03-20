@@ -54,7 +54,7 @@ class RideOfferCard extends StatelessWidget {
                     origin: offer.source,
                     originTimeLabel: offer.departureTimeLabel,
                     destination: offer.destination,
-                    destinationDetail: _formatTripType(offer.tripType),
+                    destinationDetail: offer.typeLabel,
                   ),
                 ),
               ],
@@ -70,7 +70,7 @@ class RideOfferCard extends StatelessWidget {
                   spacing: 12,
                   runSpacing: 8,
                   children: [
-                    _MiniInfo(label: offer.availableSeatsText),
+                    _MiniInfo(label: offer.slotsText),
                     _MiniInfo(label: offer.carModel),
                   ],
                 ),
@@ -273,21 +273,6 @@ String _getInitials(String fullName) {
   final firstInitial = parts.first.substring(0, 1).toUpperCase();
   final lastInitial = parts.last.substring(0, 1).toUpperCase();
   return '$firstInitial$lastInitial';
-}
-
-String _formatTripType(String value) {
-  if (value.isEmpty) {
-    return '';
-  }
-
-  return value
-      .split('_')
-      .map(
-        (word) => word.isEmpty
-            ? word
-            : '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}',
-      )
-      .join(' ');
 }
 
 class _MiniInfo extends StatelessWidget {
