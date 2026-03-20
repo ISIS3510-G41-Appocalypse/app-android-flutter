@@ -10,7 +10,6 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Happy Ride',
-      initialRoute: AppRoutes.home,
       onGenerateRoute: AppRoutes.onGenerateRoute,
       builder: (context, child) {
         return AppDependencies(child: child!);

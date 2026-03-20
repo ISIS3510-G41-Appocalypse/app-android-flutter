@@ -7,4 +7,9 @@ class AppColors {
   static const Color slate400 = Color(0xFF94A3B8);
   static const Color teal600 = Color(0xFF0D9488);
   static const Color gray50 = Color(0xFFF8FAFC);
+  static const Color slate800 = Color(0xFF1e293b);
+  static const Color white = Color(0xFFFFFFFF);
+  static const Color black = Color(0xFF000000);
+  static const Color errorRed = Color(0xFFB00020);
 }
+

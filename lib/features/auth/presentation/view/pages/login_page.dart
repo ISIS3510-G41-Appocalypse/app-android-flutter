@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../../app/routes.dart';
-import '../../view_model/auth_cubit.dart';
-import '../../view_model/auth_state.dart';
+import '../../../../../core/theme/app_colors.dart';
 import '../widgets/login_form.dart';
 
 class LoginPage extends StatelessWidget {
@@ -10,26 +7,17 @@ class LoginPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<AuthCubit, AuthState>(
-      listener: (context, state) {
-        if (state.status == AuthStatus.authenticated) {
-          Navigator.pushReplacementNamed(context, AppRoutes.rideOffers);
-        }
-
-        if (state.status == AuthStatus.error && state.errorMessage != null) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
-        }
-      },
-      child: Scaffold(
-        appBar: AppBar(title: const Text('Login')),
-        body: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
-            child: const Padding(
-              padding: EdgeInsets.all(24),
-              child: LoginForm(),
+    return Scaffold(
+      backgroundColor: AppColors.slate900,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+                child: LoginForm(),
+              ),
             ),
           ),
         ),
