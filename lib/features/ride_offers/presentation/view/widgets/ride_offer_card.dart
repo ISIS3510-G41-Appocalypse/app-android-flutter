@@ -34,6 +34,7 @@ class RideOfferCard extends StatelessWidget {
                 child: _DriverInfo(
                   driverName: offer.driverName,
                   rating: offer.ratingText,
+                  tripsText: offer.tripsText,
                 ),
               ),
               const SizedBox(width: 12),
@@ -81,10 +82,15 @@ class RideOfferCard extends StatelessWidget {
 }
 
 class _DriverInfo extends StatelessWidget {
-  const _DriverInfo({required this.driverName, required this.rating});
+  const _DriverInfo({
+    required this.driverName,
+    required this.rating,
+    required this.tripsText,
+  });
 
   final String driverName;
   final String rating;
+  final String tripsText;
 
   @override
   Widget build(BuildContext context) {
@@ -117,14 +123,23 @@ class _DriverInfo extends StatelessWidget {
           children: [
             const Icon(Icons.star_rounded, size: 20, color: AppColors.amber700),
             const SizedBox(width: 6),
+            Text(
+              rating,
+              style: AppTextStyles.primary.copyWith(
+                fontSize: 17,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF64748B),
+              ),
+            ),
+            const SizedBox(width: 8),
             Flexible(
               child: Text(
-                rating,
+                tripsText,
                 overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.primary.copyWith(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF64748B),
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF94A3B8),
                 ),
               ),
             ),
