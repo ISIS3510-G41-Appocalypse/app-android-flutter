@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../domain/entities/ride_offer_filters.dart';
 import '../../domain/usecases/get_ride_offers.dart';
 import '../view/models/ride_offer_view_data.dart';
@@ -13,43 +14,41 @@ class RideOffersCubit extends Cubit<RideOffersState> {
   Future<void> loadRideOffers() async {
     emit(state.copyWith(status: RideOffersStatus.loading, message: null));
 
-    try {
-      final result = await getRideOffers(filters: state.filters);
-      final offers = result.map(RideOfferViewData.fromEntity).toList();
+    final result = await getRideOffers(filters: state.filters);
 
-      if (offers.isEmpty) {
+    result.fold(
+      (failure) {
         emit(
           state.copyWith(
-            status: RideOffersStatus.empty,
+            status: RideOffersStatus.error,
+            message: failure.message,
             offers: const [],
-            message: 'No encontramos ofertas de viaje para esos filtros',
           ),
         );
-        return;
-      }
+      },
+      (rideOffers) {
+        final offers = rideOffers.map(RideOfferViewData.fromEntity).toList();
 
-      emit(
-        state.copyWith(
-          status: RideOffersStatus.success,
-          offers: offers,
-          message: null,
-        ),
-      );
-    } on Exception catch (e) {
-      emit(
-        state.copyWith(
-          status: RideOffersStatus.error,
-          message: _mapExceptionToMessage(e),
-        ),
-      );
-    } catch (_) {
-      emit(
-        state.copyWith(
-          status: RideOffersStatus.error,
-          message: 'Ocurrió un error inesperado',
-        ),
-      );
-    }
+        if (offers.isEmpty) {
+          emit(
+            state.copyWith(
+              status: RideOffersStatus.empty,
+              offers: const [],
+              message: 'No encontramos ofertas de viaje para esos filtros',
+            ),
+          );
+          return;
+        }
+
+        emit(
+          state.copyWith(
+            status: RideOffersStatus.success,
+            offers: offers,
+            message: null,
+          ),
+        );
+      },
+    );
   }
 
   void updateZoneId(String? zoneId) {
@@ -114,15 +113,5 @@ class RideOffersCubit extends Cubit<RideOffersState> {
     emit(state.copyWith(filters: const RideOfferFilters()));
 
     await loadRideOffers();
-  }
-
-  String _mapExceptionToMessage(Exception exception) {
-    final rawMessage = exception.toString();
-
-    if (rawMessage.startsWith('Exception: ')) {
-      return rawMessage.replaceFirst('Exception: ', '');
-    }
-
-    return rawMessage;
   }
 }

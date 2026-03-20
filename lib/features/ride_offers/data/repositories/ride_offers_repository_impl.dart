@@ -1,3 +1,7 @@
+import 'package:dartz/dartz.dart';
+
+import '../../../../core/errors/exceptions.dart';
+import '../../../../core/errors/failures.dart';
 import '../../domain/entities/ride_offer.dart';
 import '../../domain/entities/ride_offer_filters.dart';
 import '../../domain/repositories/ride_offers_repository.dart';
@@ -10,70 +14,78 @@ class RideOffersRepositoryImpl implements RideOffersRepository {
   RideOffersRepositoryImpl({required this.remoteDataSource});
 
   @override
-  Future<List<RideOffer>> getRideOffers({
+  Future<Either<Failure, List<RideOffer>>> getRideOffers({
     required RideOfferFilters filters,
   }) async {
-    final results = await Future.wait([
-      remoteDataSource.getRides(),
-      remoteDataSource.getVehicles(),
-      remoteDataSource.getDrivers(),
-      remoteDataSource.getUsers(),
-      remoteDataSource.getZones(),
-    ]);
+    try {
+      final results = await Future.wait([
+        remoteDataSource.getRides(),
+        remoteDataSource.getVehicles(),
+        remoteDataSource.getDrivers(),
+        remoteDataSource.getUsers(),
+        remoteDataSource.getZones(),
+      ]);
 
-    final rides = results[0];
-    final vehicles = results[1];
-    final drivers = results[2];
-    final users = results[3];
-    final zones = results[4];
+      final rides = results[0];
+      final vehicles = results[1];
+      final drivers = results[2];
+      final users = results[3];
+      final zones = results[4];
 
-    final vehiclesById = _indexById(vehicles);
-    final driversById = _indexById(drivers);
-    final usersById = _indexById(users);
-    final zonesById = _indexById(zones);
-    final rideCountsByDriverId = _countRidesByDriver(rides);
+      final vehiclesById = _indexById(vehicles);
+      final driversById = _indexById(drivers);
+      final usersById = _indexById(users);
+      final zonesById = _indexById(zones);
+      final rideCountsByDriverId = _countRidesByDriver(rides);
 
-    final filteredRides = rides.where((ride) {
-      if (ride['state']?.toString() != 'OFERTADO') {
-        return false;
-      }
-
-      if (filters.zoneId != null &&
-          ride['zone_id']?.toString() != filters.zoneId) {
-        return false;
-      }
-
-      if (filters.date != null) {
-        final rideDate = DateTime.tryParse(ride['date']?.toString() ?? '');
-
-        if (rideDate == null || !_isSameDate(rideDate, filters.date!)) {
+      final filteredRides = rides.where((ride) {
+        if (ride['state']?.toString() != 'OFERTADO') {
           return false;
         }
-      }
 
-      if (filters.type != null && ride['type']?.toString() != filters.type) {
-        return false;
-      }
+        if (filters.zoneId != null &&
+            ride['zone_id']?.toString() != filters.zoneId) {
+          return false;
+        }
 
-      return true;
-    }).toList();
+        if (filters.date != null) {
+          final rideDate = DateTime.tryParse(ride['date']?.toString() ?? '');
 
-    final models = filteredRides
-        .map(
-          (ride) => _buildRideOfferModel(
-            ride: ride,
-            vehiclesById: vehiclesById,
-            driversById: driversById,
-            usersById: usersById,
-            zonesById: zonesById,
-            rideCountsByDriverId: rideCountsByDriverId,
-          ),
-        )
-        .toList();
+          if (rideDate == null || !_isSameDate(rideDate, filters.date!)) {
+            return false;
+          }
+        }
 
-    _sortRideOffers(models, filters);
+        if (filters.type != null && ride['type']?.toString() != filters.type) {
+          return false;
+        }
 
-    return models.map((model) => model.toEntity()).toList();
+        return true;
+      }).toList();
+
+      final models = filteredRides
+          .map(
+            (ride) => _buildRideOfferModel(
+              ride: ride,
+              vehiclesById: vehiclesById,
+              driversById: driversById,
+              usersById: usersById,
+              zonesById: zonesById,
+              rideCountsByDriverId: rideCountsByDriverId,
+            ),
+          )
+          .toList();
+
+      _sortRideOffers(models, filters);
+
+      final offers = models.map((model) => model.toEntity()).toList();
+
+      return Right(offers);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (_) {
+      return const Left(ServerFailure('Error inesperado al obtener ofertas'));
+    }
   }
 
   Map<String, Map<String, dynamic>> _indexById(

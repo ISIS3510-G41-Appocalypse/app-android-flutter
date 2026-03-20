@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 
 import '../../../../../core/theme/app_colors.dart';
-import '../../../injection/ride_offers_injection.dart';
 import '../../view_model/ride_offers_cubit.dart';
 import '../../view_model/ride_offers_state.dart';
 import '../widgets/ride_offers_filter_section.dart';
@@ -17,13 +17,14 @@ class RideOffersPage extends StatefulWidget {
 }
 
 class _RideOffersPageState extends State<RideOffersPage> {
+  final GetIt _sl = GetIt.instance;
   late final RideOffersCubit _cubit;
 
   @override
   void initState() {
     super.initState();
 
-    _cubit = RideOffersInjection.createCubit()..loadRideOffers();
+    _cubit = _sl<RideOffersCubit>()..loadRideOffers();
   }
 
   @override
