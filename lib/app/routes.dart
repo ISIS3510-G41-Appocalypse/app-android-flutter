@@ -8,7 +8,7 @@ class AppRoutes {
   static const String home       = '/home';
   static const String login      = '/login';
   static const String testSession = '/test-session';
-  static const String nav        = '/nav';               // ← renombrar
+  static const String nav        = '/nav';               
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
