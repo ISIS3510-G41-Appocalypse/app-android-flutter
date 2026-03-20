@@ -1,23 +1,21 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/network/dio_client.dart';
-import '../../../../core/storage/token_storage.dart';
 import '../../data/repositories/rides_repository_impl.dart';
 import '../../domain/entities/ride.dart';
 import '../../domain/entities/vehicle.dart';
 import '../../domain/entities/zone.dart';
 import 'create_ride_state.dart';
 
-class CreateRideViewModel extends Cubit<CreateRideState> {
-  final RidesRepositoryImpl _repository;
+class CreateRideCubit extends Cubit<CreateRideState> {
+  final RidesRepositoryImpl repository;
+  final int                 _userId;
 
-  CreateRideViewModel({
-    required DioClient    client,
-    required TokenStorage tokenStorage,
-  }) : _repository = RidesRepositoryImpl(
-          client:       client,
-          tokenStorage: tokenStorage,
-        ),
-       super(CreateRideInitial());
+  CreateRideCubit({
+    required DioClient client,
+    required int       userId,
+  })  : repository = RidesRepositoryImpl(client: client),
+        _userId     = userId,
+        super(CreateRideInitial());
 
 
   String? validateRequired(String? value, String fieldName) {
@@ -39,13 +37,11 @@ class CreateRideViewModel extends Cubit<CreateRideState> {
   Future<void> loadVehicles() async {
     emit(CreateRideLoadingVehicles());
     try {
-      final userId   = await _repository.getUserIdFromToken();
-      final driverId = await _repository.getDriverIdByUserId(userId);
+      final driverId = await repository.getDriverIdByUserId(_userId);
 
-      // Carga vehículos y zonas en paralelo
       final results = await Future.wait([
-        _repository.getVehiclesByDriver(driverId),
-        _repository.getZones(),
+        repository.getVehiclesByDriver(driverId),
+        repository.getZones(),
       ]);
 
       final vehicles = results[0] as List<Vehicle>;
@@ -56,10 +52,7 @@ class CreateRideViewModel extends Cubit<CreateRideState> {
         return;
       }
 
-      emit(CreateRideReady(
-        vehicles: vehicles,
-        zones:    zones,
-      ));
+      emit(CreateRideReady(vehicles: vehicles, zones: zones));
     } catch (e) {
       emit(CreateRideError('Error al cargar datos: ${e.toString()}'));
     }
@@ -97,10 +90,9 @@ class CreateRideViewModel extends Cubit<CreateRideState> {
     emit(current.copyWith(isSubmitting: true));
 
     try {
-      final userId   = await _repository.getUserIdFromToken();
-      final driverId = await _repository.getDriverIdByUserId(userId);
+      final driverId = await repository.getDriverIdByUserId(_userId);
 
-      await _repository.createRide(
+      await repository.createRide(
         Ride(
           driverId:      driverId,
           vehicleId:     current.selectedVehicle!.id,

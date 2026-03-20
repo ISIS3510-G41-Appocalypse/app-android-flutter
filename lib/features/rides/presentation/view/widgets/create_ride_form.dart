@@ -5,7 +5,7 @@ import '../../../../../core/theme/app_text_styles.dart';
 import '../../../domain/entities/vehicle.dart';
 import '../../../domain/entities/zone.dart';
 import '../../view_model/create_ride_state.dart';
-import '../../view_model/create_ride_view_model.dart';
+import '../../view_model/create_ride_cubit.dart';
 import 'vehicle_selector.dart';
 
 class CreateRideForm extends StatefulWidget {
@@ -77,7 +77,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
   }
 
   Future<void> _submit(Vehicle? selectedVehicle, Zone? selectedZone) async {
-    final vm = context.read<CreateRideViewModel>();
+    final vm = context.read<CreateRideCubit>();
 
     if (vm.validateVehicleSelected(selectedVehicle) != null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -113,7 +113,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<CreateRideViewModel, CreateRideState>(
+    return BlocConsumer<CreateRideCubit, CreateRideState>(
       listener: (context, state) {
         if (state is CreateRideSuccess) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -157,7 +157,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
                 const SizedBox(height: 16),
                 TextButton(
                   onPressed: () =>
-                      context.read<CreateRideViewModel>().loadVehicles(),
+                      context.read<CreateRideCubit>().loadVehicles(),
                   child: const Text('Reintentar'),
                 ),
               ],
@@ -206,7 +206,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
                             ))
                         .toList(),
                     onChanged: (z) =>
-                        context.read<CreateRideViewModel>().selectZone(z!),
+                        context.read<CreateRideCubit>().selectZone(z!),
                     style: AppTextStyles.primary
                         .copyWith(color: AppColors.slate900, fontSize: 14),
                   ),
@@ -236,7 +236,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
                 icon:       Icons.location_on_outlined,
                 iconColor:  AppColors.amber700,
                 validator:  (v) => context
-                    .read<CreateRideViewModel>()
+                    .read<CreateRideCubit>()
                     .validateRequired(v, 'El inicio'),
               ),
               const SizedBox(height: 10),
@@ -246,7 +246,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
                 icon:       Icons.flag_outlined,
                 iconColor:  AppColors.teal600,
                 validator:  (v) => context
-                    .read<CreateRideViewModel>()
+                    .read<CreateRideCubit>()
                     .validateRequired(v, 'El destino'),
               ),
               const SizedBox(height: 20),
@@ -266,7 +266,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
                           readOnly:   true,
                           onTap:      _pickDate,
                           validator:  (v) => context
-                              .read<CreateRideViewModel>()
+                              .read<CreateRideCubit>()
                               .validateRequired(v, 'La fecha'),
                         ),
                       ],
@@ -286,7 +286,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
                           readOnly:   true,
                           onTap:      _pickTime,
                           validator:  (v) => context
-                              .read<CreateRideViewModel>()
+                              .read<CreateRideCubit>()
                               .validateRequired(v, 'La hora'),
                         ),
                       ],

@@ -16,7 +16,7 @@ class RideModel extends Ride {
   });
 
   factory RideModel.fromJson(Map<String, dynamic> json) => RideModel(
-        id:json['id'] as int?,
+        id:json['id'] as int,
         driverId:json['driver_id'] as int,
         vehicleId:json['vehicle_id'] as int,
         zoneId:json['zone_id'] as int,

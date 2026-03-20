@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../domain/entities/vehicle.dart';
-import '../../view_model/create_ride_view_model.dart';
+import '../../view_model/create_ride_cubit.dart';
 
 class VehicleSelector extends StatelessWidget {
   final List<Vehicle> vehicles;
@@ -34,7 +34,7 @@ class VehicleSelector extends StatelessWidget {
               vehicle:    v,
               isSelected: selected?.id == v.id,
               onTap: () =>
-                  context.read<CreateRideViewModel>().selectVehicle(v),
+                  context.read<CreateRideCubit>().selectVehicle(v),
             )),
       ],
     );

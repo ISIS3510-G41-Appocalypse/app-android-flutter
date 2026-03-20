@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../core/network/dio_client.dart';
-import '../../../../../core/storage/token_storage.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
-import '../../view_model/create_ride_view_model.dart';
+import '../../../../auth/presentation/view_model/auth_cubit.dart';
+import '../../view_model/create_ride_cubit.dart';
 import '../widgets/create_ride_form.dart';
 
 class CreateRidePage extends StatelessWidget {
@@ -13,13 +13,12 @@ class CreateRidePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => CreateRideViewModel(
-        client:       context.read<DioClient>(),
-        tokenStorage: context.read<TokenStorage>(),
+      create: (_) => CreateRideCubit(
+        client: context.read<DioClient>(),
+        userId: context.read<AuthCubit>().currentUserId!,
       )..loadVehicles(),
       child: Scaffold(
         backgroundColor: AppColors.slate900,
-
         appBar: AppBar(
           backgroundColor: AppColors.slate900,
           elevation:       0,
@@ -40,7 +39,6 @@ class CreateRidePage extends StatelessWidget {
             ),
           ],
         ),
-
         body: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
           child: Column(
@@ -70,7 +68,6 @@ class CreateRidePage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 24),
-
               Container(
                 width:   double.infinity,
                 padding: const EdgeInsets.all(24),
@@ -90,66 +87,7 @@ class CreateRidePage extends StatelessWidget {
             ],
           ),
         ),
-
-        bottomNavigationBar: _BottomNav(),
       ),
-    );
-  }
-}
-
-class _BottomNav extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.slate900,
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _NavItem(icon: Icons.local_offer_outlined,   label: 'Ofertas'),
-              _NavItem(icon: Icons.directions_car_rounded, label: 'Viajes',
-                  isActive: true),
-              _NavItem(icon: Icons.forum_outlined,         label: 'Chat'),
-              _NavItem(icon: Icons.person_outline_rounded, label: 'Perfil'),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final String   label;
-  final bool     isActive;
-
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    this.isActive = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isActive ? AppColors.amber700 : AppColors.slate400;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, color: color, size: 24),
-        const SizedBox(height: 4),
-        Text(
-          label.toUpperCase(),
-          style: AppTextStyles.primary.copyWith(
-            fontSize:      9,
-            fontWeight:    FontWeight.w700,
-            letterSpacing: 1,
-            color:         color,
-          ),
-        ),
-      ],
     );
   }
 }
