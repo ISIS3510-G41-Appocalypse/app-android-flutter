@@ -4,9 +4,11 @@ import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/entities/ride_offer.dart';
 import '../../domain/entities/ride_offer_filters.dart';
+import '../../domain/entities/zone.dart';
 import '../../domain/repositories/ride_offers_repository.dart';
 import '../data_sources/ride_offers_remote_datasource.dart';
 import '../models/ride_offer_model.dart';
+import '../models/zone_model.dart';
 
 class RideOffersRepositoryImpl implements RideOffersRepository {
   final RideOffersRemoteDataSource remoteDataSource;
@@ -56,6 +58,23 @@ class RideOffersRepositoryImpl implements RideOffersRepository {
       return Left(ServerFailure(e.message));
     } catch (_) {
       return const Left(ServerFailure('Error inesperado al obtener ofertas'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, List<Zone>>> getZones() async {
+    try {
+      final rows = await remoteDataSource.getZonesRows();
+      final zones = rows
+          .map(ZoneModel.fromJson)
+          .map((model) => model.toEntity())
+          .toList();
+
+      return Right(zones);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (_) {
+      return const Left(ServerFailure('Error inesperado al obtener zonas'));
     }
   }
 

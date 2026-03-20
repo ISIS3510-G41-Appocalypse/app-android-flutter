@@ -2,14 +2,21 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../domain/entities/ride_offer_filters.dart';
 import '../../domain/usecases/get_ride_offers.dart';
+import '../../domain/usecases/get_zones.dart';
 import '../view/models/ride_offer_view_data.dart';
 import 'ride_offers_state.dart';
 
 class RideOffersCubit extends Cubit<RideOffersState> {
   final GetRideOffers getRideOffers;
+  final GetZones getZones;
 
-  RideOffersCubit({required this.getRideOffers})
+  RideOffersCubit({required this.getRideOffers, required this.getZones})
     : super(RideOffersState.initial());
+
+  Future<void> loadInitialData() async {
+    await _loadZones();
+    await loadRideOffers();
+  }
 
   Future<void> loadRideOffers() async {
     emit(state.copyWith(status: RideOffersStatus.loading, message: null));
@@ -49,6 +56,14 @@ class RideOffersCubit extends Cubit<RideOffersState> {
         );
       },
     );
+  }
+
+  Future<void> _loadZones() async {
+    final result = await getZones();
+
+    result.fold((_) {}, (zones) {
+      emit(state.copyWith(zones: zones));
+    });
   }
 
   void updateZoneId(String? zoneId) {

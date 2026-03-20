@@ -24,7 +24,7 @@ class _RideOffersPageState extends State<RideOffersPage> {
   void initState() {
     super.initState();
 
-    _cubit = _sl<RideOffersCubit>()..loadRideOffers();
+    _cubit = _sl<RideOffersCubit>()..loadInitialData();
   }
 
   @override
@@ -38,7 +38,7 @@ class _RideOffersPageState extends State<RideOffersPage> {
     return BlocProvider.value(
       value: _cubit,
       child: Scaffold(
-        backgroundColor: AppColors.gray50,
+        backgroundColor: AppColors.slate900,
         appBar: AppBar(
           backgroundColor: AppColors.slate900,
           elevation: 0,
@@ -75,6 +75,7 @@ class _RideOffersPageState extends State<RideOffersPage> {
                       const RideOffersIntroSection(),
                       const SizedBox(height: 24),
                       RideOffersFiltersSection(
+                        zones: state.zones,
                         zoneId: state.filters.zoneId,
                         date: state.filters.date,
                         type: state.filters.type,

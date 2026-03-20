@@ -6,6 +6,7 @@ import 'ride_offers_remote_datasource.dart';
 
 class RideOffersRemoteDataSourceImpl implements RideOffersRemoteDataSource {
   static const String _rideOffersViewPath = '/rest/v1/ride_offers_view';
+  static const String _zonesPath = '/rest/v1/zones';
 
   final Dio dio;
 
@@ -19,6 +20,14 @@ class RideOffersRemoteDataSourceImpl implements RideOffersRemoteDataSource {
         'select':
             'id,driver_name,driver_rating,trips_count,price,source,destination,date,departure_time,slots,car_model,zone_name,type,state,zone_id',
       },
+    );
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getZonesRows() {
+    return _getTableRows(
+      path: _zonesPath,
+      queryParameters: const {'select': 'id,name'},
     );
   }
 

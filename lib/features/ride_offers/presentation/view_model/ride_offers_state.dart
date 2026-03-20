@@ -1,4 +1,5 @@
 import '../../domain/entities/ride_offer_filters.dart';
+import '../../domain/entities/zone.dart';
 import '../view/models/ride_offer_view_data.dart';
 
 enum RideOffersStatus { initial, loading, success, empty, error }
@@ -9,12 +10,14 @@ class RideOffersState {
   final RideOffersStatus status;
   final RideOfferFilters filters;
   final List<RideOfferViewData> offers;
+  final List<Zone> zones;
   final String? message;
 
   const RideOffersState({
     required this.status,
     required this.filters,
     required this.offers,
+    required this.zones,
     this.message,
   });
 
@@ -23,6 +26,7 @@ class RideOffersState {
       status: RideOffersStatus.initial,
       filters: RideOfferFilters(),
       offers: [],
+      zones: [],
     );
   }
 
@@ -30,12 +34,14 @@ class RideOffersState {
     RideOffersStatus? status,
     RideOfferFilters? filters,
     List<RideOfferViewData>? offers,
+    List<Zone>? zones,
     Object? message = _sentinel,
   }) {
     return RideOffersState(
       status: status ?? this.status,
       filters: filters ?? this.filters,
       offers: offers ?? this.offers,
+      zones: zones ?? this.zones,
       message: identical(message, _sentinel)
           ? this.message
           : message as String?,

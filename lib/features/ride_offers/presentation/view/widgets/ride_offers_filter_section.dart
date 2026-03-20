@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
+import '../../../domain/entities/zone.dart';
 
 class RideOffersFiltersSection extends StatelessWidget {
   const RideOffersFiltersSection({
     super.key,
+    required this.zones,
     required this.zoneId,
     required this.date,
     required this.type,
@@ -20,6 +22,7 @@ class RideOffersFiltersSection extends StatelessWidget {
     required this.onClear,
   });
 
+  final List<Zone> zones;
   final String? zoneId;
   final DateTime? date;
   final String? type;
@@ -54,7 +57,7 @@ class RideOffersFiltersSection extends StatelessWidget {
           const _SectionLabel(text: 'Zona'),
           const SizedBox(height: 6),
           _SelectField(
-            value: _zoneLabel(zoneId),
+            value: _zoneLabel(zones, zoneId),
             onTap: () => _selectZone(context),
           ),
           const SizedBox(height: 16),
@@ -172,11 +175,9 @@ class RideOffersFiltersSection extends StatelessWidget {
     final selectedOption = await _showOptionsSheet<String?>(
       context: context,
       title: 'Zona',
-      options: const [
-        _FilterOption(label: 'Todas las zonas', value: null),
-        _FilterOption(label: 'Colina', value: '1'),
-        _FilterOption(label: 'Mazuren', value: '2'),
-        _FilterOption(label: 'Cedritos', value: '3'),
+      options: [
+        const _FilterOption(label: 'Todas las zonas', value: null),
+        ...zones.map((zone) => _FilterOption(label: zone.name, value: zone.id)),
       ],
     );
 
@@ -275,17 +276,18 @@ class RideOffersFiltersSection extends StatelessWidget {
     );
   }
 
-  String _zoneLabel(String? value) {
-    switch (value) {
-      case '1':
-        return 'Colina';
-      case '2':
-        return 'Mazuren';
-      case '3':
-        return 'Cedritos';
-      default:
-        return 'Todas las zonas';
+  String _zoneLabel(List<Zone> zones, String? value) {
+    if (value == null) {
+      return 'Todas las zonas';
     }
+
+    for (final zone in zones) {
+      if (zone.id == value) {
+        return zone.name;
+      }
+    }
+
+    return 'Todas las zonas';
   }
 
   String _dateLabel(DateTime? value) {
