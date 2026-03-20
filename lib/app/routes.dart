@@ -18,9 +18,7 @@ class AppRoutes {
         return MaterialPageRoute(builder: (context) => const TestSessionPage());
       default:
         return MaterialPageRoute(
-          builder: (context) => const Scaffold(
-            body: Center(child: Text('Ruta no encontrada')),
-          ),
+          builder: (context) => const HomePage(),
         );
     }
   }
