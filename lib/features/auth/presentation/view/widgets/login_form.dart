@@ -43,7 +43,7 @@ class _LoginFormState extends State<LoginForm> {
     return BlocConsumer<AuthCubit, AuthState>(
       listener: (context, state) {
         if (state.status == AuthStatus.authenticated) {
-          Navigator.pushNamedAndRemoveUntil(context, AppRoutes.testSession, (route) => false);
+          Navigator.pushNamedAndRemoveUntil(context, AppRoutes.rideOffers, (route) => false);
         }
       },
       builder: (context, state) {
