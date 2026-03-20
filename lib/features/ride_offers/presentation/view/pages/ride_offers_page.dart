@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-
+import '../../../../../app/routes.dart';
+import '../../../../../core/layout/navigation_bar.dart' as app_layout;
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../auth/presentation/view_model/auth_cubit.dart';
 import '../../../../auth/presentation/view/widgets/auth_session_listener.dart';
@@ -107,66 +108,21 @@ class _RideOffersPageState extends State<RideOffersPage> {
               },
             ),
           ),
-          bottomNavigationBar: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
-            ),
-            child: const SafeArea(
-              top: false,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  _BottomItem(
-                    icon: Icons.home_rounded,
-                    label: 'Home',
-                    selected: true,
-                  ),
-                  _BottomItem(
-                    icon: Icons.directions_car_outlined,
-                    label: 'Viajes',
-                  ),
-                ],
-              ),
-            ),
+          bottomNavigationBar: app_layout.NavigationBar(
+            selectedItem: app_layout.NavigationBarItem.home,
+            onHomeTap: () {
+              Navigator.pushNamedAndRemoveUntil(
+                context,
+                AppRoutes.rideOffers,
+                (route) => false,
+              );
+            },
+            onRidesTap: () {},
+            onProfileTap: () {
+              Navigator.pushNamed(context, AppRoutes.testSession);
+            },
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _BottomItem extends StatelessWidget {
-  const _BottomItem({
-    required this.icon,
-    required this.label,
-    this.selected = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = selected ? AppColors.amber700 : AppColors.slate400;
-
-    return Expanded(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 22, color: color),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w700,
-              color: color,
-            ),
-          ),
-        ],
       ),
     );
   }
