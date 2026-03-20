@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-
 import '../../../../../app/routes.dart';
 import '../../view_model/auth_cubit.dart';
 import '../../view_model/auth_state.dart';

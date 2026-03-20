@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'auth_dependencies.dart';
+import 'app_dependencies.dart';
 import 'routes.dart';
 
 class MyApp extends StatelessWidget {
@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
       initialRoute: AppRoutes.home,
       onGenerateRoute: AppRoutes.onGenerateRoute,
       builder: (context, child) {
-        return AuthDependencies(child: child!);
+        return AppDependencies(child: child!);
       },
     );
   }
