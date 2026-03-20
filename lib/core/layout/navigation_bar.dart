@@ -23,8 +23,8 @@ class NavigationBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(top: BorderSide(color: Color(0xFFE2E8F0))),
+        color: AppColors.blue900,
+        border: Border(top: BorderSide(color: AppColors.blue900)),
       ),
       child: SafeArea(
         top: false,
@@ -71,7 +71,7 @@ class _BottomItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? AppColors.amber700 : AppColors.slate400;
+    final color = selected ? AppColors.amber700 : AppColors.gray50;
 
     return Expanded(
       child: Material(

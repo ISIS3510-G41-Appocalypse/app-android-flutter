@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import '../../../../../app/routes.dart';
-import '../../../../../core/layout/navigation_bar.dart' as app_layout;
+import '../../../../../core/layout/header.dart' as header_layout;
+import '../../../../../core/layout/navigation_bar.dart' as navigation_layout;
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../auth/presentation/view_model/auth_cubit.dart';
 import '../../../../auth/presentation/view/widgets/auth_session_listener.dart';
@@ -51,24 +52,7 @@ class _RideOffersPageState extends State<RideOffersPage> {
       child: AuthSessionListener(
         child: Scaffold(
           backgroundColor: AppColors.slate900,
-          appBar: AppBar(
-            backgroundColor: AppColors.slate900,
-            elevation: 0,
-            centerTitle: true,
-            title: const Text(
-              'Happy Ride',
-              style: TextStyle(color: AppColors.gray50),
-            ),
-            actions: const [
-              Padding(
-                padding: EdgeInsets.only(right: 16),
-                child: Icon(
-                  Icons.directions_car_rounded,
-                  color: AppColors.amber700,
-                ),
-              ),
-            ],
-          ),
+          appBar: const header_layout.Header(),
           body: SafeArea(
             top: false,
             child: BlocBuilder<RideOffersCubit, RideOffersState>(
@@ -108,8 +92,8 @@ class _RideOffersPageState extends State<RideOffersPage> {
               },
             ),
           ),
-          bottomNavigationBar: app_layout.NavigationBar(
-            selectedItem: app_layout.NavigationBarItem.home,
+          bottomNavigationBar: navigation_layout.NavigationBar(
+            selectedItem: navigation_layout.NavigationBarItem.home,
             onHomeTap: () {
               Navigator.pushNamedAndRemoveUntil(
                 context,
