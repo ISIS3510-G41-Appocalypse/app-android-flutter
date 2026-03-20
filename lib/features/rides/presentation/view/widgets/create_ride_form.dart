@@ -6,7 +6,6 @@ import '../../../domain/entities/vehicle.dart';
 import '../../../domain/entities/zone.dart';
 import '../../view_model/create_ride_state.dart';
 import '../../view_model/create_ride_cubit.dart';
-import 'vehicle_selector.dart';
 
 class CreateRideForm extends StatefulWidget {
   const CreateRideForm({super.key});
@@ -23,12 +22,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
   final _timeCtrl        = TextEditingController();
   final _priceCtrl       = TextEditingController();
 
-  String _selectedType = 'TO_UNIVERSITY';
-
-  static const _types = [
-    {'value': 'TO_UNIVERSITY',   'label': 'Hacia Uniandes'},
-    {'value': 'FROM_UNIVERSITY', 'label': 'Desde Uniandes'},
-  ];
+  final String _selectedType = 'TO_UNIVERSITY';
 
   @override
   void dispose() {
@@ -74,6 +68,54 @@ class _CreateRideFormState extends State<CreateRideForm> {
       _timeCtrl.text =
           '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
     }
+  }
+
+  Widget _buildRouteSection() {
+    return Stack(
+      children: [
+        // Línea conector vertical
+        Positioned(
+          left: 26,
+          top: 50,
+          bottom: 0,
+          child: Container(
+            width: 2,
+            decoration: BoxDecoration(
+              border: Border(
+                left: BorderSide(
+                  color: AppColors.amber700.withValues(alpha: 0.3),
+                  width: 2,
+                ),
+              ),
+            ),
+          ),
+        ),
+        // Contenido
+        Column(
+          spacing: 10,
+          children: [
+            _StyledField(
+              controller: _sourceCtrl,
+              hint: 'Punto de salida',
+              icon: Icons.location_on_outlined,
+              iconColor: AppColors.amber700,
+              validator: (v) => context
+                  .read<CreateRideCubit>()
+                  .validateRequired(v, 'El inicio'),
+            ),
+            _StyledField(
+              controller: _destinationCtrl,
+              hint: 'Destino final',
+              icon: Icons.flag_outlined,
+              iconColor: AppColors.teal600,
+              validator: (v) => context
+                  .read<CreateRideCubit>()
+                  .validateRequired(v, 'El destino'),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   Future<void> _submit(Vehicle? selectedVehicle, Zone? selectedZone) async {
@@ -171,34 +213,66 @@ class _CreateRideFormState extends State<CreateRideForm> {
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 20,
             children: [
-
-              VehicleSelector(
-                vehicles: state.vehicles,
-                selected: state.selectedVehicle,
-              ),
-              const SizedBox(height: 20),
-
-              _FieldLabel('ZONA'),
-              const SizedBox(height: 8),
+              // Vehículo
+              _FieldLabel('VEHÍCULO'),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 decoration: BoxDecoration(
-                  color:        AppColors.gray50,
+                  color: AppColors.gray50,
                   borderRadius: BorderRadius.circular(12),
-                  border:       Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<Vehicle>(
+                    value: state.selectedVehicle,
+                    isExpanded: true,
+                    hint: Text(
+                      'Selecciona tu vehículo',
+                      style: AppTextStyles.primary.copyWith(
+                        color: AppColors.slate400,
+                        fontSize: 14,
+                      ),
+                    ),
+                    icon: const Icon(Icons.expand_more, color: AppColors.slate400),
+                    items: state.vehicles
+                        .map((v) => DropdownMenuItem<Vehicle>(
+                              value: v,
+                              child: Text(v.infoCarro),
+                            ))
+                        .toList(),
+                    onChanged: (v) =>
+                        context.read<CreateRideCubit>().selectVehicle(v!),
+                    style: AppTextStyles.primary.copyWith(
+                      color: AppColors.slate900,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ),
+
+              // Zona
+              _FieldLabel('ZONA'),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                decoration: BoxDecoration(
+                  color: AppColors.gray50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFE2E8F0)),
                 ),
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<Zone>(
-                    value:      state.selectedZone,
+                    value: state.selectedZone,
                     isExpanded: true,
                     hint: Text(
                       'Selecciona tu zona',
-                      style: AppTextStyles.primary
-                          .copyWith(color: AppColors.slate400, fontSize: 14),
+                      style: AppTextStyles.primary.copyWith(
+                        color: AppColors.slate400,
+                        fontSize: 14,
+                      ),
                     ),
-                    icon: const Icon(Icons.expand_more,
-                        color: AppColors.slate400),
+                    icon: const Icon(Icons.expand_more, color: AppColors.slate400),
                     items: state.zones
                         .map((z) => DropdownMenuItem<Zone>(
                               value: z,
@@ -207,50 +281,38 @@ class _CreateRideFormState extends State<CreateRideForm> {
                         .toList(),
                     onChanged: (z) =>
                         context.read<CreateRideCubit>().selectZone(z!),
-                    style: AppTextStyles.primary
-                        .copyWith(color: AppColors.slate900, fontSize: 14),
+                    style: AppTextStyles.primary.copyWith(
+                      color: AppColors.slate900,
+                      fontSize: 14,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
 
-              _FieldLabel('TIPO DE VIAJE'),
-              const SizedBox(height: 8),
-              _StyledDropdown<String>(
-                value: _selectedType,
-                items: _types
-                    .map((t) => DropdownMenuItem<String>(
-                          value: t['value'] as String,
-                          child: Text(t['label'] as String),
-                        ))
-                    .toList(),
-                onChanged: (v) => setState(() => _selectedType = v!),
-              ),
-              const SizedBox(height: 20),
-
+              // Ruta
               _FieldLabel('RUTA'),
-              const SizedBox(height: 8),
-              _StyledField(
-                controller: _sourceCtrl,
-                hint:       'Punto de salida',
-                icon:       Icons.location_on_outlined,
-                iconColor:  AppColors.amber700,
-                validator:  (v) => context
-                    .read<CreateRideCubit>()
-                    .validateRequired(v, 'El inicio'),
-              ),
-              const SizedBox(height: 10),
-              _StyledField(
-                controller: _destinationCtrl,
-                hint:       'Destino final',
-                icon:       Icons.flag_outlined,
-                iconColor:  AppColors.teal600,
-                validator:  (v) => context
-                    .read<CreateRideCubit>()
-                    .validateRequired(v, 'El destino'),
-              ),
-              const SizedBox(height: 20),
+              _buildRouteSection(),
 
+              // Precio
+              _FieldLabel('PRECIO'),
+              _StyledField(
+                controller: _priceCtrl,
+                hint: 'Precio por pasajero',
+                icon: Icons.payments_outlined,
+                keyboardType: TextInputType.number,
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) {
+                    return 'El precio es requerido';
+                  }
+                  final parsed = double.tryParse(v);
+                  if (parsed == null || parsed <= 0) {
+                    return 'Ingresa un precio válido';
+                  }
+                  return null;
+                },
+              ),
+
+              // Fecha y Hora
               Row(
                 children: [
                   Expanded(
@@ -261,11 +323,11 @@ class _CreateRideFormState extends State<CreateRideForm> {
                         const SizedBox(height: 8),
                         _StyledField(
                           controller: _dateCtrl,
-                          hint:       'yyyy-MM-dd',
-                          icon:       Icons.calendar_today_outlined,
-                          readOnly:   true,
-                          onTap:      _pickDate,
-                          validator:  (v) => context
+                          hint: 'yyyy-MM-dd',
+                          icon: Icons.calendar_today_outlined,
+                          readOnly: true,
+                          onTap: _pickDate,
+                          validator: (v) => context
                               .read<CreateRideCubit>()
                               .validateRequired(v, 'La fecha'),
                         ),
@@ -281,11 +343,11 @@ class _CreateRideFormState extends State<CreateRideForm> {
                         const SizedBox(height: 8),
                         _StyledField(
                           controller: _timeCtrl,
-                          hint:       '00:00',
-                          icon:       Icons.schedule_outlined,
-                          readOnly:   true,
-                          onTap:      _pickTime,
-                          validator:  (v) => context
+                          hint: 'HH:mm',
+                          icon: Icons.schedule_outlined,
+                          readOnly: true,
+                          onTap: _pickTime,
+                          validator: (v) => context
                               .read<CreateRideCubit>()
                               .validateRequired(v, 'La hora'),
                         ),
@@ -294,47 +356,25 @@ class _CreateRideFormState extends State<CreateRideForm> {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
 
-              _FieldLabel('PRECIO POR PASAJERO'),
-              const SizedBox(height: 8),
-              _StyledField(
-                controller:   _priceCtrl,
-                hint:         'Ej: 6000',
-                icon:         Icons.payments_outlined,
-                keyboardType: TextInputType.number,
-                validator: (v) {
-                  if (v == null || v.trim().isEmpty) {
-                    return 'El precio es requerido';
-                  }
-                  final parsed = double.tryParse(v);
-                  if (parsed == null || parsed <= 0) {
-                    return 'Ingresa un precio válido';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 32),
-
+              // Submit Button
               SizedBox(
-                width:  double.infinity,
+                width: double.infinity,
                 height: 56,
                 child: ElevatedButton.icon(
                   onPressed: state.isSubmitting
                       ? null
-                      : () => _submit(
-                            state.selectedVehicle,
-                            state.selectedZone,
-                          ),
+                      : () => _submit(state.selectedVehicle, state.selectedZone),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor:         AppColors.amber700,
-                    disabledBackgroundColor: AppColors.amber700.withOpacity(0.6),
+                    backgroundColor: AppColors.amber700,
+                    disabledBackgroundColor:
+                        AppColors.amber700.withValues(alpha: 0.6),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14)),
                   ),
                   icon: state.isSubmitting
                       ? const SizedBox(
-                          width:  20,
+                          width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
                               color: Colors.white, strokeWidth: 2),
@@ -344,39 +384,11 @@ class _CreateRideFormState extends State<CreateRideForm> {
                   label: Text(
                     state.isSubmitting ? 'Publicando...' : 'Publicar viaje',
                     style: AppTextStyles.primary.copyWith(
-                      color:      Colors.white,
-                      fontSize:   16,
+                      color: Colors.white,
+                      fontSize: 16,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 12),
-                decoration: BoxDecoration(
-                  color:        AppColors.teal600.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color: AppColors.teal600.withOpacity(0.2)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.verified_user_outlined,
-                        color: AppColors.teal600, size: 18),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        'Tu oferta será visible para todos los estudiantes en tu ruta.',
-                        style: AppTextStyles.primary.copyWith(
-                          fontSize: 12,
-                          color:    AppColors.teal600,
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
               ),
             ],
@@ -461,41 +473,6 @@ class _StyledField extends StatelessWidget {
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide:   const BorderSide(color: Colors.red, width: 1.5),
-        ),
-      ),
-    );
-  }
-}
-
-class _StyledDropdown<T> extends StatelessWidget {
-  final T                         value;
-  final List<DropdownMenuItem<T>> items;
-  final ValueChanged<T?>          onChanged;
-
-  const _StyledDropdown({
-    required this.value,
-    required this.items,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      decoration: BoxDecoration(
-        color:        AppColors.gray50,
-        borderRadius: BorderRadius.circular(12),
-        border:       Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<T>(
-          value:      value,
-          isExpanded: true,
-          icon: const Icon(Icons.expand_more, color: AppColors.slate400),
-          items:      items,
-          onChanged:  onChanged,
-          style: AppTextStyles.primary
-              .copyWith(color: AppColors.slate900, fontSize: 14),
         ),
       ),
     );

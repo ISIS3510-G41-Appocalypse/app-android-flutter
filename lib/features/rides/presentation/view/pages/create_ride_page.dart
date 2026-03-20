@@ -21,45 +21,45 @@ class CreateRidePage extends StatelessWidget {
         backgroundColor: AppColors.slate900,
         appBar: AppBar(
           backgroundColor: AppColors.slate900,
-          elevation:       0,
-          centerTitle:     true,
+          elevation: 0,
+          centerTitle: true,
           title: Text(
             'Happy Ride',
             style: AppTextStyles.primary.copyWith(
-              color:      AppColors.amber700,
-              fontSize:   18,
+              color: AppColors.amber700,
+              fontSize: 18,
               fontWeight: FontWeight.w800,
             ),
           ),
           actions: [
             Padding(
               padding: const EdgeInsets.only(right: 16),
-              child: Icon(Icons.directions_car_rounded,
-                  color: AppColors.amber700),
+              child: Icon(Icons.directions_car_rounded, color: AppColors.amber700),
             ),
           ],
         ),
         body: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 100),
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 120),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Title Section
               Center(
                 child: Column(
                   children: [
                     Text(
                       'Ofertar viaje',
                       style: AppTextStyles.primary.copyWith(
-                        color:      Colors.white,
-                        fontSize:   24,
+                        color: Colors.white,
+                        fontSize: 24,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 8),
                     Text(
-                      'Completa los detalles para compartir tu ruta.',
+                      'Completa los detalles para compartir tu ruta con la comunidad.',
                       style: AppTextStyles.primary.copyWith(
-                        color:    AppColors.slate400,
+                        color: AppColors.slate400,
                         fontSize: 13,
                       ),
                       textAlign: TextAlign.center,
@@ -67,22 +67,48 @@ class CreateRidePage extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 32),
+              // Form Container
               Container(
-                width:   double.infinity,
+                width: double.infinity,
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color:        Colors.white,
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color:      Colors.black.withOpacity(0.15),
+                      color: Colors.black.withValues(alpha: 0.15),
                       blurRadius: 20,
-                      offset:     const Offset(5, 5),
+                      offset: const Offset(5, 5),
                     ),
                   ],
                 ),
                 child: const CreateRideForm(),
+              ),
+              const SizedBox(height: 24),
+              // Info Box
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.teal600.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.teal600.withValues(alpha: 0.2)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.verified_user_outlined, color: AppColors.teal600, size: 18),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Tu oferta será visible para todos los estudiantes en tu ruta.',
+                        style: AppTextStyles.primary.copyWith(
+                          fontSize: 12,
+                          color: AppColors.teal600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

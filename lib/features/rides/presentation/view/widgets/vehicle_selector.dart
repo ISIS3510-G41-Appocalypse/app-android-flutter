@@ -62,7 +62,7 @@ class _VehicleCard extends StatelessWidget {
         padding:  const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.amber700.withOpacity(0.08)
+              ? AppColors.amber700.withValues(alpha: 0.08)
               : AppColors.gray50,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
@@ -78,7 +78,7 @@ class _VehicleCard extends StatelessWidget {
               height: 40,
               decoration: BoxDecoration(
                 color: isSelected
-                    ? AppColors.amber700.withOpacity(0.15)
+                    ? AppColors.amber700.withValues(alpha: 0.15)
                     : const Color(0xFFE2E8F0),
                 borderRadius: BorderRadius.circular(10),
               ),
@@ -142,7 +142,7 @@ class _Chip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: isAccent
-            ? AppColors.teal600.withOpacity(0.1)
+            ? AppColors.teal600.withValues(alpha: 0.1)
             : const Color(0xFFE2E8F0),
         borderRadius: BorderRadius.circular(6),
       ),

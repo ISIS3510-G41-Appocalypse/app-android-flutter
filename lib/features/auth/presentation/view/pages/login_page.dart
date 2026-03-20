@@ -12,19 +12,24 @@ class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
+      listenWhen: (previous, current) {
+        return previous.status != current.status;
+      },
       listener: (context, state) {
-        if (state.status == AuthStatus.authenticated) {
-          Navigator.pushReplacementNamed(
-            context,
-            AppRoutes.testSession,
-          );
+        if (state.status == AuthStatus.authenticated && state.user != null) {
+          // Asegurarse que la navegación se realice después del build
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.of(context).pushReplacementNamed(
+              AppRoutes.nav,
+            );
+          });
         }
 
-        if (state.status == AuthStatus.error &&
-            state.errorMessage != null) {
+        if (state.status == AuthStatus.error && state.errorMessage != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(state.errorMessage!),
+              backgroundColor: Colors.red,
             ),
           );
         }

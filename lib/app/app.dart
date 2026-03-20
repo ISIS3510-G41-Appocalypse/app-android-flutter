@@ -30,16 +30,23 @@ class MyApp extends StatelessWidget {
           remoteDataSource: authRemoteDataSource,
           tokenStorage: tokenStorage,
         );
-        return MultiBlocProvider(
+        return MultiRepositoryProvider(
           providers: [
-            BlocProvider<AuthCubit>(
-              create: (_) => AuthCubit(
-                loginUser: LoginUser(authRepository),
-                logoutUser: LogoutUser(authRepository),
-              ),
+            RepositoryProvider<DioClient>(
+              create: (_) => dioClient,
             ),
           ],
-          child: child!,
+          child: MultiBlocProvider(
+            providers: [
+              BlocProvider<AuthCubit>(
+                create: (_) => AuthCubit(
+                  loginUser: LoginUser(authRepository),
+                  logoutUser: LogoutUser(authRepository),
+                ),
+              ),
+            ],
+            child: child!,
+          ),
         );
       },
     );
