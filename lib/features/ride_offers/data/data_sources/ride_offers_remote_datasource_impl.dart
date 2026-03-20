@@ -5,57 +5,20 @@ import '../../../../core/errors/exceptions.dart';
 import 'ride_offers_remote_datasource.dart';
 
 class RideOffersRemoteDataSourceImpl implements RideOffersRemoteDataSource {
-  static const String _ridesPath = '/rest/v1/rides';
-  static const String _vehiclesPath = '/rest/v1/vehicles';
-  static const String _driversPath = '/rest/v1/drivers';
-  static const String _usersPath = '/rest/v1/users';
-  static const String _zonesPath = '/rest/v1/zones';
+  static const String _rideOffersViewPath = '/rest/v1/ride_offers_view';
 
   final Dio dio;
 
   RideOffersRemoteDataSourceImpl({required this.dio});
 
   @override
-  Future<List<Map<String, dynamic>>> getRides() {
+  Future<List<Map<String, dynamic>>> getRideOffersRows() {
     return _getTableRows(
-      path: _ridesPath,
+      path: _rideOffersViewPath,
       queryParameters: const {
         'select':
-            'id,driver_id,vehicle_id,zone_id,source,destination,date,departure_time,state,type,price',
-        'state': 'eq.OFERTADO',
+            'id,driver_name,driver_rating,trips_count,price,source,destination,date,departure_time,slots,car_model,zone_name,type,state,zone_id',
       },
-    );
-  }
-
-  @override
-  Future<List<Map<String, dynamic>>> getVehicles() {
-    return _getTableRows(
-      path: _vehiclesPath,
-      queryParameters: const {'select': 'id,model,number_slots,driver_id'},
-    );
-  }
-
-  @override
-  Future<List<Map<String, dynamic>>> getDrivers() {
-    return _getTableRows(
-      path: _driversPath,
-      queryParameters: const {'select': 'id,rating,user_id'},
-    );
-  }
-
-  @override
-  Future<List<Map<String, dynamic>>> getUsers() {
-    return _getTableRows(
-      path: _usersPath,
-      queryParameters: const {'select': 'id,first_name,last_name'},
-    );
-  }
-
-  @override
-  Future<List<Map<String, dynamic>>> getZones() {
-    return _getTableRows(
-      path: _zonesPath,
-      queryParameters: const {'select': 'id,name'},
     );
   }
 
