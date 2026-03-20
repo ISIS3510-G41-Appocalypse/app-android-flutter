@@ -4,7 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../core/network/dio_client.dart';
 import '../../../../../core/storage/token_storage.dart';
 import '../../../../../core/theme/app_colors.dart';
-import '../../../data/data_sources/ride_offers_remote_datasource.dart';
+import '../../../data/data_sources/ride_offers_remote_datasource_impl.dart';
 import '../../../data/repositories/ride_offers_repository_impl.dart';
 import '../../../domain/usecases/get_ride_offers.dart';
 import '../../view_model/ride_offers_cubit.dart';
