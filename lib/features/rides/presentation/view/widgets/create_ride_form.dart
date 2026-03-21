@@ -239,7 +239,11 @@ class _CreateRideFormState extends State<CreateRideForm> {
               backgroundColor: AppColors.teal600,
             ),
           );
-          Navigator.pushNamedAndRemoveUntil(context, AppRoutes.rideOffers, (route) => false);
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.driverRides,
+            (route) => false,
+          );
         }
         if (state is CreateRideError) {
           ScaffoldMessenger.of(context).showSnackBar(

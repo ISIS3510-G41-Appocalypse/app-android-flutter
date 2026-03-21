@@ -6,6 +6,8 @@ import '../../../../../core/layout/navigation_bar.dart' as navigation_layout;
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../auth/presentation/view_model/auth_cubit.dart';
 import '../../../../auth/presentation/view/widgets/auth_session_listener.dart';
+import '../../../../driver_rides/presentation/view_model/driver_rides_cubit.dart';
+import '../../../../driver_rides/presentation/view_model/driver_rides_state.dart';
 import '../../view_model/ride_offers_cubit.dart';
 import '../../view_model/ride_offers_state.dart';
 import '../widgets/ride_offers_filter_section.dart';
@@ -22,32 +24,35 @@ class RideOffersPage extends StatefulWidget {
 class _RideOffersPageState extends State<RideOffersPage> {
   final GetIt _sl = GetIt.instance;
   late final RideOffersCubit _cubit;
+  late final DriverRidesCubit _driverRidesCubit;
 
   @override
   void initState() {
     super.initState();
 
-    final preferredZoneId = context
-        .read<AuthCubit>()
-        .state
-        .user
-        ?.zoneId
-        .toString();
+    final user = context.read<AuthCubit>().state.user;
+    final preferredZoneId = user?.zoneId.toString();
 
     _cubit = _sl<RideOffersCubit>()
       ..loadInitialData(preferredZoneId: preferredZoneId);
+    _driverRidesCubit = _sl<DriverRidesCubit>()
+      ..loadActiveRide(driverId: user?.driverId);
   }
 
   @override
   void dispose() {
     _cubit.close();
+    _driverRidesCubit.close();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: _cubit,
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: _cubit),
+        BlocProvider.value(value: _driverRidesCubit),
+      ],
       child: AuthSessionListener(
         child: Scaffold(
           backgroundColor: AppColors.slate900,
@@ -67,7 +72,26 @@ class _RideOffersPageState extends State<RideOffersPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const RideOffersHeaderSection(),
+                        BlocBuilder<DriverRidesCubit, DriverRidesState>(
+                          builder: (context, driverRideState) {
+                            final hasActiveRide =
+                                driverRideState.status ==
+                                DriverRidesStatus.success;
+                            final isCheckingAvailability =
+                                driverRideState.status ==
+                                DriverRidesStatus.loading;
+
+                            return RideOffersHeaderSection(
+                              isPublishEnabled:
+                                  !hasActiveRide && !isCheckingAvailability,
+                              helperText: isCheckingAvailability
+                                  ? 'Verificando si ya tienes un viaje activo...'
+                                  : hasActiveRide
+                                  ? 'Ya tienes un viaje activo. Debe quedar en FINALIZADO o CANCELADO para publicar otro.'
+                                  : null,
+                            );
+                          },
+                        ),
                         const SizedBox(height: 24),
                         RideOffersFiltersSection(
                           zones: state.zones,
