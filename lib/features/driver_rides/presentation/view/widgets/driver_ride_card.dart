@@ -5,9 +5,20 @@ import '../../../../../core/theme/app_text_styles.dart';
 import '../models/driver_ride_view_data.dart';
 
 class DriverRideCard extends StatelessWidget {
-  const DriverRideCard({super.key, required this.ride});
+  const DriverRideCard({
+    super.key,
+    required this.ride,
+    required this.onStart,
+    required this.onCancel,
+    required this.isUpdating,
+    required this.updatingAction,
+  });
 
   final DriverRideViewData ride;
+  final VoidCallback onStart;
+  final VoidCallback onCancel;
+  final bool isUpdating;
+  final String? updatingAction;
 
   @override
   Widget build(BuildContext context) {
@@ -58,6 +69,60 @@ class DriverRideCard extends StatelessWidget {
               _InfoBullet(label: ride.departureTimeLabel),
               const SizedBox(height: 10),
               _InfoBullet(label: ride.availableSlotsLabel),
+            ],
+          ),
+          const SizedBox(height: 22),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: isUpdating ? null : onStart,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.blue900,
+                    side: const BorderSide(color: AppColors.blue900),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: Text(
+                    updatingAction == 'start' && isUpdating
+                        ? 'Iniciando...'
+                        : 'Iniciar',
+                    style: AppTextStyles.primary.copyWith(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: isUpdating ? null : onCancel,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFDC2626),
+                    disabledBackgroundColor: const Color(
+                      0xFFDC2626,
+                    ).withValues(alpha: 0.6),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: Text(
+                    updatingAction == 'cancel' && isUpdating
+                        ? 'Cancelando...'
+                        : 'Cancelar',
+                    style: AppTextStyles.primary.copyWith(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ],

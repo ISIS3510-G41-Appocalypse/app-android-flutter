@@ -8,11 +8,15 @@ class DriverRidesState {
   final DriverRidesStatus status;
   final DriverRide? ride;
   final String? message;
+  final bool isUpdating;
+  final String? updatingAction;
 
   const DriverRidesState({
     required this.status,
     required this.ride,
     this.message,
+    required this.isUpdating,
+    this.updatingAction,
   });
 
   factory DriverRidesState.initial() {
@@ -20,6 +24,8 @@ class DriverRidesState {
       status: DriverRidesStatus.initial,
       ride: null,
       message: null,
+      isUpdating: false,
+      updatingAction: null,
     );
   }
 
@@ -27,11 +33,17 @@ class DriverRidesState {
     DriverRidesStatus? status,
     Object? ride = _sentinel,
     Object? message = _sentinel,
+    bool? isUpdating,
+    Object? updatingAction = _sentinel,
   }) {
     return DriverRidesState(
       status: status ?? this.status,
       ride: identical(ride, _sentinel) ? this.ride : ride as DriverRide?,
       message: identical(message, _sentinel) ? this.message : message as String?,
+      isUpdating: isUpdating ?? this.isUpdating,
+      updatingAction: identical(updatingAction, _sentinel)
+          ? this.updatingAction
+          : updatingAction as String?,
     );
   }
 }

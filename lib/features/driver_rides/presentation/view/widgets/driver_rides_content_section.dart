@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../../app/routes.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
+import '../../view_model/driver_rides_cubit.dart';
 import '../../view_model/driver_rides_state.dart';
 import '../models/driver_ride_view_data.dart';
 import 'driver_ride_card.dart';
@@ -41,7 +43,7 @@ class DriverRidesContentSection extends StatelessWidget {
           child: Column(
             children: [
               Text(
-                state.message ?? 'Aun no tienes viajes activos.',
+                state.message ?? 'Aun no tienes un viaje publicado',
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 18),
@@ -74,13 +76,47 @@ class DriverRidesContentSection extends StatelessWidget {
         );
       case DriverRidesStatus.error:
         return _StateCard(
-          child: Text(
-            state.message ?? 'Ocurrio un error al cargar tu viaje.',
-            textAlign: TextAlign.center,
+          child: Column(
+            children: [
+              Text(
+                state.message ?? 'Ocurrio un error al cargar tu viaje.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () {
+                    context.read<DriverRidesCubit>().reloadActiveRide();
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.blue900,
+                    side: const BorderSide(color: AppColors.blue900),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: Text(
+                    'Reintentar',
+                    style: AppTextStyles.primary.copyWith(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         );
       case DriverRidesStatus.success:
-        return DriverRideCard(ride: DriverRideViewData.fromEntity(state.ride!));
+        return DriverRideCard(
+          ride: DriverRideViewData.fromEntity(state.ride!),
+          onStart: () => context.read<DriverRidesCubit>().startRide(),
+          onCancel: () => context.read<DriverRidesCubit>().cancelRide(),
+          isUpdating: state.isUpdating,
+          updatingAction: state.updatingAction,
+        );
     }
   }
 }

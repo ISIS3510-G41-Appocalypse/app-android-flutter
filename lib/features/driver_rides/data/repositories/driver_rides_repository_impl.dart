@@ -53,6 +53,23 @@ class DriverRidesRepositoryImpl implements DriverRidesRepository {
     }
   }
 
+  @override
+  Future<Either<Failure, void>> updateRideState({
+    required String rideId,
+    required String state,
+  }) async {
+    try {
+      await remoteDataSource.updateRideState(rideId: rideId, state: state);
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (_) {
+      return const Left(
+        ServerFailure('Error inesperado al actualizar el estado del viaje'),
+      );
+    }
+  }
+
   int _toInt(dynamic value) {
     if (value is int) {
       return value;

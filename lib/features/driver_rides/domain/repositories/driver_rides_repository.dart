@@ -7,4 +7,9 @@ abstract class DriverRidesRepository {
   Future<Either<Failure, DriverRide?>> getActiveDriverRide({
     required int? driverId,
   });
+
+  Future<Either<Failure, void>> updateRideState({
+    required String rideId,
+    required String state,
+  });
 }

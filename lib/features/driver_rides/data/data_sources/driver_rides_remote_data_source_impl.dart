@@ -22,7 +22,7 @@ class DriverRidesRemoteDataSourceImpl implements DriverRidesRemoteDataSource {
         queryParameters: {
           'select': 'id,source,destination,state,departure_time,vehicle_id,date',
           'driver_id': 'eq.$driverId',
-          'state': 'not.in.(FINALIZADO,CANCELADO)',
+          'state': 'eq.OFERTADO',
           'order': 'date.desc,departure_time.desc',
           'limit': 1,
         },
@@ -73,6 +73,47 @@ class DriverRidesRemoteDataSourceImpl implements DriverRidesRemoteDataSource {
       rethrow;
     } catch (_) {
       throw ServerException('Error inesperado al consultar vehicles');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> updateRideState({
+    required String rideId,
+    required String state,
+  }) async {
+    try {
+      final response = await dio.patch(
+        _ridesPath,
+        data: {'state': state},
+        options: Options(
+          headers: {'Prefer': 'return=representation'},
+        ),
+        queryParameters: {
+          'select': 'id,state',
+          'id': 'eq.$rideId',
+        },
+      );
+
+      final data = response.data;
+
+      if (data is List && data.isNotEmpty) {
+        final updatedRow = data.first as Map<String, dynamic>;
+        final updatedState = updatedRow['state']?.toString();
+
+        if (updatedState == state) {
+          return updatedRow;
+        }
+      }
+
+      throw ServerException(
+        'No fue posible persistir el cambio de estado del viaje en la BD.',
+      );
+    } on DioException catch (e) {
+      throw ServerException(ErrorHandler.getErrorMessage(e));
+    } on ServerException {
+      rethrow;
+    } catch (_) {
+      throw ServerException('Error inesperado al actualizar el viaje');
     }
   }
 }
