@@ -23,7 +23,8 @@ class _CreateRideFormState extends State<CreateRideForm> {
   final _timeCtrl        = TextEditingController();
   final _priceCtrl       = TextEditingController();
 
-  final String _selectedType = 'TO_UNIVERSITY';
+  String _selectedType = 'TO_UNIVERSITY';
+  final String _universityName = 'Universidad de los Andes';
 
   @override
   void dispose() {
@@ -71,45 +72,120 @@ class _CreateRideFormState extends State<CreateRideForm> {
     }
   }
 
+  void _onTypeChanged(String newType) {
+    setState(() {
+      _selectedType = newType;
+      if (newType == 'TO_UNIVERSITY') {
+        _destinationCtrl.text = _universityName;
+        _sourceCtrl.clear();
+      } else if (newType == 'FROM_UNIVERSITY') {
+        _sourceCtrl.text = _universityName;
+        _destinationCtrl.clear();
+      }
+    });
+  }
+
   Widget _buildRouteSection() {
-    return Stack(
+    final isToUniversity = _selectedType == 'TO_UNIVERSITY';
+    final isFromUniversity = _selectedType == 'FROM_UNIVERSITY';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 16,
       children: [
-        Positioned(
-          left: 26,
-          top: 50,
-          bottom: 0,
-          child: Container(
-            width: 2,
-            decoration: BoxDecoration(
-              border: Border(
-                left: BorderSide(
-                  color: AppColors.amber700.withValues(alpha: 0.3),
-                  width: 2,
+        Row(
+          spacing: 10,
+          children: [
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () => _onTypeChanged('TO_UNIVERSITY'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isToUniversity ? AppColors.amber700 : AppColors.gray50,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: BorderSide(
+                      color: isToUniversity ? AppColors.amber700 : const Color(0xFFE2E8F0),
+                      width: isToUniversity ? 2 : 1,
+                    ),
+                  ),
+                ),
+                child: Text(
+                  'Hacia Universidad',
+                  style: AppTextStyles.primary.copyWith(
+                    color: isToUniversity ? Colors.white : AppColors.slate900,
+                    fontWeight: isToUniversity ? FontWeight.w600 : FontWeight.w500,
+                    fontSize: 13,
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
-        Column(
-          spacing: 10,
-          children: [
-            _StyledField(
-              controller: _sourceCtrl,
-              hint: 'Punto de salida',
-              icon: Icons.location_on_outlined,
-              iconColor: AppColors.amber700,
-              validator: (v) => context
-                  .read<CreateRideCubit>()
-                  .validateRequired(v, 'El inicio'),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: () => _onTypeChanged('FROM_UNIVERSITY'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isFromUniversity ? AppColors.teal600 : AppColors.gray50,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    side: BorderSide(
+                      color: isFromUniversity ? AppColors.teal600 : const Color(0xFFE2E8F0),
+                      width: isFromUniversity ? 2 : 1,
+                    ),
+                  ),
+                ),
+                child: Text(
+                  'Desde Universidad',
+                  style: AppTextStyles.primary.copyWith(
+                    color: isFromUniversity ? Colors.white : AppColors.slate900,
+                    fontWeight: isFromUniversity ? FontWeight.w600 : FontWeight.w500,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
             ),
-            _StyledField(
-              controller: _destinationCtrl,
-              hint: 'Destino final',
-              icon: Icons.flag_outlined,
-              iconColor: AppColors.teal600,
-              validator: (v) => context
-                  .read<CreateRideCubit>()
-                  .validateRequired(v, 'El destino'),
+          ],
+        ),
+        Stack(
+          children: [
+            Positioned(
+              left: 26,
+              top: 50,
+              bottom: 0,
+              child: Container(
+                width: 2,
+                decoration: BoxDecoration(
+                  border: Border(
+                    left: BorderSide(
+                      color: AppColors.amber700.withValues(alpha: 0.3),
+                      width: 2,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Column(
+              spacing: 10,
+              children: [
+                _StyledField(
+                  controller: _sourceCtrl,
+                  hint: 'Punto de salida',
+                  icon: Icons.location_on_outlined,
+                  iconColor: AppColors.amber700,
+                  validator: (v) => context
+                      .read<CreateRideCubit>()
+                      .validateRequired(v, 'El inicio'),
+                ),
+                _StyledField(
+                  controller: _destinationCtrl,
+                  hint: 'Destino final',
+                  icon: Icons.flag_outlined,
+                  iconColor: AppColors.teal600,
+                  validator: (v) => context
+                      .read<CreateRideCubit>()
+                      .validateRequired(v, 'El destino'),
+                ),
+              ],
             ),
           ],
         ),
@@ -215,7 +291,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: 20,
             children: [
-              // Vehículo
+
               _FieldLabel('VEHÍCULO'),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -252,7 +328,6 @@ class _CreateRideFormState extends State<CreateRideForm> {
                 ),
               ),
 
-              // Zona
               _FieldLabel('ZONA'),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -289,11 +364,9 @@ class _CreateRideFormState extends State<CreateRideForm> {
                 ),
               ),
 
-              // Ruta
               _FieldLabel('RUTA'),
               _buildRouteSection(),
 
-              // Precio
               _FieldLabel('PRECIO'),
               _StyledField(
                 controller: _priceCtrl,
