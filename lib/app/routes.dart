@@ -1,5 +1,6 @@
 import 'package:app_ios_flutter/features/ride_offers/presentation/view/pages/ride_offers_page.dart';
 import 'package:app_ios_flutter/features/rides/presentation/view/pages/create_ride_page.dart';
+import '../features/rider/presentation/view/rider_reservation_page.dart';
 import 'package:flutter/material.dart';
 import '../features/home/presentation/view/pages/home_page.dart';
 import '../features/auth/presentation/view/pages/login_page.dart';
@@ -12,6 +13,7 @@ class AppRoutes {
   static const String profile = '/profile';
   static const String createRide = '/create-ride';               
   static const String rideOffers = '/ride-offers';
+  static const String riderReservation = '/rider-reservation';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -25,6 +27,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const CreateRidePage()); 
       case rideOffers:
         return MaterialPageRoute(builder:(context) => const RideOffersPage());
+      case riderReservation:
+        return MaterialPageRoute(builder: (context) => const RiderReservationPage());
       default:
         return MaterialPageRoute(
           builder: (context) => const AuthGate(),

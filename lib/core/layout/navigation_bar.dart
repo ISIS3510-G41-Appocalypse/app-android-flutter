@@ -40,7 +40,9 @@ class NavigationBar extends StatelessWidget {
         );
         break;
       case NavigationBarItem.rides:
-        return;
+        Navigator.pushNamed(context, AppRoutes.riderReservation,
+        );
+        break;
       case NavigationBarItem.profile:
         Navigator.pushNamed(context, AppRoutes.profile);
         break;
