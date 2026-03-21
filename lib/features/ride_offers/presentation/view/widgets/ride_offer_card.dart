@@ -5,9 +5,14 @@ import '../../../../../core/theme/app_text_styles.dart';
 import '../models/ride_offer_view_data.dart';
 
 class RideOfferCard extends StatelessWidget {
-  const RideOfferCard({super.key, required this.offer});
+  const RideOfferCard({
+    super.key,
+    required this.offer,
+    required this.onStartRide,
+  });
 
   final RideOfferViewData offer;
+  final VoidCallback onStartRide;
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +77,7 @@ class RideOfferCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              const _ReserveButton(),
+              _ReserveButton(onPressed: onStartRide),
             ],
           ),
         ],
@@ -179,7 +184,10 @@ class _DriverNameParts {
 }
 
 class _OfferSummary extends StatelessWidget {
-  const _OfferSummary({required this.departureTimeLabel, required this.price});
+  const _OfferSummary({
+    required this.departureTimeLabel,
+    required this.price,
+  });
 
   final String departureTimeLabel;
   final String price;
@@ -221,7 +229,10 @@ class _OfferSummary extends StatelessWidget {
 }
 
 class _RouteDetails extends StatelessWidget {
-  const _RouteDetails({required this.origin, required this.destination});
+  const _RouteDetails({
+    required this.origin,
+    required this.destination,
+  });
 
   final String origin;
   final String destination;
@@ -310,14 +321,16 @@ class _MiniInfo extends StatelessWidget {
 }
 
 class _ReserveButton extends StatelessWidget {
-  const _ReserveButton();
+  const _ReserveButton({required this.onPressed});
+
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: 40,
       child: ElevatedButton(
-        onPressed: () {},
+        onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.amber700,
           foregroundColor: Colors.white,
@@ -327,7 +340,7 @@ class _ReserveButton extends StatelessWidget {
           ),
         ),
         child: Text(
-          'Reservar',
+          'Iniciar viaje',
           style: AppTextStyles.primary.copyWith(
             fontSize: 14,
             fontWeight: FontWeight.w700,

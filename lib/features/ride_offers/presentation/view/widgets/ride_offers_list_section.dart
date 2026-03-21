@@ -4,6 +4,8 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../view_model/ride_offers_state.dart';
 import 'ride_offer_card.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:app_ios_flutter/features/ride_offers/presentation/view_model/ride_offers_cubit.dart';
 
 class RideOffersListSection extends StatelessWidget {
   const RideOffersListSection({super.key, required this.state});
@@ -53,7 +55,15 @@ class RideOffersListSection extends StatelessWidget {
               padding: EdgeInsets.only(
                 bottom: index == state.offers.length - 1 ? 0 : 24,
               ),
-              child: RideOfferCard(offer: state.offers[index]),
+              child: RideOfferCard(
+                offer: state.offers[index],
+                onStartRide: () {
+                  context.read<RideOffersCubit>().onStartRidePressed(
+                  source: state.offers[index].source,
+                  destination: state.offers[index].destination,
+                  );
+                },
+              ),
             ),
           ),
         );

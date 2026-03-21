@@ -5,13 +5,15 @@ import '../../domain/usecases/get_ride_offers.dart';
 import '../../domain/usecases/get_zones.dart';
 import '../view/models/ride_offer_view_data.dart';
 import 'ride_offers_state.dart';
+import '../../domain/usecases/start_ride_navigation.dart';
 
 class RideOffersCubit extends Cubit<RideOffersState> {
   final GetRideOffers getRideOffers;
   final GetZones getZones;
+  final StartRideNavigation startRideNavigation;
   String? _preferredZoneId;
 
-  RideOffersCubit({required this.getRideOffers, required this.getZones})
+  RideOffersCubit({required this.getRideOffers, required this.getZones, required this.startRideNavigation,})
     : super(RideOffersState.initial());
 
   Future<void> loadInitialData({String? preferredZoneId}) async {
@@ -148,4 +150,22 @@ class RideOffersCubit extends Cubit<RideOffersState> {
 
     await loadRideOffers();
   }
+
+  Future<void> onStartRidePressed({
+  required String source,
+  required String destination,
+}) async {
+  try {
+    await startRideNavigation(
+      source: source,
+      destination: destination,
+    );
+  } catch (e) {
+    emit(
+      state.copyWith(
+        message: 'No se pudo abrir Google Maps',
+      ),
+    );
+  }
+}
 }

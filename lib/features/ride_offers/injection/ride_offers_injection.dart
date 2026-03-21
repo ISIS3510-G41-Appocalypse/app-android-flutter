@@ -8,6 +8,9 @@ import '../domain/usecases/get_ride_offers.dart';
 import '../domain/usecases/get_zones.dart';
 import '../presentation/view_model/ride_offers_cubit.dart';
 
+import '../data/repositories/ride_navigation_repository_impl.dart';
+import '../domain/usecases/start_ride_navigation.dart';
+
 final sl = GetIt.instance;
 
 void setupRideOffersInjection() {
@@ -25,6 +28,15 @@ void setupRideOffersInjection() {
     () => RideOffersCubit(
       getRideOffers: sl<GetRideOffers>(),
       getZones: sl<GetZones>(),
+      startRideNavigation: sl<StartRideNavigation>(),
     ),
+  );
+
+  sl.registerLazySingleton<RideNavigationRepositoryImpl>(
+    () => RideNavigationRepositoryImpl(),
+  );
+
+  sl.registerFactory(
+    () => StartRideNavigation(sl<RideNavigationRepositoryImpl>()),
   );
 }
