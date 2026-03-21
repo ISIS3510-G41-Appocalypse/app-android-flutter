@@ -11,10 +11,11 @@ class DioClient {
     dio = Dio(
       BaseOptions(
         baseUrl: ApiConstants.baseUrl,
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 10),
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 30),
         headers: {
           'Content-Type': 'application/json',
+          'apikey': ApiConstants.apiKey,
         },
       ),
     );
@@ -22,9 +23,8 @@ class DioClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          options.headers['apiKey'] = ApiConstants.apiKey;
+          final token = await tokenStorage.getAccessToken();
 
-          final token = await tokenStorage.getToken();
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }

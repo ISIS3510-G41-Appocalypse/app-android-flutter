@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'app_dependencies.dart';
 import 'routes.dart';
 
 class MyApp extends StatelessWidget {
@@ -9,8 +10,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Happy Ride',
-      initialRoute: AppRoutes.home,
-      routes: AppRoutes.routes,
+      onGenerateRoute: AppRoutes.onGenerateRoute,
+      builder: (context, child) {
+        return AppDependencies(child: child!);
+      },
     );
   }
 }
