@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
-import '../../../../../app/routes.dart';
 import '../../../../../core/layout/header.dart' as header_layout;
 import '../../../../../core/layout/navigation_bar.dart' as navigation_layout;
 import '../../../../../core/theme/app_colors.dart';
@@ -94,17 +93,6 @@ class _RideOffersPageState extends State<RideOffersPage> {
           ),
           bottomNavigationBar: navigation_layout.NavigationBar(
             selectedItem: navigation_layout.NavigationBarItem.home,
-            onHomeTap: () {
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                AppRoutes.rideOffers,
-                (route) => false,
-              );
-            },
-            onRidesTap: () {},
-            onProfileTap: () {
-              Navigator.pushNamed(context, AppRoutes.testSession);
-            },
           ),
         ),
       ),
