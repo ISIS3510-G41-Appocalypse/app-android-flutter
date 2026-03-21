@@ -107,7 +107,22 @@ class _RideOffersPageState extends State<RideOffersPage> {
                           onClear: cubit.clearFilters,
                         ),
                         const SizedBox(height: 24),
-                        RideOffersListSection(state: state),
+                        BlocBuilder<DriverRidesCubit, DriverRidesState>(
+                          builder: (context, driverRideState) {
+                            final hasActiveRide =
+                                driverRideState.status ==
+                                DriverRidesStatus.success;
+                            final isCheckingAvailability =
+                                driverRideState.status ==
+                                DriverRidesStatus.loading;
+
+                            return RideOffersListSection(
+                              state: state,
+                              isReserveEnabled:
+                                  !hasActiveRide && !isCheckingAvailability,
+                            );
+                          },
+                        ),
                       ],
                     ),
                   ),
