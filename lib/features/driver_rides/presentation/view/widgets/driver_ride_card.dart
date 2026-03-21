@@ -41,38 +41,23 @@ class DriverRideCard extends StatelessWidget {
           _RoutePoint(
             label: 'Inicio',
             value: ride.source,
-            icon: Icons.location_on_outlined,
-            color: AppColors.amber700,
           ),
           const SizedBox(height: 14),
           _RoutePoint(
             label: 'Destino',
             value: ride.destination,
-            icon: Icons.flag_outlined,
-            color: AppColors.teal600,
           ),
           const SizedBox(height: 20),
           const Divider(height: 1, color: Color(0xFFF1F5F9)),
           const SizedBox(height: 18),
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _InfoPill(
-                icon: Icons.verified_outlined,
-                label: ride.stateLabel,
-                color: AppColors.teal600,
-              ),
-              _InfoPill(
-                icon: Icons.schedule_outlined,
-                label: ride.departureTimeLabel,
-                color: AppColors.amber700,
-              ),
-              _InfoPill(
-                icon: Icons.airline_seat_recline_normal_outlined,
-                label: ride.availableSlotsLabel,
-                color: AppColors.blue900,
-              ),
+              _InfoBullet(label: 'Estado: ${ride.stateLabel}'),
+              const SizedBox(height: 10),
+              _InfoBullet(label: ride.departureTimeLabel),
+              const SizedBox(height: 10),
+              _InfoBullet(label: ride.availableSlotsLabel),
             ],
           ),
         ],
@@ -85,52 +70,31 @@ class _RoutePoint extends StatelessWidget {
   const _RoutePoint({
     required this.label,
     required this.value,
-    required this.icon,
-    required this.color,
   });
 
   final String label;
   final String value;
-  final IconData icon;
-  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(12),
+        Text(
+          label,
+          style: AppTextStyles.primary.copyWith(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF64748B),
           ),
-          child: Icon(icon, color: color, size: 20),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: AppTextStyles.primary.copyWith(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF64748B),
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                value,
-                style: AppTextStyles.primary.copyWith(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.slate900,
-                ),
-              ),
-            ],
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: AppTextStyles.primary.copyWith(
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            color: AppColors.slate900,
           ),
         ),
       ],
@@ -138,40 +102,37 @@ class _RoutePoint extends StatelessWidget {
   }
 }
 
-class _InfoPill extends StatelessWidget {
-  const _InfoPill({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
+class _InfoBullet extends StatelessWidget {
+  const _InfoBullet({required this.label});
 
-  final IconData icon;
   final String label;
-  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 18, color: color),
-          const SizedBox(width: 8),
-          Text(
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 6,
+          height: 6,
+          margin: const EdgeInsets.only(top: 6),
+          decoration: const BoxDecoration(
+            color: AppColors.slate900,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
             label,
             style: AppTextStyles.primary.copyWith(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: color,
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF475569),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
