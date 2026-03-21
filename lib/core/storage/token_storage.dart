@@ -6,17 +6,32 @@ class TokenStorage {
   TokenStorage({FlutterSecureStorage? storage})
       : _storage = storage ?? const FlutterSecureStorage();
 
-  static const String _tokenKey = 'auth_token';
+  static const String _accessTokenKey = 'access_token';
+  static const String _refreshTokenKey = 'refresh_token';
 
-  Future<void> saveToken(String token) async {
-    await _storage.write(key: _tokenKey, value: token);
+  Future<void> saveSession({
+    required String accessToken,
+    required String refreshToken,
+  }) async {
+    await _storage.write(key: _accessTokenKey, value: accessToken);
+    await _storage.write(key: _refreshTokenKey, value: refreshToken);
   }
 
-  Future<String?> getToken() async {
-    return _storage.read(key: _tokenKey);
+  Future<String?> getAccessToken() async {
+    return _storage.read(key: _accessTokenKey);
   }
 
-  Future<void> deleteToken() async {
-    await _storage.delete(key: _tokenKey);
+  Future<String?> getRefreshToken() async {
+    return _storage.read(key: _refreshTokenKey);
+  }
+
+  Future<void> clearSession() async {
+    await _storage.delete(key: _accessTokenKey);
+    await _storage.delete(key: _refreshTokenKey);
+  }
+
+  Future<bool> hasSession() async {
+    final token = await getAccessToken();
+    return token != null && token.isNotEmpty;
   }
 }

@@ -13,7 +13,7 @@ class BrandHeaderSection extends StatelessWidget {
           width: 84,
           height: 84,
           decoration: BoxDecoration(
-            color: AppColors.amber700.withOpacity(0.10),
+            color: AppColors.amber700.withAlpha((0.10 * 255).toInt()),
             borderRadius: BorderRadius.circular(24),
           ),
           child: const Icon(
