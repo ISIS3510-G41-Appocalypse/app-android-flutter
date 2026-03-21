@@ -9,6 +9,7 @@ import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../auth/presentation/view_model/auth_cubit.dart';
 import '../../view_model/create_ride_cubit.dart';
 import '../widgets/create_ride_form.dart';
+import '../widgets/no_driver_permission_state.dart';
 
 final sl = GetIt.instance;
 
@@ -17,6 +18,26 @@ class CreateRidePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = context.read<AuthCubit>().state.user;
+    final isDriver = user?.driverId != null;
+
+    if (!isDriver) {
+      return Scaffold(
+        backgroundColor: AppColors.slate900,
+        appBar: const Header(),
+        body: const SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            padding: EdgeInsets.fromLTRB(20, 24, 20, 120),
+            child: NoDriverPermissionState(),
+          ),
+        ),
+        bottomNavigationBar: const navigation_layout.NavigationBar(
+          selectedItem: navigation_layout.NavigationBarItem.rides,
+        ),
+      );
+    }
+
     return BlocProvider(
       create: (_) => CreateRideCubit(
         client: sl<DioClient>(),
