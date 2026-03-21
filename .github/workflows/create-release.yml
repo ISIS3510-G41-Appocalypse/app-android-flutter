@@ -45,24 +45,3 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  create-autopr:
-    name: Create Auto PR to Develop
-    needs: create-tag-and-release
-    if: ${{ github.event.pull_request.merged == true && startsWith(github.event.pull_request.head.ref, 'release/') }}
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Create PR from release/** to develop
-        uses: repo-sync/pull-request@v2
-        with:
-          source_branch: ${{ github.event.pull_request.head.ref }}
-          destination_branch: develop
-          pr_title: ${{ github.event.pull_request.head.ref }}
-          pr_body: 'Auto PR from ${{ github.event.pull_request.head.ref }} to develop'
-          github_token: ${{ secrets.GITHUB_TOKEN }}
