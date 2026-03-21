@@ -93,7 +93,6 @@ class _CreateRideFormState extends State<CreateRideForm> {
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: 16,
       children: [
-        // Botones TO/FROM
         Row(
           spacing: 10,
           children: [
@@ -147,7 +146,6 @@ class _CreateRideFormState extends State<CreateRideForm> {
             ),
           ],
         ),
-        // Stack con línea y campos
         Stack(
           children: [
             Positioned(
@@ -293,7 +291,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: 20,
             children: [
-              // Vehículo
+
               _FieldLabel('VEHÍCULO'),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -330,7 +328,6 @@ class _CreateRideFormState extends State<CreateRideForm> {
                 ),
               ),
 
-              // Zona
               _FieldLabel('ZONA'),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -367,11 +364,9 @@ class _CreateRideFormState extends State<CreateRideForm> {
                 ),
               ),
 
-              // Ruta
               _FieldLabel('RUTA'),
               _buildRouteSection(),
 
-              // Precio
               _FieldLabel('PRECIO'),
               _StyledField(
                 controller: _priceCtrl,
