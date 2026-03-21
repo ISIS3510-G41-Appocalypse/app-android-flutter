@@ -5,7 +5,14 @@ import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../app/routes.dart';
 
 class RideOffersHeaderSection extends StatelessWidget {
-  const RideOffersHeaderSection({super.key});
+  const RideOffersHeaderSection({
+    super.key,
+    required this.isPublishEnabled,
+    this.helperText,
+  });
+
+  final bool isPublishEnabled;
+  final String? helperText;
 
   @override
   Widget build(BuildContext context) {
@@ -13,12 +20,16 @@ class RideOffersHeaderSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ElevatedButton(
-          onPressed: () {
-            Navigator.pushNamed(context, AppRoutes.createRide);
-          },
+          onPressed: isPublishEnabled
+              ? () {
+                  Navigator.pushNamed(context, AppRoutes.createRide);
+                }
+              : null,
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.amber700,
             foregroundColor: Colors.white,
+            disabledBackgroundColor: AppColors.amber700.withValues(alpha: 0.55),
+            disabledForegroundColor: Colors.white70,
             elevation: 0,
             padding: const EdgeInsets.symmetric(vertical: 14),
             shape: RoundedRectangleBorder(
@@ -34,6 +45,18 @@ class RideOffersHeaderSection extends StatelessWidget {
             ),
           ),
         ),
+        if (helperText != null) ...[
+          const SizedBox(height: 10),
+          Text(
+            helperText!,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.primary.copyWith(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFFCBD5E1),
+            ),
+          ),
+        ],
         const SizedBox(height: 20),
         Text(
           'Oferta de viajes',

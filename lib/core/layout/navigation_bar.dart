@@ -40,7 +40,12 @@ class NavigationBar extends StatelessWidget {
         );
         break;
       case NavigationBarItem.rides:
-        return;
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.driverRides,
+          (route) => false,
+        );
+        break;
       case NavigationBarItem.profile:
         Navigator.pushNamed(context, AppRoutes.profile);
         break;
