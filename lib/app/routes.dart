@@ -4,14 +4,14 @@ import 'package:app_ios_flutter/features/rides/presentation/view/pages/create_ri
 import 'package:flutter/material.dart';
 import '../features/home/presentation/view/pages/home_page.dart';
 import '../features/auth/presentation/view/pages/login_page.dart';
-import '../features/home/presentation/view/pages/test_session_page.dart';
+import '../features/home/presentation/view/pages/profile_page.dart';
 import '../features/auth/presentation/view/widgets/auth_gate.dart';
 
 class AppRoutes {
   static const String home = '/home';
   static const String login = '/login';
-  static const String testSession = '/test-session';
   static const String createRide = '/create-ride';
+  static const String profile = '/profile';               
   static const String rideOffers = '/ride-offers';
   static const String driverRides = '/driver-rides';
 
@@ -21,8 +21,8 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const HomePage());
       case login:
         return MaterialPageRoute(builder: (_) => const LoginPage());
-      case testSession:
-        return MaterialPageRoute(builder: (_) => const TestSessionPage());
+      case profile:
+        return MaterialPageRoute(builder: (_) => const ProfilePage());
       case createRide:
         return MaterialPageRoute(builder: (_) => const CreateRidePage());
       case rideOffers:

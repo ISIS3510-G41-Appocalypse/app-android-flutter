@@ -47,7 +47,7 @@ class NavigationBar extends StatelessWidget {
         );
         break;
       case NavigationBarItem.profile:
-        Navigator.pushNamed(context, AppRoutes.testSession);
+        Navigator.pushNamed(context, AppRoutes.profile);
         break;
     }
   }

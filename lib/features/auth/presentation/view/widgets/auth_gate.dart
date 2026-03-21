@@ -24,7 +24,7 @@ class _AuthGateState extends State<AuthGate> {
       listenWhen: (previous, current) => previous.status != current.status,
       listener: (context, state) {
         if (state.status == AuthStatus.authenticated) {
-          Navigator.pushReplacementNamed(context, AppRoutes.testSession);
+          Navigator.pushReplacementNamed(context, AppRoutes.rideOffers);
         } else if (state.status == AuthStatus.unauthenticated) {
           Navigator.pushReplacementNamed(context, AppRoutes.home);
         }
