@@ -19,6 +19,7 @@ class RideOffersRemoteDataSourceImpl implements RideOffersRemoteDataSource {
       queryParameters: const {
         'select':
             'id,driver_name,driver_rating,trips_count,price,source,destination,date,departure_time,slots,car_model,zone_name,type,state,zone_id',
+        'order': 'driver_rating.desc',
       },
     );
   }

@@ -85,7 +85,7 @@ class RideOffersRepositoryImpl implements RideOffersRepository {
 
   void _sortRideOffers(List<RideOfferModel> offers, RideOfferFilters filters) {
     final effectiveSort =
-        filters.sortBy ?? _firstQuickFilter(filters.quickFilters);
+        filters.sortBy ?? _firstQuickFilter(filters.quickFilters) ?? 'driver_rating';
 
     switch (effectiveSort) {
       case 'price':
