@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppTextStyles {
-  static TextStyle get primary => GoogleFonts.plusJakartaSans();
-  static TextStyle get secondary => GoogleFonts.poppins();
+  // Usando fuentes del sistema (sin dependencia de internet)
+  static TextStyle get primary => const TextStyle(
+    fontFamily: 'Roboto',
+    fontWeight: FontWeight.w400,
+  );
+  
+  static TextStyle get secondary => const TextStyle(
+    fontFamily: 'Roboto',
+    fontWeight: FontWeight.w500,
+  );
 }

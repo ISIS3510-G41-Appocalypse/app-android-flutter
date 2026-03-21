@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
+import '../../../../../app/routes.dart';
 
 class RideOffersHeaderSection extends StatelessWidget {
   const RideOffersHeaderSection({super.key});
@@ -12,7 +13,9 @@ class RideOffersHeaderSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ElevatedButton(
-          onPressed: () {},
+          onPressed: () {
+            Navigator.pushNamed(context, AppRoutes.createRide);
+          },
           style: ElevatedButton.styleFrom(
             backgroundColor: AppColors.amber700,
             foregroundColor: Colors.white,
