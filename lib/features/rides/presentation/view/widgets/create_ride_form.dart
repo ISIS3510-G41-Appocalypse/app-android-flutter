@@ -73,7 +73,6 @@ class _CreateRideFormState extends State<CreateRideForm> {
   Widget _buildRouteSection() {
     return Stack(
       children: [
-        // Línea conector vertical
         Positioned(
           left: 26,
           top: 50,
@@ -90,7 +89,6 @@ class _CreateRideFormState extends State<CreateRideForm> {
             ),
           ),
         ),
-        // Contenido
         Column(
           spacing: 10,
           children: [
@@ -312,7 +310,6 @@ class _CreateRideFormState extends State<CreateRideForm> {
                 },
               ),
 
-              // Fecha y Hora
               Row(
                 children: [
                   Expanded(
@@ -357,7 +354,6 @@ class _CreateRideFormState extends State<CreateRideForm> {
                 ],
               ),
 
-              // Submit Button
               SizedBox(
                 width: double.infinity,
                 height: 56,
