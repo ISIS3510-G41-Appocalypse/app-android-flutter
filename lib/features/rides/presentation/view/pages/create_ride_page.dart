@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:get_it/get_it.dart';
 import '../../../../../core/network/dio_client.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../auth/presentation/view_model/auth_cubit.dart';
 import '../../view_model/create_ride_cubit.dart';
 import '../widgets/create_ride_form.dart';
+
+final sl = GetIt.instance;
 
 class CreateRidePage extends StatelessWidget {
   const CreateRidePage({super.key});
@@ -14,7 +17,7 @@ class CreateRidePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => CreateRideCubit(
-        client: context.read<DioClient>(),
+        client: sl<DioClient>(),
         userId: context.read<AuthCubit>().currentUserId!,
       )..loadVehicles(),
       child: Scaffold(
