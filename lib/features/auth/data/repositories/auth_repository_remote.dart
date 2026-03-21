@@ -42,4 +42,20 @@ class AuthRepositoryRemote implements AuthRepository {
       return const Left(ServerFailure('Error al cerrar sesión'));
     }
   }
+
+  @override
+  Future<Either<Failure, User>> restoreSession() async {
+    try {
+      final session = await tokenStorage.hasSession();
+      if (!session) {
+        return const Left(ServerFailure('No hay token guardado'));
+      }
+      final user = await dataSourceRemote.restoreSession();
+      return Right(user);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (_) {
+      return const Left(ServerFailure('Error al restaurar sesión'));
+    }
+  }
 }

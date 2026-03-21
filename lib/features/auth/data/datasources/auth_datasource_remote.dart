@@ -11,4 +11,6 @@ abstract class AuthDataSourceRemote {
   Future<AuthModel> refreshSession({
     required String refreshToken,
   });
+
+  Future<UserModel> restoreSession();
 }

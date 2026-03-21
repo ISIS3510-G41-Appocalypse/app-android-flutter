@@ -17,8 +17,8 @@ class AuthModel {
     return AuthModel(
       accessToken: json['access_token'] as String? ?? '',
       refreshToken: json['refresh_token'] as String? ?? '',
-      authId: user['id'] as String? ?? '',
-      email: user['email'] as String? ?? '',
+      authId: user['id'] as String? ?? json['id'] as String? ?? '',
+      email: user['email'] as String? ?? json['email'] as String? ?? '',
     );
   }
 }
