@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../app/routes.dart';
 import '../theme/app_colors.dart';
 
 enum NavigationBarItem { home, rides, profile }
@@ -18,6 +19,39 @@ class NavigationBar extends StatelessWidget {
   final VoidCallback? onRidesTap;
   final VoidCallback? onProfileTap;
 
+  void _handleTap(BuildContext context, NavigationBarItem item) {
+    final customHandler = switch (item) {
+      NavigationBarItem.home => onHomeTap,
+      NavigationBarItem.rides => onRidesTap,
+      NavigationBarItem.profile => onProfileTap,
+    };
+
+    if (customHandler != null) {
+      customHandler();
+      return;
+    }
+
+    switch (item) {
+      case NavigationBarItem.home:
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.rideOffers,
+          (route) => false,
+        );
+        break;
+      case NavigationBarItem.rides:
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.driverRides,
+          (route) => false,
+        );
+        break;
+      case NavigationBarItem.profile:
+        Navigator.pushNamed(context, AppRoutes.profile);
+        break;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -35,19 +69,19 @@ class NavigationBar extends StatelessWidget {
               icon: Icons.home_rounded,
               label: 'Home',
               selected: selectedItem == NavigationBarItem.home,
-              onTap: onHomeTap,
+              onTap: () => _handleTap(context, NavigationBarItem.home),
             ),
             _BottomItem(
               icon: Icons.directions_car_outlined,
               label: 'Viajes',
               selected: selectedItem == NavigationBarItem.rides,
-              onTap: onRidesTap,
+              onTap: () => _handleTap(context, NavigationBarItem.rides),
             ),
             _BottomItem(
               icon: Icons.person_outline_rounded,
               label: 'Perfil',
               selected: selectedItem == NavigationBarItem.profile,
-              onTap: onProfileTap,
+              onTap: () => _handleTap(context, NavigationBarItem.profile),
             ),
           ],
         ),

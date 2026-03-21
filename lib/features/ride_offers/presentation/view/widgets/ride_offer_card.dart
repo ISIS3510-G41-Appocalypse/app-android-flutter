@@ -5,9 +5,14 @@ import '../../../../../core/theme/app_text_styles.dart';
 import '../models/ride_offer_view_data.dart';
 
 class RideOfferCard extends StatelessWidget {
-  const RideOfferCard({super.key, required this.offer});
+  const RideOfferCard({
+    super.key,
+    required this.offer,
+    required this.isReserveEnabled,
+  });
 
   final RideOfferViewData offer;
+  final bool isReserveEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +77,7 @@ class RideOfferCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              const _ReserveButton(),
+              _ReserveButton(isEnabled: isReserveEnabled),
             ],
           ),
         ],
@@ -310,17 +315,21 @@ class _MiniInfo extends StatelessWidget {
 }
 
 class _ReserveButton extends StatelessWidget {
-  const _ReserveButton();
+  const _ReserveButton({required this.isEnabled});
+
+  final bool isEnabled;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: 40,
       child: ElevatedButton(
-        onPressed: () {},
+        onPressed: isEnabled ? () {} : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.amber700,
+          disabledBackgroundColor: AppColors.amber700.withValues(alpha: 0.55),
           foregroundColor: Colors.white,
+          disabledForegroundColor: Colors.white70,
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),

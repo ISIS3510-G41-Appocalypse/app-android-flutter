@@ -6,9 +6,14 @@ import '../../view_model/ride_offers_state.dart';
 import 'ride_offer_card.dart';
 
 class RideOffersListSection extends StatelessWidget {
-  const RideOffersListSection({super.key, required this.state});
+  const RideOffersListSection({
+    super.key,
+    required this.state,
+    required this.isReserveEnabled,
+  });
 
   final RideOffersState state;
+  final bool isReserveEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +58,10 @@ class RideOffersListSection extends StatelessWidget {
               padding: EdgeInsets.only(
                 bottom: index == state.offers.length - 1 ? 0 : 24,
               ),
-              child: RideOfferCard(offer: state.offers[index]),
+              child: RideOfferCard(
+                offer: state.offers[index],
+                isReserveEnabled: isReserveEnabled,
+              ),
             ),
           ),
         );

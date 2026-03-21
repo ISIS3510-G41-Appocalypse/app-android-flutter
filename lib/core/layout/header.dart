@@ -11,6 +11,7 @@ class Header extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      iconTheme: const IconThemeData(color: AppColors.amber700),
       backgroundColor: AppColors.blue900,
       elevation: 0,
       centerTitle: true,
