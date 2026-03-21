@@ -41,6 +41,77 @@ class AuthDataSourceRemoteSupabase implements AuthDataSourceRemote {
         refreshToken: authResponse.refreshToken,
       );
 
+      return await getUserByAuthId(authResponse);
+    } on DioException catch (e) {
+      throw ServerException(ErrorHandler.getErrorMessage(e));
+    } catch (_) {
+      throw ServerException('Error inesperado al iniciar sesión');
+    }
+  }
+
+  @override
+  Future<UserModel> restoreSession(
+  ) async {
+    try {
+      AuthModel authResponse;
+      try {
+        final response = await dio.get('/auth/v1/user');
+
+        authResponse = AuthModel.fromJson(
+          response.data as Map<String, dynamic>,
+        );
+      } on DioException catch (e) {
+        if (e.response?.statusCode == 403 && e.response?.data['msg'].contains('token is expired')) {
+          final refreshToken = await tokenStorage.getRefreshToken();
+          if (refreshToken == null) {
+            throw ServerException('No hay token de refresco disponible');
+          }
+          authResponse = await refreshSession(refreshToken: refreshToken);
+        } else {
+          throw ServerException(ErrorHandler.getErrorMessage(e));
+        }
+      }
+      
+      return await getUserByAuthId(authResponse);
+    } catch (e) {
+      throw ServerException('Error inesperado al restaurar sesión');
+    }
+  }
+
+  @override
+  Future<AuthModel> refreshSession({
+    required String refreshToken,
+  }) async {
+    try {
+      final response = await dio.post(
+        '/auth/v1/token',
+        queryParameters: {
+          'grant_type': 'refresh_token',
+        },
+        data: {
+          'refresh_token': refreshToken,
+        },
+      );
+
+      final authResponse = AuthModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+
+      await tokenStorage.saveSession(
+        accessToken: authResponse.accessToken,
+        refreshToken: authResponse.refreshToken,
+      );
+
+      return authResponse;
+    } on DioException catch (e) {
+      throw ServerException(ErrorHandler.getErrorMessage(e));
+    } catch (_) {
+      throw ServerException('Error inesperado al refrescar sesión');
+    }
+  }
+
+  Future<UserModel> getUserByAuthId(AuthModel authResponse) async {
+    try {
       final userResponse = await dio.get(
         '/rest/v1/users',
         queryParameters: {
@@ -83,42 +154,8 @@ class AuthDataSourceRemoteSupabase implements AuthDataSourceRemote {
         riderId: riderId,
         driverId: driverId,
       );
-    } on DioException catch (e) {
-      throw ServerException(ErrorHandler.getErrorMessage(e));
-    } catch (_) {
-      throw ServerException('Error inesperado al iniciar sesión');
-    }
-  }
-
-  @override
-  Future<AuthModel> refreshSession({
-    required String refreshToken,
-  }) async {
-    try {
-      final response = await dio.post(
-        '/auth/v1/token',
-        queryParameters: {
-          'grant_type': 'refresh_token',
-        },
-        data: {
-          'refresh_token': refreshToken,
-        },
-      );
-
-      final authResponse = AuthModel.fromJson(
-        response.data as Map<String, dynamic>,
-      );
-
-      await tokenStorage.saveSession(
-        accessToken: authResponse.accessToken,
-        refreshToken: authResponse.refreshToken,
-      );
-
-      return authResponse;
-    } on DioException catch (e) {
-      throw ServerException(ErrorHandler.getErrorMessage(e));
-    } catch (_) {
-      throw ServerException('Error inesperado al refrescar sesión');
+    } catch (e) {
+      throw ServerException('Error inesperado al obtener el usuario');
     }
   }
 }
