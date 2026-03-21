@@ -6,6 +6,7 @@ import '../../../domain/entities/vehicle.dart';
 import '../../../domain/entities/zone.dart';
 import '../../view_model/create_ride_state.dart';
 import '../../view_model/create_ride_cubit.dart';
+import '../../../../../app/routes.dart';
 
 class CreateRideForm extends StatefulWidget {
   const CreateRideForm({super.key});
@@ -162,6 +163,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
               backgroundColor: AppColors.teal600,
             ),
           );
+          Navigator.pushNamedAndRemoveUntil(context, AppRoutes.rideOffers, (route) => false);
         }
         if (state is CreateRideError) {
           ScaffoldMessenger.of(context).showSnackBar(
