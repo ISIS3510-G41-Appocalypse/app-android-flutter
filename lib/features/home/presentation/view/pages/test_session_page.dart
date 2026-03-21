@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../../core/layout/header.dart';
+import '../../../../../core/layout/navigation_bar.dart' as navigation_layout;
 import '../../../../auth/presentation/view_model/auth_cubit.dart';
 import '../../../../auth/presentation/view_model/auth_state.dart';
 import '../../../../auth/presentation/view/widgets/auth_session_listener.dart';
@@ -11,9 +13,7 @@ class TestSessionPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return AuthSessionListener(
       child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Sesión iniciada'),
-        ),
+        appBar: const Header(),
         body: BlocBuilder<AuthCubit, AuthState>(
           builder: (context, state) {
             final user = state.user;
@@ -63,6 +63,9 @@ class TestSessionPage extends StatelessWidget {
               ),
             );
           },
+        ),
+        bottomNavigationBar: const navigation_layout.NavigationBar(
+          selectedItem: navigation_layout.NavigationBarItem.profile,
         ),
       ),
     );
