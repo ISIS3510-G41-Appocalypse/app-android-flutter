@@ -1,36 +1,32 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+
 import '../constants/api_constants.dart';
-import '../storage/token_storage.dart';
+import '../storage/session_storage.dart';
+import 'session_interceptor.dart';
 
 class DioClient {
-  final TokenStorage tokenStorage;
+  final SessionStorage sessionStorage;
   late final Dio dio;
 
-  DioClient({required this.tokenStorage}) {
-    dio = Dio(
-      BaseOptions(
-        baseUrl: ApiConstants.baseUrl,
-        connectTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(seconds: 30),
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': ApiConstants.apiKey,
-        },
-      ),
+  DioClient({required this.sessionStorage}) {
+    final baseOptions = BaseOptions(
+      baseUrl: ApiConstants.baseUrl,
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 20),
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': ApiConstants.apiKey,
+      },
     );
 
+    dio = Dio(baseOptions);
+    final refreshClient = Dio(baseOptions);
+
     dio.interceptors.add(
-      InterceptorsWrapper(
-        onRequest: (options, handler) async {
-          final token = await tokenStorage.getAccessToken();
-
-          if (token != null && token.isNotEmpty) {
-            options.headers['Authorization'] = 'Bearer $token';
-          }
-
-          handler.next(options);
-        },
+      SessionInterceptor(
+        sessionStorage: sessionStorage,
+        refreshClient: refreshClient,
       ),
     );
 
