@@ -1,11 +1,11 @@
-import '../../../../../core/storage/token_storage.dart';
+import '../../../../../core/storage/session_storage.dart';
 import 'auth_datasource_local.dart';
 
 class AuthDataSourceLocalStorage implements AuthDataSourceLocal {
-  final TokenStorage tokenStorage;
+  final SessionStorage sessionStorage;
 
   AuthDataSourceLocalStorage({
-    required this.tokenStorage,
+    required this.sessionStorage,
   });
 
   @override
@@ -13,7 +13,7 @@ class AuthDataSourceLocalStorage implements AuthDataSourceLocal {
     required String accessToken,
     required String refreshToken,
   }) {
-    return tokenStorage.saveSession(
+    return sessionStorage.saveSession(
       accessToken: accessToken,
       refreshToken: refreshToken,
     );
@@ -21,16 +21,16 @@ class AuthDataSourceLocalStorage implements AuthDataSourceLocal {
 
   @override
   Future<({String accessToken, String refreshToken})?> getSession() {
-    return tokenStorage.getSession();
+    return sessionStorage.getSession();
   }
 
   @override
   Future<void> clearSession() {
-    return tokenStorage.clearSession();
+    return sessionStorage.clearSession();
   }
 
   @override
   Future<bool> hasSession() {
-    return tokenStorage.hasSession();
+    return sessionStorage.hasSession();
   }
 }

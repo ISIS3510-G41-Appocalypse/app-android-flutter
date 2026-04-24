@@ -1,16 +1,16 @@
 import 'package:dio/dio.dart';
 
-import '../storage/token_storage.dart';
+import '../storage/session_storage.dart';
 
 class SessionInterceptor extends Interceptor {
   static const String _retryAfterRefreshKey = 'retry_after_session_refresh';
 
-  final TokenStorage tokenStorage;
+  final SessionStorage sessionStorage;
   final Dio refreshClient;
   Future<String?>? _pendingRefresh;
 
   SessionInterceptor({
-    required this.tokenStorage,
+    required this.sessionStorage,
     required this.refreshClient,
   });
 
@@ -19,7 +19,7 @@ class SessionInterceptor extends Interceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    final session = await tokenStorage.getSession();
+    final session = await sessionStorage.getSession();
     final accessToken = session?.accessToken;
 
     if (accessToken != null && accessToken.isNotEmpty) {
@@ -41,7 +41,7 @@ class SessionInterceptor extends Interceptor {
 
     final refreshedAccessToken = await _refreshSessionAccessToken();
     if (refreshedAccessToken == null) {
-      await tokenStorage.clearSession();
+      await sessionStorage.clearSession();
       handler.next(err);
       return;
     }
@@ -99,7 +99,7 @@ class SessionInterceptor extends Interceptor {
   }
 
   Future<String?> _executeRefresh() async {
-    final session = await tokenStorage.getSession();
+    final session = await sessionStorage.getSession();
     final refreshToken = session?.refreshToken;
 
     if (refreshToken == null || refreshToken.isEmpty) {
@@ -125,7 +125,7 @@ class SessionInterceptor extends Interceptor {
         return null;
       }
 
-      await tokenStorage.saveSession(
+      await sessionStorage.saveSession(
         accessToken: accessToken,
         refreshToken: nextRefreshToken,
       );

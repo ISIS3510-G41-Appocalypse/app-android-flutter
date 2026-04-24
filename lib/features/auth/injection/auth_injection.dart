@@ -1,6 +1,6 @@
 import 'package:get_it/get_it.dart';
 import '../../../core/network/dio_client.dart';
-import '../../../core/storage/token_storage.dart';
+import '../../../core/storage/session_storage.dart';
 import '../data/datasources/local/auth_datasource_local.dart';
 import '../data/datasources/local/auth_datasource_local_storage.dart';
 import '../data/datasources/remote/auth_datasource_remote.dart';
@@ -16,7 +16,7 @@ final sl = GetIt.instance;
 void setupAuthInjection() {
   sl.registerLazySingleton<AuthDataSourceLocal>(
     () => AuthDataSourceLocalStorage(
-      tokenStorage: sl<TokenStorage>(),
+      sessionStorage: sl<SessionStorage>(),
     ),
   );
   sl.registerLazySingleton<AuthDataSourceRemote>(

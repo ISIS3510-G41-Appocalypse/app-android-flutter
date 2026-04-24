@@ -2,14 +2,14 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import '../constants/api_constants.dart';
-import '../storage/token_storage.dart';
+import '../storage/session_storage.dart';
 import 'session_interceptor.dart';
 
 class DioClient {
-  final TokenStorage tokenStorage;
+  final SessionStorage sessionStorage;
   late final Dio dio;
 
-  DioClient({required this.tokenStorage}) {
+  DioClient({required this.sessionStorage}) {
     final baseOptions = BaseOptions(
       baseUrl: ApiConstants.baseUrl,
       connectTimeout: const Duration(seconds: 10),
@@ -25,7 +25,7 @@ class DioClient {
 
     dio.interceptors.add(
       SessionInterceptor(
-        tokenStorage: tokenStorage,
+        sessionStorage: sessionStorage,
         refreshClient: refreshClient,
       ),
     );

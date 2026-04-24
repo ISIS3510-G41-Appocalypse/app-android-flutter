@@ -1,9 +1,9 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
-class TokenStorage {
+class SessionStorage {
   final FlutterSecureStorage _storage;
 
-  TokenStorage({FlutterSecureStorage? storage})
+  SessionStorage({FlutterSecureStorage? storage})
       : _storage = storage ?? const FlutterSecureStorage();
 
   static const String _accessTokenKey = 'access_token';
