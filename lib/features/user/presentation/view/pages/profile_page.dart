@@ -86,7 +86,7 @@ class ProfilePage extends StatelessWidget {
                         onPressed: () {
                           context.read<AuthCubit>().logout();
                         },
-                        child: const Text('Cerrar sesión'),
+                        child: const Text('Cerrar sesiÃ³n'),
                       ),
                     ),
                   ],

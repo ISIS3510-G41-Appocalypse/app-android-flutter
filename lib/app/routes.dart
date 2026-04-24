@@ -4,7 +4,7 @@ import 'package:app_ios_flutter/features/rides/presentation/view/pages/create_ri
 import 'package:flutter/material.dart';
 import '../features/home/presentation/view/pages/home_page.dart';
 import '../features/auth/presentation/view/pages/login_page.dart';
-import '../features/home/presentation/view/pages/profile_page.dart';
+import '../features/user/presentation/view/pages/profile_page.dart';
 import '../features/auth/presentation/view/widgets/auth_gate.dart';
 
 class AppRoutes {
