@@ -6,7 +6,8 @@ import '../../../../../core/layout/navigation_bar.dart' as navigation_layout;
 import '../../../../../core/network/dio_client.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
-import '../../../../auth/presentation/view_model/auth_cubit.dart';
+import '../../../../user/presentation/view_model/user_cubit.dart';
+import '../../../../user/presentation/view_model/user_state.dart';
 import '../../view_model/create_ride_cubit.dart';
 import '../widgets/create_ride_form.dart';
 import '../widgets/no_driver_permission_state.dart';
@@ -18,8 +19,17 @@ class CreateRidePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.read<AuthCubit>().state.user;
-    final isDriver = user?.driverId != null;
+    final userState = context.watch<UserCubit>().state;
+    final user = userState.user;
+    final isDriver = user?.driver != null;
+
+    if (userState.status == UserStatus.loading && user == null) {
+      return const Scaffold(
+        backgroundColor: AppColors.slate900,
+        appBar: Header(),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     if (!isDriver) {
       return Scaffold(
@@ -41,7 +51,7 @@ class CreateRidePage extends StatelessWidget {
     return BlocProvider(
       create: (_) => CreateRideCubit(
         client: sl<DioClient>(),
-        userId: context.read<AuthCubit>().currentUserId!,
+        userId: user!.id,
       )..loadVehicles(),
       child: Scaffold(
         backgroundColor: AppColors.slate900,

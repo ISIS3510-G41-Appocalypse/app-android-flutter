@@ -4,7 +4,6 @@ import 'package:get_it/get_it.dart';
 import '../../../../../core/layout/header.dart' as header_layout;
 import '../../../../../core/layout/navigation_bar.dart' as navigation_layout;
 import '../../../../../core/theme/app_colors.dart';
-import '../../../../auth/presentation/view_model/auth_cubit.dart';
 import '../../../../auth/presentation/view/widgets/auth_session_listener.dart';
 import '../../../../driver_rides/presentation/view_model/driver_rides_cubit.dart';
 import '../../../../driver_rides/presentation/view_model/driver_rides_state.dart';
@@ -33,15 +32,16 @@ class _RideOffersPageState extends State<RideOffersPage> {
   void initState() {
     super.initState();
 
-    final user = context.read<AuthCubit>().state.user;
-    final activeRole = context.read<UserCubit>().state.activeRole;
+    final userState = context.read<UserCubit>().state;
+    final user = userState.user;
+    final activeRole = userState.activeRole;
     final preferredZoneId = user?.zoneId.toString();
 
     _cubit = _sl<RideOffersCubit>()
       ..loadInitialData(preferredZoneId: preferredZoneId);
     _driverRidesCubit = _sl<DriverRidesCubit>()
       ..loadActiveRide(
-        driverId: activeRole == UserRole.driver ? user?.driverId : null,
+        driverId: activeRole == UserRole.driver ? user?.driver?.id : null,
       );
   }
 
@@ -71,7 +71,7 @@ class _RideOffersPageState extends State<RideOffersPage> {
                   previous.user != current.user,
               listener: (context, userState) {
                 final driverId = userState.activeRole == UserRole.driver
-                    ? userState.user?.driverId
+                    ? userState.user?.driver?.id
                     : null;
 
                 _driverRidesCubit.loadActiveRide(driverId: driverId);
