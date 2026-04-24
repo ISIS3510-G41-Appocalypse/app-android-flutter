@@ -62,11 +62,11 @@ class AuthDataSourceRemoteSupabase implements AuthDataSourceRemote {
         );
       } on DioException catch (e) {
         if (e.response?.statusCode == 403 && e.response?.data['msg'].contains('token is expired')) {
-          final refreshToken = await tokenStorage.getRefreshToken();
-          if (refreshToken == null) {
-            throw ServerException('No hay token de refresco disponible');
+          final session = await tokenStorage.getSession();
+          if (session == null) {
+            throw ServerException('No hay sesion disponible');
           }
-          authResponse = await refreshSession(refreshToken: refreshToken);
+          authResponse = await refreshSession(refreshToken: session.refreshToken);
         } else {
           throw ServerException(ErrorHandler.getErrorMessage(e));
         }

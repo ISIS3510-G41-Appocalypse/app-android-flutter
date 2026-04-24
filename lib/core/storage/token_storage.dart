@@ -25,13 +25,29 @@ class TokenStorage {
     return _storage.read(key: _refreshTokenKey);
   }
 
+  Future<({String accessToken, String refreshToken})?> getSession() async {
+    final accessToken = await getAccessToken();
+    final refreshToken = await getRefreshToken();
+
+    if (accessToken == null ||
+        accessToken.isEmpty ||
+        refreshToken == null ||
+        refreshToken.isEmpty) {
+      return null;
+    }
+
+    return (
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+    );
+  }
+
   Future<void> clearSession() async {
     await _storage.delete(key: _accessTokenKey);
     await _storage.delete(key: _refreshTokenKey);
   }
 
   Future<bool> hasSession() async {
-    final token = await getAccessToken();
-    return token != null && token.isNotEmpty;
+    return (await getSession()) != null;
   }
 }
