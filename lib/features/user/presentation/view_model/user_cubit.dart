@@ -15,22 +15,28 @@ class UserCubit extends Cubit<UserState> {
     required this.getDriverProfile,
   }) : super(const UserState());
 
+  void clear() {
+    emit(const UserState());
+  }
+
   Future<void> initialize(User user) async {
     final availableRoles = _resolveAvailableRoles(user);
-    final defaultRole = _resolveDefaultRole(availableRoles);
+    final nextRole = availableRoles.contains(state.activeRole)
+        ? state.activeRole
+        : _resolveDefaultRole(availableRoles);
 
     emit(
       state.copyWith(
         user: user,
         availableRoles: availableRoles,
-        activeRole: defaultRole,
+        activeRole: nextRole,
         status: UserStatus.initial,
         clearError: true,
       ),
     );
 
-    if (defaultRole != null) {
-      await loadRoleProfile(defaultRole);
+    if (nextRole != null) {
+      await loadRoleProfile(nextRole);
     }
   }
 

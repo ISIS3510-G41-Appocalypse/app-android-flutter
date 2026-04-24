@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:get_it/get_it.dart';
 
 import '../../../../../core/layout/header.dart';
 import '../../../../../core/layout/navigation_bar.dart' as navigation_layout;
@@ -8,7 +7,6 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../auth/presentation/view_model/auth_cubit.dart';
 import '../../../../auth/presentation/view_model/auth_state.dart';
 import '../../../../auth/presentation/view/widgets/auth_session_listener.dart';
-import '../../view_model/user_cubit.dart';
 import '../widgets/profile_content.dart';
 
 class ProfilePage extends StatelessWidget {
@@ -36,12 +34,9 @@ class ProfilePage extends StatelessWidget {
               );
             }
 
-            return BlocProvider(
-              create: (_) => GetIt.instance<UserCubit>()..initialize(user),
-              child: ProfileContent(
-                fullName: '${user.firstName} ${user.lastName}',
-                email: user.email,
-              ),
+            return ProfileContent(
+              fullName: '${user.firstName} ${user.lastName}',
+              email: user.email,
             );
           },
         ),
