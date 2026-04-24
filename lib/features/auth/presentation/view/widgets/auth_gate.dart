@@ -15,7 +15,7 @@ class _AuthGateState extends State<AuthGate> {
   @override
   void initState() {
     super.initState();
-    context.read<AuthCubit>().restoreSession();
+    context.read<AuthCubit>().verifySession();
   }
 
   @override

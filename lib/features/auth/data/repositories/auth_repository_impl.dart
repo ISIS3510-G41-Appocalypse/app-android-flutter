@@ -51,7 +51,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, Auth>> restoreSession() async {
+  Future<Either<Failure, Auth>> verifySession() async {
     try {
       final hasSession = await dataSourceLocal.hasSession();
       if (!hasSession) {
@@ -65,20 +65,8 @@ class AuthRepositoryImpl implements AuthRepository {
         if (e.message != 'La sesion expiro') {
           rethrow;
         }
-
-        final session = await dataSourceLocal.getSession();
-        if (session == null) {
-          return const Left(ServerFailure('No hay sesion disponible'));
-        }
-
-        auth = await dataSourceRemote.refreshSession(
-          refreshToken: session.refreshToken,
-        );
-
-        await dataSourceLocal.saveSession(
-          accessToken: auth.accessToken,
-          refreshToken: auth.refreshToken,
-        );
+        await dataSourceLocal.clearSession();
+        return const Left(ServerFailure('La sesion expiro'));
       }
 
       return Right(auth);

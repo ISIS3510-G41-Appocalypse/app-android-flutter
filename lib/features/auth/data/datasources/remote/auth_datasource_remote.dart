@@ -7,8 +7,4 @@ abstract class AuthDataSourceRemote {
   });
 
   Future<AuthModel> verifySession();
-
-  Future<AuthModel> refreshSession({
-    required String refreshToken,
-  });
 }

@@ -1,23 +1,23 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/usecases/login_user.dart';
 import '../../domain/usecases/logout_user.dart';
-import '../../domain/usecases/restore_session.dart';
+import '../../domain/usecases/verify_session.dart';
 import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final LoginUser loginUser;
   final LogoutUser logoutUser;
-  final RestoreSession restoreSessionUseCase;
+  final VerifySession verifySessionUseCase;
 
   AuthCubit({
     required this.loginUser,
     required this.logoutUser,
-    required this.restoreSessionUseCase,
+    required this.verifySessionUseCase,
   }) : super(const AuthState(status: AuthStatus.unauthenticated));
 
-  Future<void> restoreSession() async {
+  Future<void> verifySession() async {
     emit(state.copyWith(status: AuthStatus.loading, clearError: true));
-    final result = await restoreSessionUseCase();
+    final result = await verifySessionUseCase();
     result.fold(
       (failure) {
         emit(state.copyWith(

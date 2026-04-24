@@ -58,29 +58,4 @@ class AuthDataSourceRemoteSupabase implements AuthDataSourceRemote {
       throw ServerException('Error inesperado al verificar la sesion');
     }
   }
-
-  @override
-  Future<AuthModel> refreshSession({
-    required String refreshToken,
-  }) async {
-    try {
-      final response = await dio.post(
-        '/auth/v1/token',
-        queryParameters: {
-          'grant_type': 'refresh_token',
-        },
-        data: {
-          'refresh_token': refreshToken,
-        },
-      );
-
-      return AuthModel.fromJson(
-        response.data as Map<String, dynamic>,
-      );
-    } on DioException catch (e) {
-      throw ServerException(ErrorHandler.getErrorMessage(e));
-    } catch (_) {
-      throw ServerException('Error inesperado al refrescar sesion');
-    }
-  }
 }
