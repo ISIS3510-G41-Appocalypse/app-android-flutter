@@ -1,22 +1,20 @@
 import 'package:dio/dio.dart';
-import '../models/auth_model.dart';
-import '../../../../core/errors/error_handler.dart';
-import '../../../../core/errors/exceptions.dart';
-import '../../../../core/storage/token_storage.dart';
-import '../models/user_model.dart';
+
+import '../../../../../core/errors/error_handler.dart';
+import '../../../../../core/errors/exceptions.dart';
+import '../../models/auth_model.dart';
+import '../../models/user_model.dart';
 import 'auth_datasource_remote.dart';
 
 class AuthDataSourceRemoteSupabase implements AuthDataSourceRemote {
   final Dio dio;
-  final TokenStorage tokenStorage;
 
   AuthDataSourceRemoteSupabase({
     required this.dio,
-    required this.tokenStorage,
   });
 
   @override
-  Future<UserModel> login({
+  Future<AuthModel> login({
     required String email,
     required String password,
   }) async {
@@ -32,49 +30,33 @@ class AuthDataSourceRemoteSupabase implements AuthDataSourceRemote {
         },
       );
 
-      final authResponse = AuthModel.fromJson(
+      return AuthModel.fromJson(
         response.data as Map<String, dynamic>,
       );
-
-      await tokenStorage.saveSession(
-        accessToken: authResponse.accessToken,
-        refreshToken: authResponse.refreshToken,
-      );
-
-      return await getUserByAuthId(authResponse);
     } on DioException catch (e) {
       throw ServerException(ErrorHandler.getErrorMessage(e));
     } catch (_) {
-      throw ServerException('Error inesperado al iniciar sesión');
+      throw ServerException('Error inesperado al iniciar sesion');
     }
   }
 
   @override
-  Future<UserModel> restoreSession(
-  ) async {
+  Future<AuthModel> verifySession() async {
     try {
-      AuthModel authResponse;
-      try {
-        final response = await dio.get('/auth/v1/user');
+      final response = await dio.get('/auth/v1/user');
 
-        authResponse = AuthModel.fromJson(
-          response.data as Map<String, dynamic>,
-        );
-      } on DioException catch (e) {
-        if (e.response?.statusCode == 403 && e.response?.data['msg'].contains('token is expired')) {
-          final session = await tokenStorage.getSession();
-          if (session == null) {
-            throw ServerException('No hay sesion disponible');
-          }
-          authResponse = await refreshSession(refreshToken: session.refreshToken);
-        } else {
-          throw ServerException(ErrorHandler.getErrorMessage(e));
-        }
+      return AuthModel.fromJson(
+        response.data as Map<String, dynamic>,
+      );
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 403 &&
+          e.response?.data['msg'].contains('token is expired')) {
+        throw ServerException('La sesion expiro');
       }
-      
-      return await getUserByAuthId(authResponse);
-    } catch (e) {
-      throw ServerException('Error inesperado al restaurar sesión');
+
+      throw ServerException(ErrorHandler.getErrorMessage(e));
+    } catch (_) {
+      throw ServerException('Error inesperado al verificar la sesion');
     }
   }
 
@@ -93,36 +75,38 @@ class AuthDataSourceRemoteSupabase implements AuthDataSourceRemote {
         },
       );
 
-      final authResponse = AuthModel.fromJson(
+      return AuthModel.fromJson(
         response.data as Map<String, dynamic>,
       );
-
-      await tokenStorage.saveSession(
-        accessToken: authResponse.accessToken,
-        refreshToken: authResponse.refreshToken,
-      );
-
-      return authResponse;
     } on DioException catch (e) {
       throw ServerException(ErrorHandler.getErrorMessage(e));
     } catch (_) {
-      throw ServerException('Error inesperado al refrescar sesión');
+      throw ServerException('Error inesperado al refrescar sesion');
     }
   }
 
-  Future<UserModel> getUserByAuthId(AuthModel authResponse) async {
+  @override
+  Future<UserModel> getUser({
+    required AuthModel auth,
+  }) {
+    return _getUserByAuthId(auth);
+  }
+
+  Future<UserModel> _getUserByAuthId(
+    AuthModel auth,
+  ) async {
     try {
       final userResponse = await dio.get(
         '/rest/v1/users',
         queryParameters: {
-          'auth_id': 'eq.${authResponse.authId}',
+          'auth_id': 'eq.${auth.authId}',
           'select': '*',
         },
       );
 
       final userData = userResponse.data as List<dynamic>;
       if (userData.isEmpty) {
-        throw ServerException('No se encontró el usuario');
+        throw ServerException('No se encontro el usuario');
       }
 
       final userJson = userData.first as Map<String, dynamic>;
@@ -131,7 +115,7 @@ class AuthDataSourceRemoteSupabase implements AuthDataSourceRemote {
       final riderResponse = await dio.get(
         '/rest/v1/riders',
         queryParameters: {
-          'user_id': 'eq.$userId'
+          'user_id': 'eq.$userId',
         },
       );
 
@@ -141,7 +125,7 @@ class AuthDataSourceRemoteSupabase implements AuthDataSourceRemote {
       final driverResponse = await dio.get(
         '/rest/v1/drivers',
         queryParameters: {
-          'user_id': 'eq.$userId'
+          'user_id': 'eq.$userId',
         },
       );
 
@@ -150,11 +134,13 @@ class AuthDataSourceRemoteSupabase implements AuthDataSourceRemote {
 
       return UserModel.fromJson(
         userJson,
-        email: authResponse.email,
+        email: auth.email,
         riderId: riderId,
         driverId: driverId,
       );
-    } catch (e) {
+    } on ServerException {
+      rethrow;
+    } catch (_) {
       throw ServerException('Error inesperado al obtener el usuario');
     }
   }
