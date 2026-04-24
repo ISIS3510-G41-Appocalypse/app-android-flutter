@@ -1,5 +1,4 @@
 import '../../models/auth_model.dart';
-import '../../models/user_model.dart';
 
 abstract class AuthDataSourceRemote {
   Future<AuthModel> login({
@@ -11,9 +10,5 @@ abstract class AuthDataSourceRemote {
 
   Future<AuthModel> refreshSession({
     required String refreshToken,
-  });
-
-  Future<UserModel> getUser({
-    required AuthModel auth,
   });
 }

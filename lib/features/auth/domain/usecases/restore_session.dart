@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
 import '../../../../core/errors/failures.dart';
-import '../entities/user.dart';
+import '../entities/auth.dart';
 import '../repositories/auth_repository.dart';
 
 class RestoreSession {
@@ -8,7 +8,7 @@ class RestoreSession {
 
   RestoreSession(this.repository);
 
-  Future<Either<Failure, User>> call() async {
+  Future<Either<Failure, Auth>> call() async {
     return await repository.restoreSession();
   }
 }

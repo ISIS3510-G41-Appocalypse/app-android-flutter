@@ -3,7 +3,6 @@ import 'package:dio/dio.dart';
 import '../../../../../core/errors/error_handler.dart';
 import '../../../../../core/errors/exceptions.dart';
 import '../../models/auth_model.dart';
-import '../../models/user_model.dart';
 import 'auth_datasource_remote.dart';
 
 class AuthDataSourceRemoteSupabase implements AuthDataSourceRemote {
@@ -82,66 +81,6 @@ class AuthDataSourceRemoteSupabase implements AuthDataSourceRemote {
       throw ServerException(ErrorHandler.getErrorMessage(e));
     } catch (_) {
       throw ServerException('Error inesperado al refrescar sesion');
-    }
-  }
-
-  @override
-  Future<UserModel> getUser({
-    required AuthModel auth,
-  }) {
-    return _getUserByAuthId(auth);
-  }
-
-  Future<UserModel> _getUserByAuthId(
-    AuthModel auth,
-  ) async {
-    try {
-      final userResponse = await dio.get(
-        '/rest/v1/users',
-        queryParameters: {
-          'auth_id': 'eq.${auth.authId}',
-          'select': '*',
-        },
-      );
-
-      final userData = userResponse.data as List<dynamic>;
-      if (userData.isEmpty) {
-        throw ServerException('No se encontro el usuario');
-      }
-
-      final userJson = userData.first as Map<String, dynamic>;
-      final userId = userJson['id'] as int;
-
-      final riderResponse = await dio.get(
-        '/rest/v1/riders',
-        queryParameters: {
-          'user_id': 'eq.$userId',
-        },
-      );
-
-      final riderData = riderResponse.data as List<dynamic>;
-      final riderId = riderData.isNotEmpty ? riderData.first['id'] as int : null;
-
-      final driverResponse = await dio.get(
-        '/rest/v1/drivers',
-        queryParameters: {
-          'user_id': 'eq.$userId',
-        },
-      );
-
-      final driverData = driverResponse.data as List<dynamic>;
-      final driverId = driverData.isNotEmpty ? driverData.first['id'] as int : null;
-
-      return UserModel.fromJson(
-        userJson,
-        email: auth.email,
-        riderId: riderId,
-        driverId: driverId,
-      );
-    } on ServerException {
-      rethrow;
-    } catch (_) {
-      throw ServerException('Error inesperado al obtener el usuario');
     }
   }
 }

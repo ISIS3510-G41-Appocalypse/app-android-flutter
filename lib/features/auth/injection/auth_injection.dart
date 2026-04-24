@@ -36,6 +36,6 @@ void setupAuthInjection() {
   sl.registerFactory(() => AuthCubit(
         loginUser: sl<LoginUser>(),
         logoutUser: sl<LogoutUser>(),
-        restoreSession: sl<RestoreSession>(),
+        restoreSessionUseCase: sl<RestoreSession>(),
       ));
 }

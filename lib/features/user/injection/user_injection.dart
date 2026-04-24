@@ -1,11 +1,11 @@
 import 'package:get_it/get_it.dart';
 
 import '../../../core/network/dio_client.dart';
-import '../data/datasources/user_datasource_remote.dart';
-import '../data/datasources/user_datasource_remote_supabase.dart';
-import '../data/repositories/user_repository_remote.dart';
-import '../domain/usecases/get_driver_profile.dart';
-import '../domain/usecases/get_rider_profile.dart';
+import '../data/datasources/remote/user_datasource_remote.dart';
+import '../data/datasources/remote/user_datasource_remote_supabase.dart';
+import '../data/repositories/user_repository_impl.dart';
+import '../domain/repositories/user_repository.dart';
+import '../domain/usecases/load_user.dart';
 import '../presentation/view_model/user_cubit.dart';
 
 final sl = GetIt.instance;
@@ -16,21 +16,17 @@ void setupUserInjection() {
       dio: sl<DioClient>().dio,
     ),
   );
-  sl.registerLazySingleton<UserRepositoryRemote>(
-    () => UserRepositoryRemote(
+  sl.registerLazySingleton<UserRepository>(
+    () => UserRepositoryImpl(
       dataSourceRemote: sl<UserDataSourceRemote>(),
     ),
   );
   sl.registerFactory(
-    () => GetRiderProfile(sl<UserRepositoryRemote>()),
-  );
-  sl.registerFactory(
-    () => GetDriverProfile(sl<UserRepositoryRemote>()),
+    () => LoadUser(sl<UserRepository>()),
   );
   sl.registerFactory(
     () => UserCubit(
-      getRiderProfile: sl<GetRiderProfile>(),
-      getDriverProfile: sl<GetDriverProfile>(),
+      loadUserUseCase: sl<LoadUser>(),
     ),
   );
 }

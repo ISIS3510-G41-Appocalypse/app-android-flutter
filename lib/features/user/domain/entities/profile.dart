@@ -1,12 +1,12 @@
 import 'package:equatable/equatable.dart';
 
-class UserProfile extends Equatable {
+class Profile extends Equatable {
   final int id;
   final double cancellationOdds;
   final double rating;
   final int userId;
 
-  const UserProfile({
+  const Profile({
     required this.id,
     required this.cancellationOdds,
     required this.rating,

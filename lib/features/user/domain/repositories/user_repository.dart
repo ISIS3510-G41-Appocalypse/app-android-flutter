@@ -1,14 +1,11 @@
 import 'package:dartz/dartz.dart';
 
 import '../../../../core/errors/failures.dart';
-import '../entities/user_profile.dart';
+import '../../../auth/domain/entities/auth.dart';
+import '../entities/user.dart';
 
 abstract class UserRepository {
-  Future<Either<Failure, UserProfile>> getRiderProfile({
-    required int riderId,
-  });
-
-  Future<Either<Failure, UserProfile>> getDriverProfile({
-    required int driverId,
+  Future<Either<Failure, User>> loadUser({
+    required Auth auth,
   });
 }

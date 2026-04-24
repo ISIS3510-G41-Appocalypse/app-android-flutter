@@ -49,15 +49,6 @@ class UserRoleSelector extends StatelessWidget {
       }).toList(),
     );
   }
-
-  String _labelForRole(UserRole role) {
-    switch (role) {
-      case UserRole.rider:
-        return 'Pasajero';
-      case UserRole.driver:
-        return 'Conductor';
-    }
-  }
 }
 
 class _RoleCard extends StatelessWidget {

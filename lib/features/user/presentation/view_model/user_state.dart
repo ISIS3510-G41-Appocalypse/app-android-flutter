@@ -1,8 +1,8 @@
 import 'package:equatable/equatable.dart';
 
-import '../../../auth/domain/entities/user.dart';
+import '../../domain/entities/profile.dart';
 import '../../domain/entities/user_role.dart';
-import '../../domain/entities/user_profile.dart';
+import '../../domain/entities/user.dart';
 
 enum UserStatus {
   initial,
@@ -16,8 +16,6 @@ class UserState extends Equatable {
   final User? user;
   final List<UserRole> availableRoles;
   final UserRole? activeRole;
-  final UserProfile? riderProfile;
-  final UserProfile? driverProfile;
   final String? errorMessage;
 
   const UserState({
@@ -25,8 +23,6 @@ class UserState extends Equatable {
     this.user,
     this.availableRoles = const [],
     this.activeRole,
-    this.riderProfile,
-    this.driverProfile,
     this.errorMessage,
   });
 
@@ -35,29 +31,24 @@ class UserState extends Equatable {
     User? user,
     List<UserRole>? availableRoles,
     UserRole? activeRole,
-    UserProfile? riderProfile,
-    UserProfile? driverProfile,
     String? errorMessage,
     bool clearError = false,
-    bool clearProfiles = false,
   }) {
     return UserState(
       status: status ?? this.status,
       user: user ?? this.user,
       availableRoles: availableRoles ?? this.availableRoles,
       activeRole: activeRole ?? this.activeRole,
-      riderProfile: clearProfiles ? null : (riderProfile ?? this.riderProfile),
-      driverProfile: clearProfiles ? null : (driverProfile ?? this.driverProfile),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
 
-  UserProfile? get activeProfile {
+  Profile? get activeProfile {
     switch (activeRole) {
       case UserRole.rider:
-        return riderProfile;
+        return user?.rider;
       case UserRole.driver:
-        return driverProfile;
+        return user?.driver;
       case null:
         return null;
     }
@@ -71,8 +62,6 @@ class UserState extends Equatable {
         user,
         availableRoles,
         activeRole,
-        riderProfile,
-        driverProfile,
         errorMessage,
       ];
 }

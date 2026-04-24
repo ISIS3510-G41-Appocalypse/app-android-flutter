@@ -2,7 +2,7 @@ import 'package:dartz/dartz.dart';
 
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/failures.dart';
-import '../../domain/entities/user.dart';
+import '../../domain/entities/auth.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../models/auth_model.dart';
 import '../datasources/local/auth_datasource_local.dart';
@@ -18,7 +18,7 @@ class AuthRepositoryImpl implements AuthRepository {
   });
 
   @override
-  Future<Either<Failure, User>> login({
+  Future<Either<Failure, Auth>> login({
     required String email,
     required String password,
   }) async {
@@ -32,9 +32,7 @@ class AuthRepositoryImpl implements AuthRepository {
         accessToken: auth.accessToken,
         refreshToken: auth.refreshToken,
       );
-
-      final user = await dataSourceRemote.getUser(auth: auth);
-      return Right(user);
+      return Right(auth);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (_) {
@@ -53,7 +51,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, User>> restoreSession() async {
+  Future<Either<Failure, Auth>> restoreSession() async {
     try {
       final hasSession = await dataSourceLocal.hasSession();
       if (!hasSession) {
@@ -83,8 +81,7 @@ class AuthRepositoryImpl implements AuthRepository {
         );
       }
 
-      final user = await dataSourceRemote.getUser(auth: auth);
-      return Right(user);
+      return Right(auth);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (_) {
