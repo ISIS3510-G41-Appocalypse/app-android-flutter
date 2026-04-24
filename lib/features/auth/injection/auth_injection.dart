@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 import '../../../core/network/dio_client.dart';
+import '../../../core/network/network_checker.dart';
 import '../../../core/storage/session_storage.dart';
 import '../data/datasources/local/auth_datasource_local.dart';
 import '../data/datasources/local/auth_datasource_local_storage.dart';
@@ -28,6 +29,7 @@ void setupAuthInjection() {
     () => AuthRepositoryImpl(
       dataSourceRemote: sl<AuthDataSourceRemote>(),
       dataSourceLocal: sl<AuthDataSourceLocal>(),
+      networkChecker: sl<NetworkChecker>(),
     ),
   );
   sl.registerFactory(() => LoginUser(sl<AuthRepositoryImpl>()));

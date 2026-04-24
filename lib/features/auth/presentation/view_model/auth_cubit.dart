@@ -107,4 +107,8 @@ class AuthCubit extends Cubit<AuthState> {
 
   bool get isAuthenticated =>
       state.status == AuthStatus.authenticated && state.auth != null;
+
+  void clearError() {
+    emit(state.copyWith(clearError: true));
+  }
 }
