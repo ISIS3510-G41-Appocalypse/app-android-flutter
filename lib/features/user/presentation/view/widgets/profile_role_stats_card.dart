@@ -18,26 +18,6 @@ class ProfileRoleStatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (errorMessage != null) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.slate100),
-        ),
-        child: Text(
-          errorMessage!,
-          style: AppTextStyles.secondary.copyWith(
-            color: AppColors.errorRed,
-            fontWeight: FontWeight.w600,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      );
-    }
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -66,29 +46,39 @@ class ProfileRoleStatsCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: ProfileMetricItem(
-                  icon: Icons.star_rounded,
-                  iconColor: AppColors.gold500,
-                  label: 'Calificacion',
-                  value: rating?.toStringAsFixed(1) ?? '--',
-                ),
+          if (errorMessage != null)
+            Text(
+              errorMessage!,
+              style: AppTextStyles.secondary.copyWith(
+                color: AppColors.errorRed,
+                fontWeight: FontWeight.w600,
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: ProfileMetricItem(
-                  icon: Icons.event_busy_rounded,
-                  iconColor: AppColors.rose600,
-                  label: 'Cancelacion',
-                  value: cancellationOdds == null
-                      ? '--'
-                      : '${(cancellationOdds! * 100).toStringAsFixed(0)}%',
+              textAlign: TextAlign.center,
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  child: ProfileMetricItem(
+                    icon: Icons.star_rounded,
+                    iconColor: AppColors.gold500,
+                    label: 'Calificacion',
+                    value: rating?.toStringAsFixed(1) ?? '--',
+                  ),
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ProfileMetricItem(
+                    icon: Icons.event_busy_rounded,
+                    iconColor: AppColors.rose600,
+                    label: 'Cancelacion',
+                    value: cancellationOdds == null
+                        ? '--'
+                        : '${(cancellationOdds! * 100).toStringAsFixed(0)}%',
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );

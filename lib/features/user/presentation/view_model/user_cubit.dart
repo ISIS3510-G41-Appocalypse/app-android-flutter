@@ -4,13 +4,16 @@ import '../../../auth/domain/entities/auth.dart';
 import '../../domain/entities/user_role.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/usecases/load_user.dart';
+import '../../domain/usecases/load_profiles.dart';
 import 'user_state.dart';
 
 class UserCubit extends Cubit<UserState> {
   final LoadUser loadUserUseCase;
+  final LoadProfiles loadProfilesUseCase;
 
   UserCubit({
     required this.loadUserUseCase,
+    required this.loadProfilesUseCase,
   }) : super(const UserState());
 
   void clear() {
@@ -66,6 +69,42 @@ class UserCubit extends Cubit<UserState> {
         status: UserStatus.loaded,
         clearError: true,
       ),
+    );
+  }
+
+  Future<void> loadProfiles() async {
+    final user = state.user;
+    if (user == null) {
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        status: UserStatus.loading,
+        clearError: true,
+      ),
+    );
+
+    final result = await loadProfilesUseCase(currentUser: user);
+
+    await result.fold(
+      (failure) async {
+        emit(
+          state.copyWith(
+            status: UserStatus.error,
+            errorMessage: failure.message,
+          ),
+        );
+      },
+      (updatedUser) async {
+        emit(
+          state.copyWith(
+            user: updatedUser,
+            status: UserStatus.loaded,
+            clearError: true,
+          ),
+        );
+      },
     );
   }
 

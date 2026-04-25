@@ -26,8 +26,7 @@ class ProfileContent extends StatelessWidget {
     return BlocBuilder<UserCubit, UserState>(
       builder: (context, state) {
         final activeProfile = state.activeProfile;
-        final isLoading =
-            state.status == UserStatus.loading && activeProfile == null;
+        final isLoading = state.status == UserStatus.loading;
 
         return SafeArea(
           top: false,
@@ -89,6 +88,7 @@ class ProfileContent extends StatelessWidget {
                               activeRole: state.activeRole,
                               onChanged: (role) {
                                 context.read<UserCubit>().changeRole(role);
+                                context.read<UserCubit>().loadProfiles();
                               },
                             ),
                           ],
@@ -103,7 +103,13 @@ class ProfileContent extends StatelessWidget {
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(color: AppColors.slate200),
                           ),
-                          child: const Center(child: CircularProgressIndicator()),
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.amber700,
+                              ),
+                            ),
+                          ),
                         )
                       else
                         ProfileRoleStatsCard(

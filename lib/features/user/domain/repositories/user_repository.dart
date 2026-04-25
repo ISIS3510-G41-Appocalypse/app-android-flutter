@@ -8,4 +8,8 @@ abstract class UserRepository {
   Future<Either<Failure, User>> loadUser({
     required Auth auth,
   });
+
+  Future<Either<Failure, User>> loadProfiles({
+    required User currentUser,
+  });
 }

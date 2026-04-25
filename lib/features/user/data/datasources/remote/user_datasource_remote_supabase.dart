@@ -79,4 +79,26 @@ class UserDataSourceRemoteSupabase implements UserDataSourceRemote {
       data.first as Map<String, dynamic>,
     );
   }
+
+  @override
+  Future<({ProfileModel? rider, ProfileModel? driver})> loadProfiles({
+    required int userId,
+  }) async {
+    try {
+      final rider = await _loadProfile(
+        endpoint: '/rest/v1/riders',
+        userId: userId,
+      );
+      final driver = await _loadProfile(
+        endpoint: '/rest/v1/drivers',
+        userId: userId,
+      );
+
+      return (rider: rider, driver: driver);
+    } on DioException catch (e) {
+      throw ServerException(ErrorHandler.getErrorMessage(e));
+    } catch (_) {
+      throw ServerException('Error al cargar los perfiles');
+    }
+  }
 }
