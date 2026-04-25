@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'dart:async';
 
@@ -18,6 +19,9 @@ class CreateRideForm extends StatefulWidget {
 }
 
 class _CreateRideFormState extends State<CreateRideForm> {
+  static const int _locationMaxLength = 40;
+  static const int _priceMaxDigits = 5;
+
   final _formKey = GlobalKey<FormState>();
   final _sourceCtrl = TextEditingController();
   final _destinationCtrl = TextEditingController();
@@ -51,28 +55,70 @@ class _CreateRideFormState extends State<CreateRideForm> {
   }
 
   Future<void> _pickDate() async {
+    final today = DateUtils.dateOnly(DateTime.now());
     final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime.now().add(const Duration(days: 1)),
-      firstDate: DateTime.now(),
+      initialDate: today.add(const Duration(days: 1)),
+      firstDate: today,
       lastDate: DateTime.now().add(const Duration(days: 90)),
       builder: _buildPickerTheme,
     );
     if (picked != null) {
       _dateCtrl.text =
           '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+      if (_timeCtrl.text.isNotEmpty && _isPastTimeForSelectedDate(_timeCtrl.text)) {
+        _timeCtrl.clear();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'La hora anterior ya no es valida para la fecha seleccionada. Elige una nueva hora.',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
     }
   }
 
   Future<void> _pickTime() async {
+    if (_dateCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Selecciona primero una fecha.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    final now = DateTime.now();
+    final initialTime =
+        _selectedDateIsToday() ? TimeOfDay.fromDateTime(now) : TimeOfDay.now();
     final picked = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.now(),
+      initialTime: initialTime,
       builder: _buildPickerTheme,
     );
     if (picked != null) {
-      _timeCtrl.text =
+      final pickedText =
           '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+      if (_isPastTimeForSelectedDate(pickedText)) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'No puedes crear un viaje para una hora que ya paso hoy.',
+              ),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+      _timeCtrl.text =
+          pickedText;
     }
   }
 
@@ -119,6 +165,82 @@ class _CreateRideFormState extends State<CreateRideForm> {
       type: _selectedType,
       price: _priceCtrl.text,
     );
+  }
+
+  DateTime? _selectedDate() {
+    final raw = _dateCtrl.text.trim();
+    if (raw.isEmpty) return null;
+    return DateTime.tryParse(raw);
+  }
+
+  bool _selectedDateIsToday() {
+    final selected = _selectedDate();
+    if (selected == null) return false;
+    return DateUtils.isSameDay(selected, DateTime.now());
+  }
+
+  bool _isPastTimeForSelectedDate(String value) {
+    final selected = _selectedDate();
+    if (selected == null) return false;
+
+    final timeParts = value.split(':');
+    if (timeParts.length != 2) return false;
+
+    final hour = int.tryParse(timeParts[0]);
+    final minute = int.tryParse(timeParts[1]);
+    if (hour == null || minute == null) return false;
+
+    final selectedDateTime = DateTime(
+      selected.year,
+      selected.month,
+      selected.day,
+      hour,
+      minute,
+    );
+
+    return selectedDateTime.isBefore(DateTime.now());
+  }
+
+  String? _validateLocation(String? value, String fieldName) {
+    final requiredMessage =
+        context.read<CreateRideCubit>().validateRequired(value, fieldName);
+    if (requiredMessage != null) return requiredMessage;
+
+    if (value!.trim().length > _locationMaxLength) {
+      return '$fieldName no puede superar $_locationMaxLength caracteres';
+    }
+
+    return null;
+  }
+
+  String? _validateDate(String? value) {
+    final requiredMessage =
+        context.read<CreateRideCubit>().validateRequired(value, 'La fecha');
+    if (requiredMessage != null) return requiredMessage;
+
+    final selected = DateTime.tryParse(value!.trim());
+    if (selected == null) {
+      return 'Selecciona una fecha valida';
+    }
+
+    final today = DateUtils.dateOnly(DateTime.now());
+    if (selected.isBefore(today)) {
+      return 'No puedes crear viajes para dias pasados';
+    }
+
+    return null;
+  }
+
+  String? _validateTime(String? value) {
+    final requiredMessage =
+        context.read<CreateRideCubit>().validateRequired(value, 'La hora');
+    if (requiredMessage != null) return requiredMessage;
+
+    if (_isPastTimeForSelectedDate(value!.trim())) {
+      return 'No puedes crear viajes para horas que ya pasaron hoy';
+    }
+
+    return null;
   }
 
   Widget _buildPickerTheme(BuildContext context, Widget? child) {
@@ -356,18 +478,16 @@ class _CreateRideFormState extends State<CreateRideForm> {
                   hint: 'Punto de salida',
                   icon: Icons.location_on_outlined,
                   iconColor: AppColors.amber700,
-                  validator: (v) => context
-                      .read<CreateRideCubit>()
-                      .validateRequired(v, 'El inicio'),
+                  maxLength: _locationMaxLength,
+                  validator: (v) => _validateLocation(v, 'El inicio'),
                 ),
                 _StyledField(
                   controller: _destinationCtrl,
                   hint: 'Destino final',
                   icon: Icons.flag_outlined,
                   iconColor: AppColors.teal600,
-                  validator: (v) => context
-                      .read<CreateRideCubit>()
-                      .validateRequired(v, 'El destino'),
+                  maxLength: _locationMaxLength,
+                  validator: (v) => _validateLocation(v, 'El destino'),
                 ),
               ],
             ),
@@ -599,9 +719,17 @@ class _CreateRideFormState extends State<CreateRideForm> {
                 hint: 'Precio por pasajero',
                 icon: Icons.payments_outlined,
                 keyboardType: TextInputType.number,
+                maxLength: _priceMaxDigits,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(_priceMaxDigits),
+                ],
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) {
                     return 'El precio es requerido';
+                  }
+                  if (v.trim().length > _priceMaxDigits) {
+                    return 'El precio no puede tener mas de $_priceMaxDigits digitos';
                   }
                   final parsed = double.tryParse(v);
                   if (parsed == null || parsed <= 0) {
@@ -624,9 +752,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
                           icon: Icons.calendar_today_outlined,
                           readOnly: true,
                           onTap: _pickDate,
-                          validator: (v) => context
-                              .read<CreateRideCubit>()
-                              .validateRequired(v, 'La fecha'),
+                          validator: _validateDate,
                         ),
                       ],
                     ),
@@ -644,9 +770,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
                           icon: Icons.schedule_outlined,
                           readOnly: true,
                           onTap: _pickTime,
-                          validator: (v) => context
-                              .read<CreateRideCubit>()
-                              .validateRequired(v, 'La hora'),
+                          validator: _validateTime,
                         ),
                       ],
                     ),
@@ -733,6 +857,8 @@ class _StyledField extends StatelessWidget {
   final VoidCallback? onTap;
   final String? Function(String?)? validator;
   final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
+  final int? maxLength;
 
   const _StyledField({
     required this.controller,
@@ -743,6 +869,8 @@ class _StyledField extends StatelessWidget {
     this.onTap,
     this.validator,
     this.keyboardType,
+    this.inputFormatters,
+    this.maxLength,
   });
 
   @override
@@ -753,6 +881,8 @@ class _StyledField extends StatelessWidget {
       onTap: onTap,
       validator: validator,
       keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      maxLength: maxLength,
       style: AppTextStyles.primary.copyWith(
         color: AppColors.slate900,
         fontSize: 14,
@@ -763,6 +893,7 @@ class _StyledField extends StatelessWidget {
           color: AppColors.slate400,
           fontSize: 14,
         ),
+        counterText: '',
         prefixIcon: Icon(
           icon,
           color: iconColor ?? AppColors.slate400,
