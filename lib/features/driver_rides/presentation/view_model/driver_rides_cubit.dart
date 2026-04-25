@@ -1,10 +1,13 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../domain/entities/driver_ride.dart';
 import '../../domain/usecases/get_active_driver_ride.dart';
 import '../../domain/usecases/update_ride_state.dart';
 import 'driver_rides_state.dart';
 
 class DriverRidesCubit extends Cubit<DriverRidesState> {
+  static const Duration _startWindowOffset = Duration(minutes: 5);
+
   final GetActiveDriverRide getActiveDriverRide;
   final UpdateRideState updateRideState;
   int? _lastDriverId;
@@ -61,11 +64,27 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
   }
 
   Future<void> startRide() async {
+    final currentRide = state.ride;
+
+    if (currentRide == null || state.isUpdating) {
+      return;
+    }
+
+    final validationMessage = _validateRideCanStart(currentRide);
+    if (validationMessage != null) {
+      emit(state.copyWith(message: validationMessage));
+      return;
+    }
+
     await _changeRideState(nextState: 'EN_CURSO', actionLabel: 'start');
   }
 
   Future<void> cancelRide() async {
     await _changeRideState(nextState: 'CANCELADO', actionLabel: 'cancel');
+  }
+
+  Future<void> finishRide() async {
+    await _changeRideState(nextState: 'FINALIZADO', actionLabel: 'finish');
   }
 
   Future<void> _changeRideState({
@@ -112,5 +131,61 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
         await reloadActiveRide();
       },
     );
+  }
+
+  String? _validateRideCanStart(DriverRide currentRide) {
+    if (currentRide.state != 'OFERTADO') {
+      return null;
+    }
+
+    final departureDateTime = _parseRideDepartureDateTime(currentRide);
+    if (departureDateTime == null) {
+      return 'No pudimos validar la hora de salida de este viaje.';
+    }
+
+    final now = DateTime.now();
+    final startAllowedAt = departureDateTime.subtract(_startWindowOffset);
+
+    if (now.isBefore(startAllowedAt)) {
+      return 'Podras iniciar este viaje desde las ${_formatTime(startAllowedAt)}.';
+    }
+
+    return null;
+  }
+
+  DateTime? _parseRideDepartureDateTime(DriverRide currentRide) {
+    final dateParts = currentRide.date.split('-');
+    if (dateParts.length != 3) {
+      return null;
+    }
+
+    final timeParts = currentRide.departureTime.split(':');
+    if (timeParts.length < 2) {
+      return null;
+    }
+
+    final year = int.tryParse(dateParts[0]);
+    final month = int.tryParse(dateParts[1]);
+    final day = int.tryParse(dateParts[2]);
+    final hour = int.tryParse(timeParts[0]);
+    final minute = int.tryParse(timeParts[1]);
+    final second = timeParts.length > 2 ? int.tryParse(timeParts[2]) ?? 0 : 0;
+
+    if (year == null ||
+        month == null ||
+        day == null ||
+        hour == null ||
+        minute == null) {
+      return null;
+    }
+
+    return DateTime(year, month, day, hour, minute, second);
+  }
+
+  String _formatTime(DateTime dateTime) {
+    final hour = dateTime.hour % 12 == 0 ? 12 : dateTime.hour % 12;
+    final minute = dateTime.minute.toString().padLeft(2, '0');
+    final period = dateTime.hour >= 12 ? 'PM' : 'AM';
+    return '$hour:$minute $period';
   }
 }

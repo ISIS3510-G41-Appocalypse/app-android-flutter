@@ -110,12 +110,36 @@ class DriverRidesContentSection extends StatelessWidget {
           ),
         );
       case DriverRidesStatus.success:
-        return DriverRideCard(
-          ride: DriverRideViewData.fromEntity(state.ride!),
-          onStart: () => context.read<DriverRidesCubit>().startRide(),
-          onCancel: () => context.read<DriverRidesCubit>().cancelRide(),
-          isUpdating: state.isUpdating,
-          updatingAction: state.updatingAction,
+        final rideViewData = DriverRideViewData.fromEntity(state.ride!);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            DriverRideCard(
+              ride: rideViewData,
+              onStart: () => context.read<DriverRidesCubit>().startRide(),
+              onCancel: () => context.read<DriverRidesCubit>().cancelRide(),
+              onFinish: () => context.read<DriverRidesCubit>().finishRide(),
+              isUpdating: state.isUpdating,
+              updatingAction: state.updatingAction,
+              message: state.message,
+            ),
+            const SizedBox(height: 24),
+            const _PassengersSectionCard(
+              title: 'Solicitudes de reserva',
+              description:
+                  'Pasajeros que solicitaron un cupo',
+              emptyLabel:
+                  'Todavia no hay solicitudes de reserva para este viaje.',
+            ),
+            const SizedBox(height: 16),
+            const _PassengersSectionCard(
+              title: 'Pasajeros confirmados',
+              description:
+                  'Pasajeros con cupo confirmado',
+              emptyLabel:
+                  'Todavia no hay pasajeros confirmados para este viaje.',
+            ),
+          ],
         );
     }
   }
@@ -143,6 +167,71 @@ class _StateCard extends StatelessWidget {
           color: const Color(0xFF64748B),
         ),
         child: child,
+      ),
+    );
+  }
+}
+
+class _PassengersSectionCard extends StatelessWidget {
+  const _PassengersSectionCard({
+    required this.title,
+    required this.description,
+    required this.emptyLabel,
+  });
+
+  final String title;
+  final String description;
+  final String emptyLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFFF1F5F9)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: AppTextStyles.primary.copyWith(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: AppColors.slate900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            description,
+            style: AppTextStyles.primary.copyWith(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: const Color(0xFF64748B),
+            ),
+          ),
+          const SizedBox(height: 18),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Text(
+              emptyLabel,
+              style: AppTextStyles.primary.copyWith(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF64748B),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

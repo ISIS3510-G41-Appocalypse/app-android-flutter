@@ -116,7 +116,8 @@ class _RideOffersPageState extends State<RideOffersPage> {
                                     helperText: isCheckingAvailability
                                         ? 'Verificando si ya tienes un viaje activo...'
                                         : hasActiveRide
-                                        ? 'Ya tienes un viaje publicado. Debes iniciarlo o cancelarlo para publicar otro.'
+                                        ? 'Ya tienes un viaje activo como conductor. '
+                                              'Debes cancelarlo o finalizarlo antes de publicar otro.'
                                         : null,
                                   );
                                 },
