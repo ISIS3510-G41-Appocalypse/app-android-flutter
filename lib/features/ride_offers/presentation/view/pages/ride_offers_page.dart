@@ -37,13 +37,9 @@ class _RideOffersPageState extends State<RideOffersPage> {
     final user = userState.user;
     final activeRole = userState.activeRole;
     final preferredZoneId = user?.zoneId.toString();
-    final excludedDriverId = user?.driver?.id;
 
     _cubit = _sl<RideOffersCubit>()
-      ..loadInitialData(
-        preferredZoneId: preferredZoneId,
-        excludedDriverId: excludedDriverId,
-      );
+      ..loadInitialData(preferredZoneId: preferredZoneId);
     _driverRidesCubit = _sl<DriverRidesCubit>()
       ..loadActiveRide(
         driverId: activeRole == UserRole.driver ? user?.driver?.id : null,
@@ -80,125 +76,132 @@ class _RideOffersPageState extends State<RideOffersPage> {
                     : null;
 
                 _driverRidesCubit.loadActiveRide(driverId: driverId);
-                _cubit.updateExcludedDriverId(userState.user?.driver?.id);
               },
-              child: BlocConsumer<RideOffersCubit, RideOffersState>(
+              child: BlocListener<DriverRidesCubit, DriverRidesState>(
                 listenWhen: (previous, current) =>
-                    !previous.reservationCreated && current.reservationCreated,
-                listener: (context, state) async {
-                  await context.read<UserCubit>().changeRole(UserRole.rider);
-
-                  if (!context.mounted) {
-                    return;
-                  }
-
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    AppRoutes.riderRides,
-                    (route) => false,
-                  );
+                    previous.ride?.id != current.ride?.id,
+                listener: (context, driverRideState) {
+                  _cubit.updateExcludedRideId(driverRideState.ride?.id);
                 },
-                builder: (context, state) {
-                  final cubit = context.read<RideOffersCubit>();
+                child: BlocConsumer<RideOffersCubit, RideOffersState>(
+                  listenWhen: (previous, current) =>
+                      !previous.reservationCreated &&
+                      current.reservationCreated,
+                  listener: (context, state) async {
+                    await context.read<UserCubit>().changeRole(UserRole.rider);
 
-                  return ScrollConfiguration(
-                    behavior: const MaterialScrollBehavior().copyWith(
-                      overscroll: false,
-                    ),
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          BlocBuilder<UserCubit, UserState>(
-                            builder: (context, userState) {
-                              final isDriverMode =
-                                  userState.activeRole == UserRole.driver;
+                    if (!context.mounted) {
+                      return;
+                    }
 
-                              return BlocBuilder<
-                                DriverRidesCubit,
-                                DriverRidesState
-                              >(
-                                builder: (context, driverRideState) {
-                                  final hasActiveRide =
-                                      isDriverMode &&
-                                      driverRideState.status ==
-                                          DriverRidesStatus.success;
-                                  final isCheckingAvailability =
-                                      isDriverMode &&
-                                      driverRideState.status ==
-                                          DriverRidesStatus.loading;
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      AppRoutes.riderRides,
+                      (route) => false,
+                    );
+                  },
+                  builder: (context, state) {
+                    final cubit = context.read<RideOffersCubit>();
 
-                                  return RideOffersHeaderSection(
-                                    showPublishAction: isDriverMode,
-                                    isPublishEnabled:
-                                        !hasActiveRide &&
-                                        !isCheckingAvailability,
-                                    helperText: isCheckingAvailability
-                                        ? 'Verificando si ya tienes un viaje activo...'
-                                        : hasActiveRide
-                                        ? 'Ya tienes un viaje activo como conductor. '
-                                              'Debes cancelarlo o finalizarlo antes de publicar otro.'
-                                        : null,
-                                  );
-                                },
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 24),
-                          RideOffersFiltersSection(
-                            zones: state.zones,
-                            zoneId: state.filters.zoneId,
-                            date: state.filters.date,
-                            time: state.filters.time,
-                            type: state.filters.type,
-                            onZoneChanged: cubit.updateZoneId,
-                            onDateChanged: cubit.updateDate,
-                            onTimeChanged: cubit.updateTime,
-                            onTypeChanged: cubit.updateType,
-                            onApply: cubit.applyFilters,
-                            onClear: cubit.clearFilters,
-                          ),
-                          const SizedBox(height: 24),
-                          BlocBuilder<DriverRidesCubit, DriverRidesState>(
-                            builder: (context, driverRideState) {
-                              final userState = context
-                                  .watch<UserCubit>()
-                                  .state;
-                              final isDriverMode =
-                                  userState.activeRole == UserRole.driver;
-                              final hasActiveRide =
-                                  isDriverMode &&
-                                  driverRideState.status ==
-                                      DriverRidesStatus.success;
-                              final isCheckingAvailability =
-                                  isDriverMode &&
-                                  driverRideState.status ==
-                                      DriverRidesStatus.loading;
-
-                              return RideOffersListSection(
-                                state: state,
-                                isReserveEnabled:
-                                    !hasActiveRide &&
-                                    !isCheckingAvailability &&
-                                    !state.isReserving,
-                                reservingRideId: state.reservingRideId,
-                                onReserve: (index) {
-                                  final riderId = userState.user?.rider?.id;
-                                  cubit.reserveRide(
-                                    offer: state.offers[index],
-                                    riderId: riderId,
-                                  );
-                                },
-                                onRetry: cubit.loadRideOffers,
-                              );
-                            },
-                          ),
-                        ],
+                    return ScrollConfiguration(
+                      behavior: const MaterialScrollBehavior().copyWith(
+                        overscroll: false,
                       ),
-                    ),
-                  );
-                },
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            BlocBuilder<UserCubit, UserState>(
+                              builder: (context, userState) {
+                                final isDriverMode =
+                                    userState.activeRole == UserRole.driver;
+
+                                return BlocBuilder<
+                                  DriverRidesCubit,
+                                  DriverRidesState
+                                >(
+                                  builder: (context, driverRideState) {
+                                    final hasActiveRide =
+                                        isDriverMode &&
+                                        driverRideState.status ==
+                                            DriverRidesStatus.success;
+                                    final isCheckingAvailability =
+                                        isDriverMode &&
+                                        driverRideState.status ==
+                                            DriverRidesStatus.loading;
+
+                                    return RideOffersHeaderSection(
+                                      showPublishAction: isDriverMode,
+                                      isPublishEnabled:
+                                          !hasActiveRide &&
+                                          !isCheckingAvailability,
+                                      helperText: isCheckingAvailability
+                                          ? 'Verificando si ya tienes un viaje activo...'
+                                          : hasActiveRide
+                                          ? 'Ya tienes un viaje activo como conductor. '
+                                                'Debes cancelarlo o finalizarlo antes de publicar otro.'
+                                          : null,
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                            const SizedBox(height: 24),
+                            RideOffersFiltersSection(
+                              zones: state.zones,
+                              zoneId: state.filters.zoneId,
+                              date: state.filters.date,
+                              time: state.filters.time,
+                              type: state.filters.type,
+                              onZoneChanged: cubit.updateZoneId,
+                              onDateChanged: cubit.updateDate,
+                              onTimeChanged: cubit.updateTime,
+                              onTypeChanged: cubit.updateType,
+                              onApply: cubit.applyFilters,
+                              onClear: cubit.clearFilters,
+                            ),
+                            const SizedBox(height: 24),
+                            BlocBuilder<DriverRidesCubit, DriverRidesState>(
+                              builder: (context, driverRideState) {
+                                final userState = context
+                                    .watch<UserCubit>()
+                                    .state;
+                                final isDriverMode =
+                                    userState.activeRole == UserRole.driver;
+                                final hasActiveRide =
+                                    isDriverMode &&
+                                    driverRideState.status ==
+                                        DriverRidesStatus.success;
+                                final isCheckingAvailability =
+                                    isDriverMode &&
+                                    driverRideState.status ==
+                                        DriverRidesStatus.loading;
+
+                                return RideOffersListSection(
+                                  state: state,
+                                  isReserveEnabled:
+                                      !hasActiveRide &&
+                                      !isCheckingAvailability &&
+                                      !state.isReserving,
+                                  reservingRideId: state.reservingRideId,
+                                  onReserve: (index) {
+                                    final riderId = userState.user?.rider?.id;
+                                    cubit.reserveRide(
+                                      offer: state.offers[index],
+                                      riderId: riderId,
+                                    );
+                                  },
+                                  onRetry: cubit.loadRideOffers,
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ),

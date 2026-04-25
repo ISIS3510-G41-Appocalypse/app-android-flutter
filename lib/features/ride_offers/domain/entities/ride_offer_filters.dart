@@ -4,7 +4,7 @@ class RideOfferFilters {
   final String? time;
   final String? type;
   final String? sortBy;
-  final int? excludedDriverId;
+  final String? excludedRideId;
   final List<String> quickFilters;
 
   const RideOfferFilters({
@@ -13,7 +13,7 @@ class RideOfferFilters {
     this.time,
     this.type,
     this.sortBy,
-    this.excludedDriverId,
+    this.excludedRideId,
     this.quickFilters = const [],
   });
 
@@ -23,14 +23,14 @@ class RideOfferFilters {
     String? time,
     String? type,
     String? sortBy,
-    int? excludedDriverId,
+    String? excludedRideId,
     List<String>? quickFilters,
     bool clearZoneId = false,
     bool clearDate = false,
     bool clearTime = false,
     bool clearType = false,
     bool clearSortBy = false,
-    bool clearExcludedDriverId = false,
+    bool clearExcludedRideId = false,
   }) {
     return RideOfferFilters(
       zoneId: clearZoneId ? null : (zoneId ?? this.zoneId),
@@ -38,9 +38,9 @@ class RideOfferFilters {
       time: clearTime ? null : (time ?? this.time),
       type: clearType ? null : (type ?? this.type),
       sortBy: clearSortBy ? null : (sortBy ?? this.sortBy),
-      excludedDriverId: clearExcludedDriverId
+      excludedRideId: clearExcludedRideId
           ? null
-          : (excludedDriverId ?? this.excludedDriverId),
+          : (excludedRideId ?? this.excludedRideId),
       quickFilters: quickFilters ?? this.quickFilters,
     );
   }

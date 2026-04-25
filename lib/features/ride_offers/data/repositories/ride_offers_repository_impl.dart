@@ -40,9 +40,8 @@ class RideOffersRepositoryImpl implements RideOffersRepository {
           return false;
         }
 
-        if (filters.excludedDriverId != null &&
-            row['driver_id']?.toString() ==
-                filters.excludedDriverId.toString()) {
+        if (filters.excludedRideId != null &&
+            row['id']?.toString() == filters.excludedRideId) {
           return false;
         }
 
