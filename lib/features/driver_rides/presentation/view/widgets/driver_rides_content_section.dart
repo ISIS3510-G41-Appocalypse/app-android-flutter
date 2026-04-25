@@ -110,12 +110,15 @@ class DriverRidesContentSection extends StatelessWidget {
           ),
         );
       case DriverRidesStatus.success:
+        final rideViewData = DriverRideViewData.fromEntity(state.ride!);
         return DriverRideCard(
-          ride: DriverRideViewData.fromEntity(state.ride!),
+          ride: rideViewData,
           onStart: () => context.read<DriverRidesCubit>().startRide(),
           onCancel: () => context.read<DriverRidesCubit>().cancelRide(),
+          onFinish: () => context.read<DriverRidesCubit>().finishRide(),
           isUpdating: state.isUpdating,
           updatingAction: state.updatingAction,
+          message: state.message,
         );
     }
   }
