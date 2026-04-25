@@ -76,6 +76,7 @@ class CreateRideCubit extends Cubit<CreateRideState> {
           selectedVehicle: _findVehicleById(vehicles, pendingDraft?.vehicleId),
           selectedZone: _findZoneById(zones, pendingDraft?.zoneId),
           restoredDraft: pendingDraft,
+          shouldAnnounceRestoredDraft: pendingDraft != null,
           hasPendingRideForm: false,
           navigateToDriverRides: false,
           clearMessage: true,
@@ -162,7 +163,7 @@ class CreateRideCubit extends Cubit<CreateRideState> {
           date: ride.date,
           departureTime: ride.departureTime,
           type: ride.type,
-          price: ride.price.toString(),
+          price: _formatDraftPrice(ride.price),
         ),
       );
     } catch (e) {
@@ -195,11 +196,14 @@ class CreateRideCubit extends Cubit<CreateRideState> {
   }
 
   void consumeRestoredDraft() {
-    if (state.restoredDraft == null) return;
+    if (state.restoredDraft == null && !state.shouldAnnounceRestoredDraft) {
+      return;
+    }
 
     emit(
       state.copyWith(
         clearRestoredDraft: true,
+        shouldAnnounceRestoredDraft: false,
       ),
     );
   }
@@ -253,8 +257,31 @@ class CreateRideCubit extends Cubit<CreateRideState> {
       date: pendingForm['date'] as String? ?? '',
       departureTime: pendingForm['departure_time'] as String? ?? '',
       type: pendingForm['type'] as String? ?? 'TO_UNIVERSITY',
-      price: (pendingForm['price'] as num?)?.toString() ?? '',
+      price: _formatDraftPrice(pendingForm['price']),
     );
+  }
+
+  String _formatDraftPrice(Object? value) {
+    if (value == null) return '';
+
+    if (value is int) {
+      return value.toString();
+    }
+
+    if (value is double) {
+      return value.truncateToDouble() == value
+          ? value.toInt().toString()
+          : value.toString();
+    }
+
+    if (value is num) {
+      final asDouble = value.toDouble();
+      return asDouble.truncateToDouble() == asDouble
+          ? asDouble.toInt().toString()
+          : asDouble.toString();
+    }
+
+    return value.toString();
   }
 
   Vehicle? _findVehicleById(List<Vehicle> vehicles, int? vehicleId) {
@@ -296,6 +323,7 @@ class CreateRideCubit extends Cubit<CreateRideState> {
             message: result.message,
             hasPendingRideForm: false,
             restoredDraft: fallbackDraft ?? state.restoredDraft,
+            shouldAnnounceRestoredDraft: false,
           ),
         );
         break;
