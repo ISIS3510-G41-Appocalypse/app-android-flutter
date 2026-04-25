@@ -34,15 +34,20 @@ class RideOffersRepositoryImpl implements RideOffersRepository {
 
     try {
       final rows = await remoteDataSource.getRideOffersRows();
+      final now = DateTime.now();
 
       final filteredRows = rows.where((row) {
         if (row['state']?.toString() != 'OFERTADO') {
           return false;
         }
 
-        if (filters.excludedDriverId != null &&
-            row['driver_id']?.toString() ==
-                filters.excludedDriverId.toString()) {
+        final departureDateTime = _parseDepartureDateTime(row);
+        if (departureDateTime == null || departureDateTime.isBefore(now)) {
+          return false;
+        }
+
+        if (filters.excludedRideId != null &&
+            row['id']?.toString() == filters.excludedRideId) {
           return false;
         }
 
@@ -159,5 +164,38 @@ class RideOffersRepositoryImpl implements RideOffersRepository {
     return left.year == right.year &&
         left.month == right.month &&
         left.day == right.day;
+  }
+
+  DateTime? _parseDepartureDateTime(Map<String, dynamic> row) {
+    final date = row['date']?.toString();
+    final time = row['departure_time']?.toString();
+
+    if (date == null || time == null) {
+      return null;
+    }
+
+    final dateParts = date.split('-');
+    final timeParts = time.split(':');
+
+    if (dateParts.length != 3 || timeParts.length < 2) {
+      return null;
+    }
+
+    final year = int.tryParse(dateParts[0]);
+    final month = int.tryParse(dateParts[1]);
+    final day = int.tryParse(dateParts[2]);
+    final hour = int.tryParse(timeParts[0]);
+    final minute = int.tryParse(timeParts[1]);
+    final second = timeParts.length > 2 ? int.tryParse(timeParts[2]) ?? 0 : 0;
+
+    if (year == null ||
+        month == null ||
+        day == null ||
+        hour == null ||
+        minute == null) {
+      return null;
+    }
+
+    return DateTime(year, month, day, hour, minute, second);
   }
 }
