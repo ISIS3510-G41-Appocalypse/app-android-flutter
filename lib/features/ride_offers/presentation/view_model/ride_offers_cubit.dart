@@ -13,6 +13,7 @@ class RideOffersCubit extends Cubit<RideOffersState> {
   final GetZones getZones;
   final CreateReservation createReservation;
   String? _preferredZoneId;
+  int? _excludedDriverId;
 
   RideOffersCubit({
     required this.getRideOffers,
@@ -20,13 +21,20 @@ class RideOffersCubit extends Cubit<RideOffersState> {
     required this.createReservation,
   }) : super(RideOffersState.initial());
 
-  Future<void> loadInitialData({String? preferredZoneId}) async {
+  Future<void> loadInitialData({
+    String? preferredZoneId,
+    int? excludedDriverId,
+  }) async {
     _preferredZoneId = preferredZoneId;
+    _excludedDriverId = excludedDriverId;
 
-    if (preferredZoneId != null) {
+    if (preferredZoneId != null || excludedDriverId != null) {
       emit(
         state.copyWith(
-          filters: state.filters.copyWith(zoneId: preferredZoneId),
+          filters: state.filters.copyWith(
+            zoneId: preferredZoneId,
+            excludedDriverId: excludedDriverId,
+          ),
         ),
       );
     }
@@ -163,7 +171,32 @@ class RideOffersCubit extends Cubit<RideOffersState> {
   }
 
   Future<void> clearFilters() async {
-    emit(state.copyWith(filters: RideOfferFilters(zoneId: _preferredZoneId)));
+    emit(
+      state.copyWith(
+        filters: RideOfferFilters(
+          zoneId: _preferredZoneId,
+          excludedDriverId: _excludedDriverId,
+        ),
+      ),
+    );
+
+    await loadRideOffers();
+  }
+
+  Future<void> updateExcludedDriverId(int? driverId) async {
+    if (_excludedDriverId == driverId) {
+      return;
+    }
+
+    _excludedDriverId = driverId;
+    emit(
+      state.copyWith(
+        filters: state.filters.copyWith(
+          excludedDriverId: driverId,
+          clearExcludedDriverId: driverId == null,
+        ),
+      ),
+    );
 
     await loadRideOffers();
   }
