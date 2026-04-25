@@ -1,4 +1,5 @@
 import '../../domain/entities/driver_ride.dart';
+import '../../domain/entities/driver_ride_reservation.dart';
 
 class DriverRideModel {
   final String id;
@@ -8,6 +9,8 @@ class DriverRideModel {
   final String state;
   final String departureTime;
   final int availableSlots;
+  final List<DriverRideReservation> pendingReservations;
+  final List<DriverRideReservation> acceptedReservations;
 
   const DriverRideModel({
     required this.id,
@@ -17,11 +20,15 @@ class DriverRideModel {
     required this.state,
     required this.departureTime,
     required this.availableSlots,
+    required this.pendingReservations,
+    required this.acceptedReservations,
   });
 
   factory DriverRideModel.fromJson(
     Map<String, dynamic> json, {
     required int availableSlots,
+    required List<DriverRideReservation> pendingReservations,
+    required List<DriverRideReservation> acceptedReservations,
   }) {
     return DriverRideModel(
       id: json['id'].toString(),
@@ -31,6 +38,8 @@ class DriverRideModel {
       state: json['state'] as String? ?? '',
       departureTime: json['departure_time'] as String? ?? '',
       availableSlots: availableSlots,
+      pendingReservations: pendingReservations,
+      acceptedReservations: acceptedReservations,
     );
   }
 
@@ -43,6 +52,8 @@ class DriverRideModel {
       state: state,
       departureTime: departureTime,
       availableSlots: availableSlots,
+      pendingReservations: pendingReservations,
+      acceptedReservations: acceptedReservations,
     );
   }
 }
