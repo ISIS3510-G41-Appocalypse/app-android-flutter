@@ -71,7 +71,7 @@ class SessionInterceptor extends Interceptor {
       return false;
     }
 
-    if (error.response?.statusCode != 403) {
+    if (error.response?.statusCode != 401) {
       return false;
     }
 
@@ -81,7 +81,7 @@ class SessionInterceptor extends Interceptor {
     }
 
     final message = data['msg'] as String?;
-    return message != null && message.contains('token is expired');
+    return message != null && message.contains('JWT expired');
   }
 
   Future<String?> _refreshSessionAccessToken() async {
