@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../../../../app/routes.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../domain/entities/vehicle.dart';
 import '../../../domain/entities/zone.dart';
-import '../../view_model/create_ride_state.dart';
 import '../../view_model/create_ride_cubit.dart';
-import '../../../../../app/routes.dart';
+import '../../view_model/create_ride_state.dart';
 
 class CreateRideForm extends StatefulWidget {
   const CreateRideForm({super.key});
@@ -16,15 +17,16 @@ class CreateRideForm extends StatefulWidget {
 }
 
 class _CreateRideFormState extends State<CreateRideForm> {
-  final _formKey         = GlobalKey<FormState>();
-  final _sourceCtrl      = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _sourceCtrl = TextEditingController();
   final _destinationCtrl = TextEditingController();
-  final _dateCtrl        = TextEditingController();
-  final _timeCtrl        = TextEditingController();
-  final _priceCtrl       = TextEditingController();
+  final _dateCtrl = TextEditingController();
+  final _timeCtrl = TextEditingController();
+  final _priceCtrl = TextEditingController();
 
   String _selectedType = 'TO_UNIVERSITY';
   final String _universityName = 'Universidad de los Andes';
+  bool _restoredDraftApplied = false;
 
   @override
   void dispose() {
@@ -38,10 +40,10 @@ class _CreateRideFormState extends State<CreateRideForm> {
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
-      context:     context,
+      context: context,
       initialDate: DateTime.now().add(const Duration(days: 1)),
-      firstDate:   DateTime.now(),
-      lastDate:    DateTime.now().add(const Duration(days: 90)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 90)),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
           colorScheme: const ColorScheme.light(primary: AppColors.amber700),
@@ -57,7 +59,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
 
   Future<void> _pickTime() async {
     final picked = await showTimePicker(
-      context:     context,
+      context: context,
       initialTime: TimeOfDay.now(),
       builder: (ctx, child) => Theme(
         data: Theme.of(ctx).copyWith(
@@ -85,6 +87,51 @@ class _CreateRideFormState extends State<CreateRideForm> {
     });
   }
 
+  void _applyDraft(RideFormDraft draft) {
+    setState(() {
+      _selectedType = draft.type;
+      _sourceCtrl.text = draft.source;
+      _destinationCtrl.text = draft.destination;
+      _dateCtrl.text = draft.date;
+      _timeCtrl.text = draft.departureTime;
+      _priceCtrl.text = draft.price;
+      _restoredDraftApplied = true;
+    });
+  }
+
+  Widget _buildPendingSyncBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.teal600.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: AppColors.teal600.withValues(alpha: 0.25),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.cloud_upload_outlined,
+            color: AppColors.teal600,
+            size: 18,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Hay un viaje pendiente por sincronizar. Mantendremos este formulario listo hasta que se publique.',
+              style: AppTextStyles.primary.copyWith(
+                fontSize: 12,
+                color: AppColors.teal600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildRouteSection() {
     final isToUniversity = _selectedType == 'TO_UNIVERSITY';
     final isFromUniversity = _selectedType == 'FROM_UNIVERSITY';
@@ -100,12 +147,15 @@ class _CreateRideFormState extends State<CreateRideForm> {
               child: ElevatedButton(
                 onPressed: () => _onTypeChanged('TO_UNIVERSITY'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isToUniversity ? AppColors.amber700 : AppColors.gray50,
+                  backgroundColor:
+                      isToUniversity ? AppColors.amber700 : AppColors.gray50,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                     side: BorderSide(
-                      color: isToUniversity ? AppColors.amber700 : const Color(0xFFE2E8F0),
+                      color: isToUniversity
+                          ? AppColors.amber700
+                          : const Color(0xFFE2E8F0),
                       width: isToUniversity ? 2 : 1,
                     ),
                   ),
@@ -113,8 +163,11 @@ class _CreateRideFormState extends State<CreateRideForm> {
                 child: Text(
                   'Hacia Universidad',
                   style: AppTextStyles.primary.copyWith(
-                    color: isToUniversity ? Colors.white : AppColors.slate900,
-                    fontWeight: isToUniversity ? FontWeight.w600 : FontWeight.w500,
+                    color:
+                        isToUniversity ? Colors.white : AppColors.slate900,
+                    fontWeight: isToUniversity
+                        ? FontWeight.w600
+                        : FontWeight.w500,
                     fontSize: 13,
                   ),
                 ),
@@ -124,12 +177,15 @@ class _CreateRideFormState extends State<CreateRideForm> {
               child: ElevatedButton(
                 onPressed: () => _onTypeChanged('FROM_UNIVERSITY'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isFromUniversity ? AppColors.teal600 : AppColors.gray50,
+                  backgroundColor:
+                      isFromUniversity ? AppColors.teal600 : AppColors.gray50,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
                     side: BorderSide(
-                      color: isFromUniversity ? AppColors.teal600 : const Color(0xFFE2E8F0),
+                      color: isFromUniversity
+                          ? AppColors.teal600
+                          : const Color(0xFFE2E8F0),
                       width: isFromUniversity ? 2 : 1,
                     ),
                   ),
@@ -137,8 +193,11 @@ class _CreateRideFormState extends State<CreateRideForm> {
                 child: Text(
                   'Desde Universidad',
                   style: AppTextStyles.primary.copyWith(
-                    color: isFromUniversity ? Colors.white : AppColors.slate900,
-                    fontWeight: isFromUniversity ? FontWeight.w600 : FontWeight.w500,
+                    color:
+                        isFromUniversity ? Colors.white : AppColors.slate900,
+                    fontWeight: isFromUniversity
+                        ? FontWeight.w600
+                        : FontWeight.w500,
                     fontSize: 13,
                   ),
                 ),
@@ -199,7 +258,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
     if (vm.validateVehicleSelected(selectedVehicle) != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content:         Text('Selecciona un vehículo'),
+          content: Text('Selecciona un vehiculo'),
           backgroundColor: Colors.red,
         ),
       );
@@ -209,7 +268,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
     if (vm.validateZoneSelected(selectedZone) != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content:         Text('Selecciona una zona'),
+          content: Text('Selecciona una zona'),
           backgroundColor: Colors.red,
         ),
       );
@@ -219,12 +278,12 @@ class _CreateRideFormState extends State<CreateRideForm> {
     if (!_formKey.currentState!.validate()) return;
 
     await vm.createRide(
-      source:        _sourceCtrl.text,
-      destination:   _destinationCtrl.text,
-      date:          _dateCtrl.text,
+      source: _sourceCtrl.text,
+      destination: _destinationCtrl.text,
+      date: _dateCtrl.text,
       departureTime: _timeCtrl.text,
-      type:          _selectedType,
-      price:         double.tryParse(_priceCtrl.text) ?? 0,
+      type: _selectedType,
+      price: double.tryParse(_priceCtrl.text) ?? 0,
     );
   }
 
@@ -232,38 +291,58 @@ class _CreateRideFormState extends State<CreateRideForm> {
   Widget build(BuildContext context) {
     return BlocConsumer<CreateRideCubit, CreateRideState>(
       listener: (context, state) {
-        if (state is CreateRideSuccess) {
+        if (!_restoredDraftApplied && state.restoredDraft != null) {
+          _applyDraft(state.restoredDraft!);
+          context.read<CreateRideCubit>().consumeRestoredDraft();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content:         Text('¡Viaje publicado exitosamente!'),
+              content: Text('Se restauro un formulario pendiente.'),
               backgroundColor: AppColors.teal600,
             ),
           );
+          return;
+        }
+
+        if (state.navigateToDriverRides) {
+          final messenger = ScaffoldMessenger.of(context);
+          if (state.message != null) {
+            messenger.showSnackBar(
+              SnackBar(
+                content: Text(state.message!),
+                backgroundColor: AppColors.teal600,
+              ),
+            );
+          }
+          context.read<CreateRideCubit>().consumeMessage();
           Navigator.pushNamedAndRemoveUntil(
             context,
             AppRoutes.driverRides,
             (route) => false,
           );
+          return;
         }
-        if (state is CreateRideError) {
+
+        if (state.message != null) {
+          final isError = state.status == CreateRideStatus.error;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content:         Text(state.message),
-              backgroundColor: Colors.red,
+              content: Text(state.message!),
+              backgroundColor: isError ? Colors.red : AppColors.teal600,
             ),
           );
+          if (state.status != CreateRideStatus.syncing) {
+            context.read<CreateRideCubit>().consumeMessage();
+          }
         }
       },
       builder: (context, state) {
-
-      
-        if (state is CreateRideLoadingVehicles) {
+        if (state.isLoading) {
           return const Center(
             child: CircularProgressIndicator(color: AppColors.amber700),
           );
         }
 
-        if (state is CreateRideError) {
+        if (state.status == CreateRideStatus.error && !state.hasLoadedFormData) {
           return Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -271,15 +350,17 @@ class _CreateRideFormState extends State<CreateRideForm> {
                 const Icon(Icons.error_outline, color: Colors.red, size: 48),
                 const SizedBox(height: 12),
                 Text(
-                  state.message,
-                  style: AppTextStyles.primary
-                      .copyWith(color: Colors.red, fontSize: 14),
+                  state.message ?? 'Ocurrio un error inesperado.',
+                  style: AppTextStyles.primary.copyWith(
+                    color: Colors.red,
+                    fontSize: 14,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
                 TextButton(
                   onPressed: () =>
-                      context.read<CreateRideCubit>().loadVehicles(),
+                      context.read<CreateRideCubit>().loadInitialData(),
                   child: const Text('Reintentar'),
                 ),
               ],
@@ -287,7 +368,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
           );
         }
 
-        if (state is! CreateRideReady) return const SizedBox.shrink();
+        if (!state.isReadyLike) return const SizedBox.shrink();
 
         return Form(
           key: _formKey,
@@ -295,8 +376,9 @@ class _CreateRideFormState extends State<CreateRideForm> {
             crossAxisAlignment: CrossAxisAlignment.start,
             spacing: 20,
             children: [
-
-              _FieldLabel('VEHÍCULO'),
+              if (state.hasPendingRideForm) _buildPendingSyncBanner(),
+              if (state.hasPendingRideForm) const SizedBox(height: 4),
+              _FieldLabel('VEHICULO'),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
                 decoration: BoxDecoration(
@@ -309,21 +391,29 @@ class _CreateRideFormState extends State<CreateRideForm> {
                     value: state.selectedVehicle,
                     isExpanded: true,
                     hint: Text(
-                      'Selecciona tu vehículo',
+                      'Selecciona tu vehiculo',
                       style: AppTextStyles.primary.copyWith(
                         color: AppColors.slate400,
                         fontSize: 14,
                       ),
                     ),
-                    icon: const Icon(Icons.expand_more, color: AppColors.slate400),
+                    icon: const Icon(
+                      Icons.expand_more,
+                      color: AppColors.slate400,
+                    ),
                     items: state.vehicles
-                        .map((v) => DropdownMenuItem<Vehicle>(
-                              value: v,
-                              child: Text(v.infoCarro),
-                            ))
+                        .map(
+                          (v) => DropdownMenuItem<Vehicle>(
+                            value: v,
+                            child: Text(v.infoCarro),
+                          ),
+                        )
                         .toList(),
-                    onChanged: (v) =>
-                        context.read<CreateRideCubit>().selectVehicle(v!),
+                    onChanged: (v) {
+                      if (v != null) {
+                        context.read<CreateRideCubit>().selectVehicle(v);
+                      }
+                    },
                     style: AppTextStyles.primary.copyWith(
                       color: AppColors.slate900,
                       fontSize: 14,
@@ -331,7 +421,6 @@ class _CreateRideFormState extends State<CreateRideForm> {
                   ),
                 ),
               ),
-
               _FieldLabel('ZONA'),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -351,15 +440,23 @@ class _CreateRideFormState extends State<CreateRideForm> {
                         fontSize: 14,
                       ),
                     ),
-                    icon: const Icon(Icons.expand_more, color: AppColors.slate400),
+                    icon: const Icon(
+                      Icons.expand_more,
+                      color: AppColors.slate400,
+                    ),
                     items: state.zones
-                        .map((z) => DropdownMenuItem<Zone>(
-                              value: z,
-                              child: Text(z.name),
-                            ))
+                        .map(
+                          (z) => DropdownMenuItem<Zone>(
+                            value: z,
+                            child: Text(z.name),
+                          ),
+                        )
                         .toList(),
-                    onChanged: (z) =>
-                        context.read<CreateRideCubit>().selectZone(z!),
+                    onChanged: (z) {
+                      if (z != null) {
+                        context.read<CreateRideCubit>().selectZone(z);
+                      }
+                    },
                     style: AppTextStyles.primary.copyWith(
                       color: AppColors.slate900,
                       fontSize: 14,
@@ -367,10 +464,8 @@ class _CreateRideFormState extends State<CreateRideForm> {
                   ),
                 ),
               ),
-
               _FieldLabel('RUTA'),
               _buildRouteSection(),
-
               _FieldLabel('PRECIO'),
               _StyledField(
                 controller: _priceCtrl,
@@ -383,12 +478,11 @@ class _CreateRideFormState extends State<CreateRideForm> {
                   }
                   final parsed = double.tryParse(v);
                   if (parsed == null || parsed <= 0) {
-                    return 'Ingresa un precio válido';
+                    return 'Ingresa un precio valido';
                   }
                   return null;
                 },
               ),
-
               Row(
                 children: [
                   Expanded(
@@ -432,32 +526,44 @@ class _CreateRideFormState extends State<CreateRideForm> {
                   ),
                 ],
               ),
-
               SizedBox(
                 width: double.infinity,
                 height: 56,
                 child: ElevatedButton.icon(
-                  onPressed: state.isSubmitting
+                  onPressed: (state.isSubmitting || state.isSyncing)
                       ? null
-                      : () => _submit(state.selectedVehicle, state.selectedZone),
+                      : () => _submit(
+                            state.selectedVehicle,
+                            state.selectedZone,
+                          ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.amber700,
                     disabledBackgroundColor:
                         AppColors.amber700.withValues(alpha: 0.6),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
-                  icon: state.isSubmitting
+                  icon: (state.isSubmitting || state.isSyncing)
                       ? const SizedBox(
                           width: 20,
                           height: 20,
                           child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2),
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
                         )
-                      : const Icon(Icons.send_rounded,
-                          color: Colors.white, size: 20),
+                      : const Icon(
+                          Icons.send_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                   label: Text(
-                    state.isSubmitting ? 'Publicando...' : 'Publicar viaje',
+                    state.isSyncing
+                        ? 'Sincronizando...'
+                        : state.isSubmitting
+                            ? 'Publicando...'
+                            : 'Publicar viaje',
                     style: AppTextStyles.primary.copyWith(
                       color: Colors.white,
                       fontSize: 16,
@@ -474,39 +580,39 @@ class _CreateRideFormState extends State<CreateRideForm> {
   }
 }
 
-
 class _FieldLabel extends StatelessWidget {
   final String text;
+
   const _FieldLabel(this.text);
 
   @override
   Widget build(BuildContext context) => Text(
         text,
         style: AppTextStyles.primary.copyWith(
-          fontSize:      10,
-          fontWeight:    FontWeight.w700,
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
           letterSpacing: 1.5,
-          color:         AppColors.slate400,
+          color: AppColors.slate400,
         ),
       );
 }
 
 class _StyledField extends StatelessWidget {
-  final TextEditingController      controller;
-  final String                     hint;
-  final IconData                   icon;
-  final Color?                     iconColor;
-  final bool                       readOnly;
-  final VoidCallback?              onTap;
+  final TextEditingController controller;
+  final String hint;
+  final IconData icon;
+  final Color? iconColor;
+  final bool readOnly;
+  final VoidCallback? onTap;
   final String? Function(String?)? validator;
-  final TextInputType?             keyboardType;
+  final TextInputType? keyboardType;
 
   const _StyledField({
     required this.controller,
     required this.hint,
     required this.icon,
     this.iconColor,
-    this.readOnly    = false,
+    this.readOnly = false,
     this.onTap,
     this.validator,
     this.keyboardType,
@@ -515,39 +621,50 @@ class _StyledField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextFormField(
-      controller:   controller,
-      readOnly:     readOnly,
-      onTap:        onTap,
-      validator:    validator,
+      controller: controller,
+      readOnly: readOnly,
+      onTap: onTap,
+      validator: validator,
       keyboardType: keyboardType,
-      style: AppTextStyles.primary
-          .copyWith(color: AppColors.slate900, fontSize: 14),
+      style: AppTextStyles.primary.copyWith(
+        color: AppColors.slate900,
+        fontSize: 14,
+      ),
       decoration: InputDecoration(
-        hintText:  hint,
-        hintStyle: AppTextStyles.primary
-            .copyWith(color: AppColors.slate400, fontSize: 14),
-        prefixIcon:     Icon(icon,
-            color: iconColor ?? AppColors.slate400, size: 20),
-        filled:         true,
-        fillColor:      AppColors.gray50,
+        hintText: hint,
+        hintStyle: AppTextStyles.primary.copyWith(
+          color: AppColors.slate400,
+          fontSize: 14,
+        ),
+        prefixIcon: Icon(
+          icon,
+          color: iconColor ?? AppColors.slate400,
+          size: 20,
+        ),
+        filled: true,
+        fillColor: AppColors.gray50,
         contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16, vertical: 14),
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:   const BorderSide(color: Color(0xFFE2E8F0)),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:   const BorderSide(color: Color(0xFFE2E8F0)),
+          borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              const BorderSide(color: AppColors.amber700, width: 1.5),
+          borderSide: const BorderSide(
+            color: AppColors.amber700,
+            width: 1.5,
+          ),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:   const BorderSide(color: Colors.red, width: 1.5),
+          borderSide: const BorderSide(color: Colors.red, width: 1.5),
         ),
       ),
     );

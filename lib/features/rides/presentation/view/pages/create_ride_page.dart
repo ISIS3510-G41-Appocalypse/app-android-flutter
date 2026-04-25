@@ -8,6 +8,7 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../user/presentation/view_model/user_cubit.dart';
 import '../../../../user/presentation/view_model/user_state.dart';
+import '../../../domain/repositories/rides_offline_sync_repository.dart';
 import '../../view_model/create_ride_cubit.dart';
 import '../widgets/create_ride_form.dart';
 import '../widgets/no_driver_permission_state.dart';
@@ -51,8 +52,9 @@ class CreateRidePage extends StatelessWidget {
     return BlocProvider(
       create: (_) => CreateRideCubit(
         client: sl<DioClient>(),
+        syncRepository: sl<RidesOfflineSyncRepository>(),
         userId: user!.id,
-      )..loadVehicles(),
+      )..loadInitialData(),
       child: Scaffold(
         backgroundColor: AppColors.slate900,
         appBar: const Header(),
