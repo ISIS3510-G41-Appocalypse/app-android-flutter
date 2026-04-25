@@ -9,10 +9,14 @@ class RideOfferCard extends StatelessWidget {
     super.key,
     required this.offer,
     required this.isReserveEnabled,
+    required this.isReserving,
+    required this.onReserve,
   });
 
   final RideOfferViewData offer;
   final bool isReserveEnabled;
+  final bool isReserving;
+  final VoidCallback onReserve;
 
   @override
   Widget build(BuildContext context) {
@@ -78,7 +82,11 @@ class RideOfferCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              _ReserveButton(isEnabled: isReserveEnabled),
+              _ReserveButton(
+                isEnabled: isReserveEnabled,
+                isLoading: isReserving,
+                onPressed: onReserve,
+              ),
             ],
           ),
         ],
@@ -337,16 +345,22 @@ class _MiniInfo extends StatelessWidget {
 }
 
 class _ReserveButton extends StatelessWidget {
-  const _ReserveButton({required this.isEnabled});
+  const _ReserveButton({
+    required this.isEnabled,
+    required this.isLoading,
+    required this.onPressed,
+  });
 
   final bool isEnabled;
+  final bool isLoading;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: 40,
       child: ElevatedButton(
-        onPressed: isEnabled ? () {} : null,
+        onPressed: isEnabled && !isLoading ? onPressed : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.amber700,
           disabledBackgroundColor: AppColors.amber700.withValues(alpha: 0.55),
@@ -358,7 +372,7 @@ class _ReserveButton extends StatelessWidget {
           ),
         ),
         child: Text(
-          'Reservar',
+          isLoading ? 'Reservando...' : 'Reservar',
           style: AppTextStyles.primary.copyWith(
             fontSize: 14,
             fontWeight: FontWeight.w700,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
+import '../../../../../app/routes.dart';
 import '../../../../../core/layout/header.dart' as header_layout;
 import '../../../../../core/layout/navigation_bar.dart' as navigation_layout;
 import '../../../../../core/theme/app_colors.dart';
@@ -76,7 +77,22 @@ class _RideOffersPageState extends State<RideOffersPage> {
 
                 _driverRidesCubit.loadActiveRide(driverId: driverId);
               },
-              child: BlocBuilder<RideOffersCubit, RideOffersState>(
+              child: BlocConsumer<RideOffersCubit, RideOffersState>(
+                listenWhen: (previous, current) =>
+                    !previous.reservationCreated && current.reservationCreated,
+                listener: (context, state) async {
+                  await context.read<UserCubit>().changeRole(UserRole.rider);
+
+                  if (!context.mounted) {
+                    return;
+                  }
+
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    AppRoutes.riderRides,
+                    (route) => false,
+                  );
+                },
                 builder: (context, state) {
                   final cubit = context.read<RideOffersCubit>();
 
@@ -141,7 +157,9 @@ class _RideOffersPageState extends State<RideOffersPage> {
                           const SizedBox(height: 24),
                           BlocBuilder<DriverRidesCubit, DriverRidesState>(
                             builder: (context, driverRideState) {
-                              final userState = context.watch<UserCubit>().state;
+                              final userState = context
+                                  .watch<UserCubit>()
+                                  .state;
                               final isDriverMode =
                                   userState.activeRole == UserRole.driver;
                               final hasActiveRide =
@@ -156,7 +174,17 @@ class _RideOffersPageState extends State<RideOffersPage> {
                               return RideOffersListSection(
                                 state: state,
                                 isReserveEnabled:
-                                    !hasActiveRide && !isCheckingAvailability,
+                                    !hasActiveRide &&
+                                    !isCheckingAvailability &&
+                                    !state.isReserving,
+                                reservingRideId: state.reservingRideId,
+                                onReserve: (index) {
+                                  final riderId = userState.user?.rider?.id;
+                                  cubit.reserveRide(
+                                    offer: state.offers[index],
+                                    riderId: riderId,
+                                  );
+                                },
                                 onRetry: cubit.loadRideOffers,
                               );
                             },

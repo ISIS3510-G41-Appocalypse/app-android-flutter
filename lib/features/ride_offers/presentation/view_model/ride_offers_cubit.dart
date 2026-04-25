@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/errors/failures.dart';
+import '../../../rider_rides/domain/usecases/create_reservation.dart';
 import '../../domain/entities/ride_offer_filters.dart';
 import '../../domain/usecases/get_ride_offers.dart';
 import '../../domain/usecases/get_zones.dart';
@@ -10,10 +11,14 @@ import 'ride_offers_state.dart';
 class RideOffersCubit extends Cubit<RideOffersState> {
   final GetRideOffers getRideOffers;
   final GetZones getZones;
+  final CreateReservation createReservation;
   String? _preferredZoneId;
 
-  RideOffersCubit({required this.getRideOffers, required this.getZones})
-    : super(RideOffersState.initial());
+  RideOffersCubit({
+    required this.getRideOffers,
+    required this.getZones,
+    required this.createReservation,
+  }) : super(RideOffersState.initial());
 
   Future<void> loadInitialData({String? preferredZoneId}) async {
     _preferredZoneId = preferredZoneId;
@@ -36,6 +41,7 @@ class RideOffersCubit extends Cubit<RideOffersState> {
         status: RideOffersStatus.loading,
         message: null,
         isOffline: false,
+        reservationCreated: false,
       ),
     );
 
@@ -49,6 +55,7 @@ class RideOffersCubit extends Cubit<RideOffersState> {
             message: failure.message,
             offers: const [],
             isOffline: failure is NetworkFailure,
+            reservationCreated: false,
           ),
         );
       },
@@ -62,6 +69,7 @@ class RideOffersCubit extends Cubit<RideOffersState> {
               offers: const [],
               message: 'No encontramos ofertas de viaje para esos filtros',
               isOffline: false,
+              reservationCreated: false,
             ),
           );
           return;
@@ -73,6 +81,7 @@ class RideOffersCubit extends Cubit<RideOffersState> {
             offers: offers,
             message: null,
             isOffline: false,
+            reservationCreated: false,
           ),
         );
       },
@@ -157,5 +166,56 @@ class RideOffersCubit extends Cubit<RideOffersState> {
     emit(state.copyWith(filters: RideOfferFilters(zoneId: _preferredZoneId)));
 
     await loadRideOffers();
+  }
+
+  Future<void> reserveRide({
+    required RideOfferViewData offer,
+    required int? riderId,
+  }) async {
+    if (state.isReserving) {
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        isReserving: true,
+        reservingRideId: offer.id,
+        message: null,
+        isOffline: false,
+        reservationCreated: false,
+      ),
+    );
+
+    final result = await createReservation(
+      rideId: offer.id,
+      riderId: riderId,
+      meetingPoint: offer.source,
+      destinationPoint: offer.destination,
+    );
+
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            isReserving: false,
+            reservingRideId: null,
+            message: failure.message,
+            isOffline: failure is NetworkFailure,
+            reservationCreated: false,
+          ),
+        );
+      },
+      (_) {
+        emit(
+          state.copyWith(
+            isReserving: false,
+            reservingRideId: null,
+            message: null,
+            isOffline: false,
+            reservationCreated: true,
+          ),
+        );
+      },
+    );
   }
 }
