@@ -36,6 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_dotenv: ^6.0.0
   dio: ^5.9.2
+  dio_cache_plus: ^2.0.6
   flutter_bloc: ^9.1.1
   flutter_secure_storage: ^10.0.0
   google_fonts: ^8.0.2
