@@ -77,9 +77,14 @@ class DriverRideViewData {
       return null;
     }
 
-    return DateTime(year, month, day, hour, minute, second).subtract(
-      const Duration(minutes: 5),
-    );
+    return DateTime(
+      year,
+      month,
+      day,
+      hour,
+      minute,
+      second,
+    ).subtract(const Duration(minutes: 5));
   }
 
   static String? _buildStartAvailableFromLabel(DateTime? startAllowedAt) {

@@ -11,6 +11,7 @@ class DriverRidesState {
   final bool isOffline;
   final bool isUpdating;
   final String? updatingAction;
+  final String? updatingReservationId;
 
   const DriverRidesState({
     required this.status,
@@ -19,6 +20,7 @@ class DriverRidesState {
     required this.isOffline,
     required this.isUpdating,
     this.updatingAction,
+    this.updatingReservationId,
   });
 
   factory DriverRidesState.initial() {
@@ -29,6 +31,7 @@ class DriverRidesState {
       isOffline: false,
       isUpdating: false,
       updatingAction: null,
+      updatingReservationId: null,
     );
   }
 
@@ -39,16 +42,22 @@ class DriverRidesState {
     bool? isOffline,
     bool? isUpdating,
     Object? updatingAction = _sentinel,
+    Object? updatingReservationId = _sentinel,
   }) {
     return DriverRidesState(
       status: status ?? this.status,
       ride: identical(ride, _sentinel) ? this.ride : ride as DriverRide?,
-      message: identical(message, _sentinel) ? this.message : message as String?,
+      message: identical(message, _sentinel)
+          ? this.message
+          : message as String?,
       isOffline: isOffline ?? this.isOffline,
       isUpdating: isUpdating ?? this.isUpdating,
       updatingAction: identical(updatingAction, _sentinel)
           ? this.updatingAction
           : updatingAction as String?,
+      updatingReservationId: identical(updatingReservationId, _sentinel)
+          ? this.updatingReservationId
+          : updatingReservationId as String?,
     );
   }
 }

@@ -12,4 +12,13 @@ abstract class DriverRidesRepository {
     required String rideId,
     required String state,
   });
+
+  Future<Either<Failure, void>> acceptReservation({
+    required String rideId,
+    required String reservationId,
+  });
+
+  Future<Either<Failure, void>> rejectReservation({
+    required String reservationId,
+  });
 }

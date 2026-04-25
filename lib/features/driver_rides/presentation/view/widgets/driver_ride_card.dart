@@ -53,15 +53,9 @@ class DriverRideCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          _RoutePoint(
-            label: 'Inicio',
-            value: ride.source,
-          ),
+          _RoutePoint(label: 'Inicio', value: ride.source),
           const SizedBox(height: 14),
-          _RoutePoint(
-            label: 'Destino',
-            value: ride.destination,
-          ),
+          _RoutePoint(label: 'Destino', value: ride.destination),
           const SizedBox(height: 20),
           const Divider(height: 1, color: Color(0xFFF1F5F9)),
           const SizedBox(height: 18),
@@ -238,10 +232,7 @@ class _InlineNotice extends StatelessWidget {
 }
 
 class _RoutePoint extends StatelessWidget {
-  const _RoutePoint({
-    required this.label,
-    required this.value,
-  });
+  const _RoutePoint({required this.label, required this.value});
 
   final String label;
   final String value;
