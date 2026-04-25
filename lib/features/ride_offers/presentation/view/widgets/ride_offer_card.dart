@@ -39,6 +39,7 @@ class RideOfferCard extends StatelessWidget {
                 child: _DriverInfo(
                   driverName: offer.driverName,
                   rating: offer.ratingText,
+                  cancellationOdds: offer.cancellationOddsText,
                   tripsText: offer.tripsText,
                 ),
               ),
@@ -90,11 +91,13 @@ class _DriverInfo extends StatelessWidget {
   const _DriverInfo({
     required this.driverName,
     required this.rating,
+    required this.cancellationOdds,
     required this.tripsText,
   });
 
   final String driverName;
   final String rating;
+  final String cancellationOdds;
   final String tripsText;
 
   @override
@@ -146,6 +149,25 @@ class _DriverInfo extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                   color: const Color(0xFF94A3B8),
                 ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            const Icon(
+              Icons.event_busy_rounded,
+              size: 18,
+              color: Color(0xFFDC2626),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              cancellationOdds,
+              style: AppTextStyles.primary.copyWith(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF64748B),
               ),
             ),
           ],

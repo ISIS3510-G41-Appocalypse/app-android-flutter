@@ -5,6 +5,7 @@ class RideOfferModel {
   final String id;
   final String driverName;
   final double driverRating;
+  final double cancellationOdds;
   final int tripsCount;
   final int price;
   final String source;
@@ -20,6 +21,7 @@ class RideOfferModel {
     required this.id,
     required this.driverName,
     required this.driverRating,
+    required this.cancellationOdds,
     required this.tripsCount,
     required this.price,
     required this.source,
@@ -37,6 +39,7 @@ class RideOfferModel {
       id: json['id'].toString(),
       driverName: json['driver_name'] as String,
       driverRating: JsonParsers.parseDouble(json['driver_rating']),
+      cancellationOdds: JsonParsers.parseDouble(json['cancellation_odds']),
       tripsCount: JsonParsers.parseInt(json['trips_count']),
       price: JsonParsers.parseInt(json['price']),
       source: json['source'] as String,
@@ -55,6 +58,7 @@ class RideOfferModel {
       id: id,
       driverName: driverName,
       driverRating: driverRating,
+      cancellationOdds: cancellationOdds,
       tripsCount: tripsCount,
       price: price,
       source: source,
@@ -67,5 +71,4 @@ class RideOfferModel {
       type: type,
     );
   }
-
 }

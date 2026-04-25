@@ -2,6 +2,7 @@ class RideOffer {
   final String id;
   final String driverName;
   final double driverRating;
+  final double cancellationOdds;
   final int tripsCount;
   final int price;
   final String source;
@@ -17,6 +18,7 @@ class RideOffer {
     required this.id,
     required this.driverName,
     required this.driverRating,
+    required this.cancellationOdds,
     required this.tripsCount,
     required this.price,
     required this.source,
