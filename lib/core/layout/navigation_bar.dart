@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../app/routes.dart';
+import '../../features/user/domain/entities/user_role.dart';
+import '../../features/user/presentation/view_model/user_cubit.dart';
 import '../theme/app_colors.dart';
 
 enum NavigationBarItem { home, rides, profile }
@@ -40,11 +43,12 @@ class NavigationBar extends StatelessWidget {
         );
         break;
       case NavigationBarItem.rides:
-        Navigator.pushNamedAndRemoveUntil(
-          context,
-          AppRoutes.driverRides,
-          (route) => false,
-        );
+        final activeRole = context.read<UserCubit>().state.activeRole;
+        final route = activeRole == UserRole.rider
+            ? AppRoutes.riderRides
+            : AppRoutes.driverRides;
+
+        Navigator.pushNamedAndRemoveUntil(context, route, (route) => false);
         break;
       case NavigationBarItem.profile:
         Navigator.pushNamed(context, AppRoutes.profile);
