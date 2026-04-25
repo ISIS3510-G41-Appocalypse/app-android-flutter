@@ -157,6 +157,7 @@ class _RideOffersPageState extends State<RideOffersPage> {
                                 state: state,
                                 isReserveEnabled:
                                     !hasActiveRide && !isCheckingAvailability,
+                                onRetry: cubit.loadRideOffers,
                               );
                             },
                           ),

@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/errors/failures.dart';
 import '../../domain/entities/ride_offer_filters.dart';
 import '../../domain/usecases/get_ride_offers.dart';
 import '../../domain/usecases/get_zones.dart';
@@ -30,7 +31,13 @@ class RideOffersCubit extends Cubit<RideOffersState> {
   }
 
   Future<void> loadRideOffers() async {
-    emit(state.copyWith(status: RideOffersStatus.loading, message: null));
+    emit(
+      state.copyWith(
+        status: RideOffersStatus.loading,
+        message: null,
+        isOffline: false,
+      ),
+    );
 
     final result = await getRideOffers(filters: state.filters);
 
@@ -41,6 +48,7 @@ class RideOffersCubit extends Cubit<RideOffersState> {
             status: RideOffersStatus.error,
             message: failure.message,
             offers: const [],
+            isOffline: failure is NetworkFailure,
           ),
         );
       },
@@ -53,6 +61,7 @@ class RideOffersCubit extends Cubit<RideOffersState> {
               status: RideOffersStatus.empty,
               offers: const [],
               message: 'No encontramos ofertas de viaje para esos filtros',
+              isOffline: false,
             ),
           );
           return;
@@ -63,6 +72,7 @@ class RideOffersCubit extends Cubit<RideOffersState> {
             status: RideOffersStatus.success,
             offers: offers,
             message: null,
+            isOffline: false,
           ),
         );
       },

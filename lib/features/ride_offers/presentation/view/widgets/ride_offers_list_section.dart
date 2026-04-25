@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
+import '../../../../../core/widgets/offline_state_card.dart';
 import '../../view_model/ride_offers_state.dart';
 import 'ride_offer_card.dart';
 
@@ -10,10 +11,12 @@ class RideOffersListSection extends StatelessWidget {
     super.key,
     required this.state,
     required this.isReserveEnabled,
+    required this.onRetry,
   });
 
   final RideOffersState state;
   final bool isReserveEnabled;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +47,15 @@ class RideOffersListSection extends StatelessWidget {
           ),
         );
       case RideOffersStatus.error:
+        if (state.isOffline) {
+          return OfflineStateCard(
+            title: 'Sin conexion',
+            message:
+                'No pudimos cargar las ofertas. Algunas funciones requieren internet.',
+            onRetry: onRetry,
+          );
+        }
+
         return _StateCard(
           child: Text(
             state.message ?? 'Ocurrio un error al cargar las ofertas.',

@@ -8,6 +8,7 @@ class DriverRidesState {
   final DriverRidesStatus status;
   final DriverRide? ride;
   final String? message;
+  final bool isOffline;
   final bool isUpdating;
   final String? updatingAction;
 
@@ -15,6 +16,7 @@ class DriverRidesState {
     required this.status,
     required this.ride,
     this.message,
+    required this.isOffline,
     required this.isUpdating,
     this.updatingAction,
   });
@@ -24,6 +26,7 @@ class DriverRidesState {
       status: DriverRidesStatus.initial,
       ride: null,
       message: null,
+      isOffline: false,
       isUpdating: false,
       updatingAction: null,
     );
@@ -33,6 +36,7 @@ class DriverRidesState {
     DriverRidesStatus? status,
     Object? ride = _sentinel,
     Object? message = _sentinel,
+    bool? isOffline,
     bool? isUpdating,
     Object? updatingAction = _sentinel,
   }) {
@@ -40,6 +44,7 @@ class DriverRidesState {
       status: status ?? this.status,
       ride: identical(ride, _sentinel) ? this.ride : ride as DriverRide?,
       message: identical(message, _sentinel) ? this.message : message as String?,
+      isOffline: isOffline ?? this.isOffline,
       isUpdating: isUpdating ?? this.isUpdating,
       updatingAction: identical(updatingAction, _sentinel)
           ? this.updatingAction

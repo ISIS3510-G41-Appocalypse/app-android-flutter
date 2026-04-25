@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 
 import '../../../core/network/dio_client.dart';
+import '../../../core/network/network_checker.dart';
 import '../data/data_sources/ride_offers_remote_datasource.dart';
 import '../data/data_sources/ride_offers_remote_datasource_impl.dart';
 import '../data/repositories/ride_offers_repository_impl.dart';
@@ -17,6 +18,7 @@ void setupRideOffersInjection() {
   sl.registerLazySingleton<RideOffersRepositoryImpl>(
     () => RideOffersRepositoryImpl(
       remoteDataSource: sl<RideOffersRemoteDataSource>(),
+      networkChecker: sl<NetworkChecker>(),
     ),
   );
   sl.registerFactory(() => GetRideOffers(sl<RideOffersRepositoryImpl>()));

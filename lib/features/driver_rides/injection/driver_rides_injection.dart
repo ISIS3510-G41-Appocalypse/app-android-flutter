@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 
 import '../../../core/network/dio_client.dart';
+import '../../../core/network/network_checker.dart';
 import '../data/data_sources/driver_rides_remote_data_source.dart';
 import '../data/data_sources/driver_rides_remote_data_source_impl.dart';
 import '../data/repositories/driver_rides_repository_impl.dart';
@@ -17,6 +18,7 @@ void setupDriverRidesInjection() {
   sl.registerLazySingleton<DriverRidesRepositoryImpl>(
     () => DriverRidesRepositoryImpl(
       remoteDataSource: sl<DriverRidesRemoteDataSource>(),
+      networkChecker: sl<NetworkChecker>(),
     ),
   );
   sl.registerFactory(

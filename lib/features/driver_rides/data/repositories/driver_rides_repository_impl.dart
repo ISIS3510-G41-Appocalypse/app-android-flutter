@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/failures.dart';
+import '../../../../core/network/network_checker.dart';
 import '../../domain/entities/driver_ride.dart';
 import '../../domain/repositories/driver_rides_repository.dart';
 import '../data_sources/driver_rides_remote_data_source.dart';
@@ -9,8 +10,12 @@ import '../models/driver_ride_model.dart';
 
 class DriverRidesRepositoryImpl implements DriverRidesRepository {
   final DriverRidesRemoteDataSource remoteDataSource;
+  final NetworkChecker networkChecker;
 
-  DriverRidesRepositoryImpl({required this.remoteDataSource});
+  DriverRidesRepositoryImpl({
+    required this.remoteDataSource,
+    required this.networkChecker,
+  });
 
   @override
   Future<Either<Failure, DriverRide?>> getActiveDriverRide({
@@ -18,6 +23,12 @@ class DriverRidesRepositoryImpl implements DriverRidesRepository {
   }) async {
     if (driverId == null) {
       return const Right(null);
+    }
+
+    if (!await networkChecker.hasInternet) {
+      return const Left(
+        NetworkFailure('No tienes internet. Revisa tu conexion e intenta de nuevo.'),
+      );
     }
 
     try {
@@ -58,6 +69,14 @@ class DriverRidesRepositoryImpl implements DriverRidesRepository {
     required String rideId,
     required String state,
   }) async {
+    if (!await networkChecker.hasInternet) {
+      return const Left(
+        NetworkFailure(
+          'No tienes internet. Esta accion requiere conexion para completarse.',
+        ),
+      );
+    }
+
     try {
       await remoteDataSource.updateRideState(rideId: rideId, state: state);
       return const Right(null);

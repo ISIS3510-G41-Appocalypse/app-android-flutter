@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../app/routes.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
+import '../../../../../core/widgets/offline_state_card.dart';
 import '../../view_model/driver_rides_cubit.dart';
 import '../../view_model/driver_rides_state.dart';
 import '../models/driver_ride_view_data.dart';
@@ -75,6 +76,17 @@ class DriverRidesContentSection extends StatelessWidget {
           ),
         );
       case DriverRidesStatus.error:
+        if (state.isOffline) {
+          return OfflineStateCard(
+            title: 'Sin conexion',
+            message:
+                'No pudimos cargar tus viajes. Revisa tu conexion e intenta de nuevo.',
+            onRetry: () {
+              context.read<DriverRidesCubit>().reloadActiveRide();
+            },
+          );
+        }
+
         return _StateCard(
           child: Column(
             children: [

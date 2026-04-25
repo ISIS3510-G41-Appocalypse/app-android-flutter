@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/errors/failures.dart';
 import '../../domain/entities/driver_ride.dart';
 import '../../domain/usecases/get_active_driver_ride.dart';
 import '../../domain/usecases/update_ride_state.dart';
@@ -20,7 +21,13 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
 
   Future<void> loadActiveRide({required int? driverId}) async {
     _lastDriverId = driverId;
-    emit(state.copyWith(status: DriverRidesStatus.loading, message: null));
+    emit(
+      state.copyWith(
+        status: DriverRidesStatus.loading,
+        message: null,
+        isOffline: false,
+      ),
+    );
 
     final result = await getActiveDriverRide(driverId: driverId);
 
@@ -31,6 +38,7 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
             status: DriverRidesStatus.error,
             ride: null,
             message: failure.message,
+            isOffline: failure is NetworkFailure,
           ),
         );
       },
@@ -41,6 +49,7 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
               status: DriverRidesStatus.empty,
               ride: null,
               message: 'Aun no tienes un viaje activo como conductor.',
+              isOffline: false,
             ),
           );
           return;
@@ -51,6 +60,7 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
             status: DriverRidesStatus.success,
             ride: ride,
             message: null,
+            isOffline: false,
             isUpdating: false,
             updatingAction: null,
           ),
@@ -117,6 +127,7 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
             isUpdating: false,
             updatingAction: null,
             message: failure.message,
+            isOffline: failure is NetworkFailure,
           ),
         );
       },
@@ -126,6 +137,7 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
             isUpdating: false,
             updatingAction: null,
             message: null,
+            isOffline: false,
           ),
         );
         await reloadActiveRide();
