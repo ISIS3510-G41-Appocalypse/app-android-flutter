@@ -536,8 +536,13 @@ class _CreateRideFormState extends State<CreateRideForm> {
   Widget build(BuildContext context) {
     return BlocConsumer<CreateRideCubit, CreateRideState>(
       listener: (context, state) {
-        if (!_restoredDraftApplied && state.restoredDraft != null) {
+        if (state.restoredDraft != null) {
           _applyDraft(state.restoredDraft!);
+        }
+
+        if (!_restoredDraftApplied &&
+            state.restoredDraft != null &&
+            state.shouldAnnounceRestoredDraft) {
           context.read<CreateRideCubit>().consumeRestoredDraft();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

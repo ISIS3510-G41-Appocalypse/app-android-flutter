@@ -42,6 +42,7 @@ class CreateRideState {
   final Zone? selectedZone;
   final String? message;
   final RideFormDraft? restoredDraft;
+  final bool shouldAnnounceRestoredDraft;
   final bool hasPendingRideForm;
   final bool navigateToDriverRides;
 
@@ -53,6 +54,7 @@ class CreateRideState {
     this.selectedZone,
     this.message,
     this.restoredDraft,
+    this.shouldAnnounceRestoredDraft = false,
     this.hasPendingRideForm = false,
     this.navigateToDriverRides = false,
   });
@@ -76,6 +78,7 @@ class CreateRideState {
     bool clearMessage = false,
     RideFormDraft? restoredDraft,
     bool clearRestoredDraft = false,
+    bool? shouldAnnounceRestoredDraft,
     bool? hasPendingRideForm,
     bool? navigateToDriverRides,
   }) {
@@ -92,6 +95,8 @@ class CreateRideState {
       restoredDraft: clearRestoredDraft
           ? null
           : (restoredDraft ?? this.restoredDraft),
+      shouldAnnounceRestoredDraft:
+          shouldAnnounceRestoredDraft ?? this.shouldAnnounceRestoredDraft,
       hasPendingRideForm: hasPendingRideForm ?? this.hasPendingRideForm,
       navigateToDriverRides:
           navigateToDriverRides ?? this.navigateToDriverRides,
