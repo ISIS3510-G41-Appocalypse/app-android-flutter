@@ -1,4 +1,5 @@
 import '../../domain/entities/user.dart';
+import 'profile_model.dart';
 
 class UserModel extends User {
   const UserModel({
@@ -8,15 +9,15 @@ class UserModel extends User {
     required super.zoneId,
     required super.authId,
     required super.email,
-    super.riderId,
-    super.driverId,
+    super.rider,
+    super.driver,
   });
 
   factory UserModel.fromJson(
     Map<String, dynamic> json, {
     required String email,
-    int? riderId,
-    int? driverId,
+    ProfileModel? rider,
+    ProfileModel? driver,
   }) {
     return UserModel(
       id: json['id'] as int,
@@ -25,21 +26,8 @@ class UserModel extends User {
       zoneId: json['zone_id'] as int? ?? 0,
       authId: json['auth_id'] as String? ?? '',
       email: email,
-      riderId: riderId,
-      driverId: driverId,
+      rider: rider,
+      driver: driver,
     );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'first_name': firstName,
-      'last_name': lastName,
-      'zone_id': zoneId,
-      'auth_id': authId,
-      'email': email,
-      'rider_id': riderId,
-      'driver_id': driverId,
-    };
   }
 }

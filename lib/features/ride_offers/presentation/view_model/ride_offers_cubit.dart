@@ -1,5 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/errors/failures.dart';
+import '../../../rider_rides/domain/usecases/create_reservation.dart';
 import '../../domain/entities/ride_offer_filters.dart';
 import '../../domain/usecases/get_ride_offers.dart';
 import '../../domain/usecases/get_zones.dart';
@@ -9,18 +11,30 @@ import 'ride_offers_state.dart';
 class RideOffersCubit extends Cubit<RideOffersState> {
   final GetRideOffers getRideOffers;
   final GetZones getZones;
+  final CreateReservation createReservation;
   String? _preferredZoneId;
+  String? _excludedRideId;
 
-  RideOffersCubit({required this.getRideOffers, required this.getZones})
-    : super(RideOffersState.initial());
+  RideOffersCubit({
+    required this.getRideOffers,
+    required this.getZones,
+    required this.createReservation,
+  }) : super(RideOffersState.initial());
 
-  Future<void> loadInitialData({String? preferredZoneId}) async {
+  Future<void> loadInitialData({
+    String? preferredZoneId,
+    String? excludedRideId,
+  }) async {
     _preferredZoneId = preferredZoneId;
+    _excludedRideId = excludedRideId;
 
-    if (preferredZoneId != null) {
+    if (preferredZoneId != null || excludedRideId != null) {
       emit(
         state.copyWith(
-          filters: state.filters.copyWith(zoneId: preferredZoneId),
+          filters: state.filters.copyWith(
+            zoneId: preferredZoneId,
+            excludedRideId: excludedRideId,
+          ),
         ),
       );
     }
@@ -30,7 +44,14 @@ class RideOffersCubit extends Cubit<RideOffersState> {
   }
 
   Future<void> loadRideOffers() async {
-    emit(state.copyWith(status: RideOffersStatus.loading, message: null));
+    emit(
+      state.copyWith(
+        status: RideOffersStatus.loading,
+        message: null,
+        isOffline: false,
+        reservationCreated: false,
+      ),
+    );
 
     final result = await getRideOffers(filters: state.filters);
 
@@ -41,6 +62,8 @@ class RideOffersCubit extends Cubit<RideOffersState> {
             status: RideOffersStatus.error,
             message: failure.message,
             offers: const [],
+            isOffline: failure is NetworkFailure,
+            reservationCreated: false,
           ),
         );
       },
@@ -53,6 +76,8 @@ class RideOffersCubit extends Cubit<RideOffersState> {
               status: RideOffersStatus.empty,
               offers: const [],
               message: 'No encontramos ofertas de viaje para esos filtros',
+              isOffline: false,
+              reservationCreated: false,
             ),
           );
           return;
@@ -63,6 +88,8 @@ class RideOffersCubit extends Cubit<RideOffersState> {
             status: RideOffersStatus.success,
             offers: offers,
             message: null,
+            isOffline: false,
+            reservationCreated: false,
           ),
         );
       },
@@ -144,8 +171,84 @@ class RideOffersCubit extends Cubit<RideOffersState> {
   }
 
   Future<void> clearFilters() async {
-    emit(state.copyWith(filters: RideOfferFilters(zoneId: _preferredZoneId)));
+    emit(
+      state.copyWith(
+        filters: RideOfferFilters(
+          zoneId: _preferredZoneId,
+          excludedRideId: _excludedRideId,
+        ),
+      ),
+    );
 
     await loadRideOffers();
+  }
+
+  Future<void> updateExcludedRideId(String? rideId) async {
+    if (_excludedRideId == rideId) {
+      return;
+    }
+
+    _excludedRideId = rideId;
+    emit(
+      state.copyWith(
+        filters: state.filters.copyWith(
+          excludedRideId: rideId,
+          clearExcludedRideId: rideId == null,
+        ),
+      ),
+    );
+
+    await loadRideOffers();
+  }
+
+  Future<void> reserveRide({
+    required RideOfferViewData offer,
+    required int? riderId,
+  }) async {
+    if (state.isReserving) {
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        isReserving: true,
+        reservingRideId: offer.id,
+        message: null,
+        isOffline: false,
+        reservationCreated: false,
+      ),
+    );
+
+    final result = await createReservation(
+      rideId: offer.id,
+      riderId: riderId,
+      meetingPoint: offer.source,
+      destinationPoint: offer.destination,
+    );
+
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            isReserving: false,
+            reservingRideId: null,
+            message: failure.message,
+            isOffline: failure is NetworkFailure,
+            reservationCreated: false,
+          ),
+        );
+      },
+      (_) {
+        emit(
+          state.copyWith(
+            isReserving: false,
+            reservingRideId: null,
+            message: null,
+            isOffline: false,
+            reservationCreated: true,
+          ),
+        );
+      },
+    );
   }
 }

@@ -4,6 +4,7 @@ class RideOfferViewData {
   final String id;
   final String driverName;
   final String ratingText;
+  final String cancellationOddsText;
   final String tripsText;
   final String priceText;
   final String source;
@@ -18,6 +19,7 @@ class RideOfferViewData {
     required this.id,
     required this.driverName,
     required this.ratingText,
+    required this.cancellationOddsText,
     required this.tripsText,
     required this.priceText,
     required this.source,
@@ -34,6 +36,8 @@ class RideOfferViewData {
       id: offer.id,
       driverName: offer.driverName,
       ratingText: offer.driverRating.toStringAsFixed(1),
+      cancellationOddsText:
+          '${(offer.cancellationOdds * 100).toStringAsFixed(0)}% cancelacion',
       tripsText: offer.tripsCount == 1
           ? '1 viaje'
           : '${offer.tripsCount} viajes',

@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:dio_cache_plus/dio_cache_plus.dart';
 
 import '../../../../core/errors/error_handler.dart';
 import '../../../../core/errors/exceptions.dart';
@@ -18,7 +19,7 @@ class RideOffersRemoteDataSourceImpl implements RideOffersRemoteDataSource {
       path: _rideOffersViewPath,
       queryParameters: const {
         'select':
-            'id,driver_name,driver_rating,trips_count,price,source,destination,date,departure_time,slots,car_model,zone_name,type,state,zone_id',
+            'id,driver_name,driver_rating,cancellation_odds,trips_count,price,source,destination,date,departure_time,slots,car_model,zone_name,type,state,zone_id',
         'order': 'driver_rating.desc',
       },
     );
@@ -29,15 +30,24 @@ class RideOffersRemoteDataSourceImpl implements RideOffersRemoteDataSource {
     return _getTableRows(
       path: _zonesPath,
       queryParameters: const {'select': 'id,name'},
+      options: Options().setCachingWithDuration(
+        enableCache: true,
+        duration: const Duration(hours: 6),
+      ),
     );
   }
 
   Future<List<Map<String, dynamic>>> _getTableRows({
     required String path,
     required Map<String, dynamic> queryParameters,
+    Options? options,
   }) async {
     try {
-      final response = await dio.get(path, queryParameters: queryParameters);
+      final response = await dio.get(
+        path,
+        queryParameters: queryParameters,
+        options: options,
+      );
 
       final data = response.data;
 

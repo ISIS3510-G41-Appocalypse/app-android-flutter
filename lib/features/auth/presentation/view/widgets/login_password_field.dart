@@ -29,57 +29,50 @@ class LoginPasswordField extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        Stack(
-          children: [
-            TextFormField(
-              controller: controller,
-              validator: validator,
-              obscureText: true,
-              inputFormatters: [LengthLimitingTextInputFormatter(32)],
-              style: const TextStyle(color: Color(0xFF1e293b)),
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: AppColors.gray50,
-                hintText: '••••••••',
-                hintStyle: const TextStyle(color: AppColors.slate400),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 48),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(16)),
-                  borderSide: BorderSide(
-                    color: AppColors.slate400,
-                    width: 1.5,
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(16)),
-                  borderSide: BorderSide(
-                    color: AppColors.slate400,
-                    width: 1.5,
-                  ),
-                ),
-                errorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(16)),
-                  borderSide: BorderSide(
-                    color: AppColors.errorRed,
-                    width: 1.5,
-                  ),
-                ),
-                focusedErrorBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.all(Radius.circular(16)),
-                  borderSide: BorderSide(
-                    color: AppColors.errorRed,
-                    width: 1.5,
-                  ),
-                ),
+        TextFormField(
+          controller: controller,
+          validator: validator,
+          obscureText: true,
+          inputFormatters: [LengthLimitingTextInputFormatter(32)],
+          style: const TextStyle(color: Color(0xFF1e293b)),
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: AppColors.gray50,
+            hintText: '••••••••',
+            hintStyle: const TextStyle(color: AppColors.slate400),
+            prefixIcon: const Icon(Icons.lock, color: AppColors.slate400),
+            contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(16)),
+              borderSide: BorderSide(
+                color: AppColors.slate400,
+                width: 1.5,
               ),
             ),
-            const Positioned(
-              left: 16,
-              top: 0,
-              bottom: 0,
-              child: Icon(Icons.lock, color: AppColors.slate400),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(16)),
+              borderSide: BorderSide(
+                color: AppColors.slate400,
+                width: 1.5,
+              ),
             ),
-          ],
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(16)),
+              borderSide: BorderSide(
+                color: AppColors.errorRed,
+                width: 1.5,
+              ),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.all(Radius.circular(16)),
+              borderSide: BorderSide(
+                color: AppColors.errorRed,
+                width: 1.5,
+              ),
+            ),
+            errorMaxLines: 2,
+          ),
         ),
       ],
     );

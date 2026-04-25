@@ -8,19 +8,13 @@ class SessionStorage {
 
   static const String _accessTokenKey = 'access_token';
   static const String _refreshTokenKey = 'refresh_token';
-  static const String _authIdKey = 'auth_id';
-  static const String _emailKey = 'email';
 
   Future<void> saveSession({
     required String accessToken,
     required String refreshToken,
-    required String authId,
-    required String email,
   }) async {
     await _storage.write(key: _accessTokenKey, value: accessToken);
     await _storage.write(key: _refreshTokenKey, value: refreshToken);
-    await _storage.write(key: _authIdKey, value: authId);
-    await _storage.write(key: _emailKey, value: email);
   }
 
   Future<String?> getAccessToken() async {
@@ -31,23 +25,29 @@ class SessionStorage {
     return _storage.read(key: _refreshTokenKey);
   }
 
-  Future<String?> getAuthId() async {
-    return _storage.read(key: _authIdKey);
-  }
+  Future<({String accessToken, String refreshToken})?> getSession() async {
+    final accessToken = await getAccessToken();
+    final refreshToken = await getRefreshToken();
 
-  Future<String?> getEmail() async {
-    return _storage.read(key: _emailKey);
+    if (accessToken == null ||
+        accessToken.isEmpty ||
+        refreshToken == null ||
+        refreshToken.isEmpty) {
+      return null;
+    }
+
+    return (
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+    );
   }
 
   Future<void> clearSession() async {
     await _storage.delete(key: _accessTokenKey);
     await _storage.delete(key: _refreshTokenKey);
-    await _storage.delete(key: _authIdKey);
-    await _storage.delete(key: _emailKey);
   }
 
   Future<bool> hasSession() async {
-    final token = await getAccessToken();
-    return token != null && token.isNotEmpty;
+    return (await getSession()) != null;
   }
 }

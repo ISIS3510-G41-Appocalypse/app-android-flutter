@@ -154,15 +154,21 @@ class RideOffersFiltersSection extends StatelessWidget {
   }
 
   Future<void> _selectDate(BuildContext context) async {
+    final today = _dateOnly(DateTime.now());
+    final initialDate = date == null || date!.isBefore(today) ? today : date!;
     final selectedDate = await showDatePicker(
       context: context,
-      initialDate: date ?? DateTime.now(),
-      firstDate: DateTime.now().subtract(const Duration(days: 365)),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: initialDate,
+      firstDate: today,
+      lastDate: today.add(const Duration(days: 365)),
     );
 
     if (selectedDate != null) {
       onDateChanged(selectedDate);
+
+      if (_isToday(selectedDate) && time != null && _isPastTimeToday(time!)) {
+        onTimeChanged(null);
+      }
     }
   }
 
@@ -173,6 +179,11 @@ class RideOffersFiltersSection extends StatelessWidget {
     );
 
     if (selectedTime != null) {
+      if ((date == null || _isToday(date!)) && _isPastTime(selectedTime)) {
+        onTimeChanged(null);
+        return;
+      }
+
       onTimeChanged(_formatTimeValue(selectedTime));
     }
   }
@@ -308,6 +319,44 @@ class RideOffersFiltersSection extends StatelessWidget {
     final minute = selectedTime.minute.toString().padLeft(2, '0');
 
     return '$hour:$minute:00';
+  }
+
+  DateTime _dateOnly(DateTime value) {
+    return DateTime(value.year, value.month, value.day);
+  }
+
+  bool _isToday(DateTime value) {
+    final today = DateTime.now();
+    return value.year == today.year &&
+        value.month == today.month &&
+        value.day == today.day;
+  }
+
+  bool _isPastTime(TimeOfDay selectedTime) {
+    final now = TimeOfDay.now();
+
+    if (selectedTime.hour < now.hour) {
+      return true;
+    }
+
+    return selectedTime.hour == now.hour && selectedTime.minute < now.minute;
+  }
+
+  bool _isPastTimeToday(String value) {
+    final parts = value.split(':');
+
+    if (parts.length < 2) {
+      return false;
+    }
+
+    final hour = int.tryParse(parts[0]);
+    final minute = int.tryParse(parts[1]);
+
+    if (hour == null || minute == null) {
+      return false;
+    }
+
+    return _isPastTime(TimeOfDay(hour: hour, minute: minute));
   }
 }
 

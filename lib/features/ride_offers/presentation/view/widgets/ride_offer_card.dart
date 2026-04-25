@@ -9,10 +9,14 @@ class RideOfferCard extends StatelessWidget {
     super.key,
     required this.offer,
     required this.isReserveEnabled,
+    required this.isReserving,
+    required this.onReserve,
   });
 
   final RideOfferViewData offer;
   final bool isReserveEnabled;
+  final bool isReserving;
+  final VoidCallback onReserve;
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +43,7 @@ class RideOfferCard extends StatelessWidget {
                 child: _DriverInfo(
                   driverName: offer.driverName,
                   rating: offer.ratingText,
+                  cancellationOdds: offer.cancellationOddsText,
                   tripsText: offer.tripsText,
                 ),
               ),
@@ -77,7 +82,11 @@ class RideOfferCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              _ReserveButton(isEnabled: isReserveEnabled),
+              _ReserveButton(
+                isEnabled: isReserveEnabled,
+                isLoading: isReserving,
+                onPressed: onReserve,
+              ),
             ],
           ),
         ],
@@ -90,11 +99,13 @@ class _DriverInfo extends StatelessWidget {
   const _DriverInfo({
     required this.driverName,
     required this.rating,
+    required this.cancellationOdds,
     required this.tripsText,
   });
 
   final String driverName;
   final String rating;
+  final String cancellationOdds;
   final String tripsText;
 
   @override
@@ -146,6 +157,25 @@ class _DriverInfo extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                   color: const Color(0xFF94A3B8),
                 ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            const Icon(
+              Icons.event_busy_rounded,
+              size: 18,
+              color: Color(0xFFDC2626),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              cancellationOdds,
+              style: AppTextStyles.primary.copyWith(
+                fontSize: 15,
+                fontWeight: FontWeight.w500,
+                color: const Color(0xFF64748B),
               ),
             ),
           ],
@@ -315,16 +345,22 @@ class _MiniInfo extends StatelessWidget {
 }
 
 class _ReserveButton extends StatelessWidget {
-  const _ReserveButton({required this.isEnabled});
+  const _ReserveButton({
+    required this.isEnabled,
+    required this.isLoading,
+    required this.onPressed,
+  });
 
   final bool isEnabled;
+  final bool isLoading;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: 40,
       child: ElevatedButton(
-        onPressed: isEnabled ? () {} : null,
+        onPressed: isEnabled && !isLoading ? onPressed : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.amber700,
           disabledBackgroundColor: AppColors.amber700.withValues(alpha: 0.55),
@@ -336,7 +372,7 @@ class _ReserveButton extends StatelessWidget {
           ),
         ),
         child: Text(
-          'Reservar',
+          isLoading ? 'Reservando...' : 'Reservar',
           style: AppTextStyles.primary.copyWith(
             fontSize: 14,
             fontWeight: FontWeight.w700,

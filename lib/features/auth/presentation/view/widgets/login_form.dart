@@ -31,7 +31,11 @@ class _LoginFormState extends State<LoginForm> {
   }
 
   void _submit() {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      context.read<AuthCubit>().clearError();
+      return;
+    }
+    ScaffoldMessenger.of(context).clearSnackBars();
     context.read<AuthCubit>().login(
       email: _emailController.text.trim(),
       password: _passwordController.text.trim(),

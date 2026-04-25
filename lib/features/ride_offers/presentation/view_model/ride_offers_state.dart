@@ -12,6 +12,10 @@ class RideOffersState {
   final List<RideOfferViewData> offers;
   final List<Zone> zones;
   final String? message;
+  final bool isOffline;
+  final bool isReserving;
+  final String? reservingRideId;
+  final bool reservationCreated;
 
   const RideOffersState({
     required this.status,
@@ -19,6 +23,10 @@ class RideOffersState {
     required this.offers,
     required this.zones,
     this.message,
+    required this.isOffline,
+    required this.isReserving,
+    this.reservingRideId,
+    required this.reservationCreated,
   });
 
   factory RideOffersState.initial() {
@@ -27,6 +35,10 @@ class RideOffersState {
       filters: RideOfferFilters(),
       offers: [],
       zones: [],
+      isOffline: false,
+      isReserving: false,
+      reservingRideId: null,
+      reservationCreated: false,
     );
   }
 
@@ -36,6 +48,10 @@ class RideOffersState {
     List<RideOfferViewData>? offers,
     List<Zone>? zones,
     Object? message = _sentinel,
+    bool? isOffline,
+    bool? isReserving,
+    Object? reservingRideId = _sentinel,
+    bool? reservationCreated,
   }) {
     return RideOffersState(
       status: status ?? this.status,
@@ -45,6 +61,12 @@ class RideOffersState {
       message: identical(message, _sentinel)
           ? this.message
           : message as String?,
+      isOffline: isOffline ?? this.isOffline,
+      isReserving: isReserving ?? this.isReserving,
+      reservingRideId: identical(reservingRideId, _sentinel)
+          ? this.reservingRideId
+          : reservingRideId as String?,
+      reservationCreated: reservationCreated ?? this.reservationCreated,
     );
   }
 }

@@ -12,6 +12,9 @@ class AuthSessionListener extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocListener<AuthCubit, AuthState>(
       listener: (context, state) {
+        if (state.status == AuthStatus.loading) {
+          ScaffoldMessenger.of(context).clearSnackBars();
+        }
         if (state.status == AuthStatus.unauthenticated) {
           Navigator.pushNamedAndRemoveUntil(
             context,

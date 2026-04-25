@@ -1,9 +1,11 @@
+import '../../../../core/helpers/json_parsers.dart';
 import '../../domain/entities/ride_offer.dart';
 
 class RideOfferModel {
   final String id;
   final String driverName;
   final double driverRating;
+  final double cancellationOdds;
   final int tripsCount;
   final int price;
   final String source;
@@ -19,6 +21,7 @@ class RideOfferModel {
     required this.id,
     required this.driverName,
     required this.driverRating,
+    required this.cancellationOdds,
     required this.tripsCount,
     required this.price,
     required this.source,
@@ -35,14 +38,15 @@ class RideOfferModel {
     return RideOfferModel(
       id: json['id'].toString(),
       driverName: json['driver_name'] as String,
-      driverRating: _toDouble(json['driver_rating']),
-      tripsCount: _toInt(json['trips_count']),
-      price: _toInt(json['price']),
+      driverRating: JsonParsers.parseDouble(json['driver_rating']),
+      cancellationOdds: JsonParsers.parseDouble(json['cancellation_odds']),
+      tripsCount: JsonParsers.parseInt(json['trips_count']),
+      price: JsonParsers.parseInt(json['price']),
       source: json['source'] as String,
       destination: json['destination'] as String,
       date: DateTime.parse(json['date'] as String),
       departureTime: json['departure_time'] as String,
-      slots: _toInt(json['slots']),
+      slots: JsonParsers.parseInt(json['slots']),
       carModel: json['car_model'] as String,
       zoneName: json['zone_name'] as String,
       type: json['type'] as String,
@@ -54,6 +58,7 @@ class RideOfferModel {
       id: id,
       driverName: driverName,
       driverRating: driverRating,
+      cancellationOdds: cancellationOdds,
       tripsCount: tripsCount,
       price: price,
       source: source,
@@ -65,17 +70,5 @@ class RideOfferModel {
       zoneName: zoneName,
       type: type,
     );
-  }
-
-  static int _toInt(dynamic value) {
-    if (value is int) return value;
-    if (value is double) return value.toInt();
-    return int.tryParse(value.toString()) ?? 0;
-  }
-
-  static double _toDouble(dynamic value) {
-    if (value is double) return value;
-    if (value is int) return value.toDouble();
-    return double.tryParse(value.toString()) ?? 0;
   }
 }
