@@ -7,13 +7,33 @@ import '../features/driver_rides/injection/driver_rides_injection.dart';
 import '../features/ride_offers/injection/ride_offers_injection.dart';
 import '../features/rider_rides/injection/rider_rides_injection.dart';
 import '../features/user/injection/user_injection.dart';
+import '../core/storage/ride_form_offline_storage.dart';
+import '../features/rides/data/datasources/rides_remote_datasource.dart';
+import '../features/rides/domain/repositories/rides_offline_sync_repository.dart';
 
 final sl = GetIt.instance;
 
-void setupLocator() {
+Future<void> setupLocator() async {
   sl.registerLazySingleton<SessionStorage>(() => SessionStorage());
   sl.registerLazySingleton<NetworkChecker>(() => NetworkChecker());
   sl.registerLazySingleton<DioClient>(() => DioClient(sessionStorage: sl()));
+  sl.registerLazySingleton<RidesRemoteDatasource>(
+    () => RidesRemoteDatasource(client: sl<DioClient>()),
+  );
+
+  // Offline storage for rides form
+  final offlineStorage = RideFormOfflineStorage();
+  await offlineStorage.initialize();
+  sl.registerLazySingleton<RideFormOfflineStorage>(() => offlineStorage);
+
+  // Offline sync repository
+  sl.registerLazySingleton<RidesOfflineSyncRepository>(
+    () => RidesOfflineSyncRepository(
+      networkChecker: sl<NetworkChecker>(),
+      offlineStorage: sl<RideFormOfflineStorage>(),
+      remoteDatasource: sl<RidesRemoteDatasource>(),
+    ),
+  );
 
   setupAuthInjection();
   setupDriverRidesInjection();

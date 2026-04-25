@@ -16,6 +16,25 @@ class DriverRidesContentSection extends StatelessWidget {
 
   final DriverRidesState state;
 
+  String _friendlyMessage(String? message) {
+    final raw = message?.trim();
+    if (raw == null || raw.isEmpty) {
+      return 'Ocurrio un error al cargar tu viaje.';
+    }
+
+    final normalized = raw.toLowerCase();
+    if (normalized.contains('connection reset by peer') ||
+        normalized.contains('socketexception') ||
+        normalized.contains('connection errored') ||
+        normalized.contains('failed host lookup') ||
+        normalized.contains('network is unreachable') ||
+        normalized.contains('no tienes internet')) {
+      return 'No tienes internet en este momento. Cuando vuelva la conexion podras publicar o consultar tu viaje.';
+    }
+
+    return raw;
+  }
+
   @override
   Widget build(BuildContext context) {
     switch (state.status) {
@@ -92,7 +111,7 @@ class DriverRidesContentSection extends StatelessWidget {
           child: Column(
             children: [
               Text(
-                state.message ?? 'Ocurrio un error al cargar tu viaje.',
+                _friendlyMessage(state.message),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 18),

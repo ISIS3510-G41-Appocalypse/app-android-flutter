@@ -8,6 +8,6 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppOrientation.lockPortrait();
   await dotenv.load(fileName: ".env");
-  setupLocator();
+  await setupLocator();
   runApp(const MyApp());
 }
