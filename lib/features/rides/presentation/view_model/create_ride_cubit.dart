@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/network/dio_client.dart';
@@ -13,21 +11,15 @@ import 'create_ride_state.dart';
 class CreateRideCubit extends Cubit<CreateRideState> {
   final RidesRepositoryImpl repository;
   final RidesOfflineSyncRepository syncRepository;
-  final int _userId;
-
-  StreamSubscription<RideSyncResult>? _connectivitySubscription;
+  final int _driverId;
 
   CreateRideCubit({
     required DioClient client,
     required this.syncRepository,
-    required int userId,
+    required int driverId,
   })  : repository = RidesRepositoryImpl(client: client),
-        _userId = userId,
-        super(const CreateRideState()) {
-    _connectivitySubscription = syncRepository
-        .listenToConnectivityChanges()
-        .listen(_handleConnectivitySyncResult);
-  }
+        _driverId = driverId,
+        super(const CreateRideState());
 
   String? validateRequired(String? value, String fieldName) {
     if (value == null || value.trim().isEmpty) return '$fieldName es requerido';
@@ -53,10 +45,8 @@ class CreateRideCubit extends Cubit<CreateRideState> {
     );
 
     try {
-      final driverId = await repository.getDriverIdByUserId(_userId);
-
       final results = await Future.wait([
-        repository.getVehiclesByDriver(driverId),
+        repository.getVehiclesByDriver(_driverId),
         repository.getZones(),
       ]);
 
@@ -86,13 +76,11 @@ class CreateRideCubit extends Cubit<CreateRideState> {
           selectedVehicle: _findVehicleById(vehicles, pendingDraft?.vehicleId),
           selectedZone: _findZoneById(zones, pendingDraft?.zoneId),
           restoredDraft: pendingDraft,
-          hasPendingRideForm: pendingDraft != null,
+          hasPendingRideForm: false,
           navigateToDriverRides: false,
           clearMessage: true,
         ),
       );
-
-      await syncPendingRideIfPossible();
     } catch (e) {
       emit(
         state.copyWith(
@@ -150,10 +138,8 @@ class CreateRideCubit extends Cubit<CreateRideState> {
     );
 
     try {
-      final driverId = await repository.getDriverIdByUserId(_userId);
-
       final ride = RideModel(
-        driverId: driverId,
+        driverId: _driverId,
         vehicleId: state.selectedVehicle!.id,
         zoneId: state.selectedZone!.id,
         source: source.trim(),
@@ -189,23 +175,6 @@ class CreateRideCubit extends Cubit<CreateRideState> {
     }
   }
 
-  Future<void> syncPendingRideIfPossible() async {
-    if (!state.hasPendingRideForm) return;
-
-    final hasInternet = await syncRepository.networkChecker.hasInternet;
-    if (!hasInternet) return;
-
-    emit(
-      state.copyWith(
-        status: CreateRideStatus.syncing,
-        message: 'Conexion restaurada. Sincronizando viaje...',
-      ),
-    );
-
-    final result = await syncRepository.syncPendingRide();
-    _applySyncResult(result);
-  }
-
   void consumeMessage() {
     if (state.message == null && !state.navigateToDriverRides) return;
 
@@ -213,7 +182,6 @@ class CreateRideCubit extends Cubit<CreateRideState> {
       CreateRideStatus.success => CreateRideStatus.ready,
       CreateRideStatus.error => CreateRideStatus.ready,
       CreateRideStatus.offlineQueued => CreateRideStatus.ready,
-      CreateRideStatus.syncing => CreateRideStatus.ready,
       _ => state.status,
     };
 
@@ -236,8 +204,45 @@ class CreateRideCubit extends Cubit<CreateRideState> {
     );
   }
 
+  Future<void> saveDraft({
+    int? vehicleId,
+    int? zoneId,
+    required String source,
+    required String destination,
+    required String date,
+    required String departureTime,
+    required String type,
+    required String price,
+  }) async {
+    final hasUsefulData = source.trim().isNotEmpty ||
+        destination.trim().isNotEmpty ||
+        date.trim().isNotEmpty ||
+        departureTime.trim().isNotEmpty ||
+        price.trim().isNotEmpty ||
+        vehicleId != null ||
+        zoneId != null;
+
+    if (!hasUsefulData) {
+      await syncRepository.clearRideDraft();
+      return;
+    }
+
+    await syncRepository.saveRideDraft({
+      'driver_id': _driverId,
+      'vehicle_id': vehicleId,
+      'zone_id': zoneId,
+      'source': source.trim(),
+      'destination': destination.trim(),
+      'date': date.trim(),
+      'departure_time': departureTime.trim(),
+      'state': 'OFERTADO',
+      'type': type,
+      'price': double.tryParse(price.trim()) ?? 0,
+    });
+  }
+
   RideFormDraft? _restorePendingDraft() {
-    final pendingForm = syncRepository.getPendingRideForm();
+    final pendingForm = syncRepository.getRestorableRideForm();
     if (pendingForm == null) return null;
 
     return RideFormDraft(
@@ -268,11 +273,6 @@ class CreateRideCubit extends Cubit<CreateRideState> {
     return null;
   }
 
-  void _handleConnectivitySyncResult(RideSyncResult result) {
-    if (isClosed) return;
-    _applySyncResult(result);
-  }
-
   void _applySyncResult(
     RideSyncResult result, {
     RideFormDraft? fallbackDraft,
@@ -289,43 +289,26 @@ class CreateRideCubit extends Cubit<CreateRideState> {
           ),
         );
         break;
-      case RideSyncStatus.waitingForConnection:
+      case RideSyncStatus.networkError:
         emit(
           state.copyWith(
             status: CreateRideStatus.offlineQueued,
             message: result.message,
-            hasPendingRideForm: true,
+            hasPendingRideForm: false,
             restoredDraft: fallbackDraft ?? state.restoredDraft,
           ),
         );
         break;
-      case RideSyncStatus.syncing:
-        emit(
-          state.copyWith(
-            status: CreateRideStatus.syncing,
-            message: result.message,
-            hasPendingRideForm: true,
-          ),
-        );
-        break;
-      case RideSyncStatus.networkError:
       case RideSyncStatus.serverError:
       case RideSyncStatus.error:
         emit(
           state.copyWith(
             status: CreateRideStatus.error,
             message: result.message,
-            hasPendingRideForm:
-                syncRepository.getPendingRideForm() != null,
+            hasPendingRideForm: false,
           ),
         );
         break;
     }
-  }
-
-  @override
-  Future<void> close() async {
-    await _connectivitySubscription?.cancel();
-    return super.close();
   }
 }

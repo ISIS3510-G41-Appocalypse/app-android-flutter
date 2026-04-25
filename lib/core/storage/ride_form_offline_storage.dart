@@ -1,10 +1,9 @@
 import 'package:hive_flutter/hive_flutter.dart';
 
-/// Clase para manejar el almacenamiento local de formularios de viajes
-/// cuando no hay conexión a internet
 class RideFormOfflineStorage {
   static const String _boxName = 'ride_form_cache';
-  static const String _formDataKey = 'pending_ride_form';
+  static const String _pendingFormKey = 'pending_ride_form';
+  static const String _draftFormKey = 'ride_form_draft';
 
   late Box<Map> _box;
 
@@ -13,43 +12,38 @@ class RideFormOfflineStorage {
     _box = await Hive.openBox<Map>(_boxName);
   }
 
-  
   Future<void> savePendingRideForm(Map<String, dynamic> formData) async {
-    try {
-      await _box.put(_formDataKey, formData);
-    } catch (e) {
-      throw Exception('Error al guardar formulario: $e');
-    }
+    await _saveMap(_pendingFormKey, formData, 'guardar formulario pendiente');
   }
 
-  
   Map<String, dynamic>? getPendingRideForm() {
-    try {
-      final data = _box.get(_formDataKey);
-      if (data != null) {
-        return Map<String, dynamic>.from(data);
-      }
-      return null;
-    } catch (e) {
-      throw Exception('Error al obtener formulario: $e');
-    }
+    return _getMap(_pendingFormKey, 'obtener formulario pendiente');
   }
-
 
   bool hasPendingRideForm() {
-    return _box.containsKey(_formDataKey);
+    return _box.containsKey(_pendingFormKey);
   }
 
-  
   Future<void> clearPendingRideForm() async {
-    try {
-      await _box.delete(_formDataKey);
-    } catch (e) {
-      throw Exception('Error al eliminar formulario: $e');
-    }
+    await _deleteKey(_pendingFormKey, 'eliminar formulario pendiente');
   }
 
-  
+  Future<void> saveDraftRideForm(Map<String, dynamic> formData) async {
+    await _saveMap(_draftFormKey, formData, 'guardar borrador del formulario');
+  }
+
+  Map<String, dynamic>? getDraftRideForm() {
+    return _getMap(_draftFormKey, 'obtener borrador del formulario');
+  }
+
+  bool hasDraftRideForm() {
+    return _box.containsKey(_draftFormKey);
+  }
+
+  Future<void> clearDraftRideForm() async {
+    await _deleteKey(_draftFormKey, 'eliminar borrador del formulario');
+  }
+
   Future<void> clear() async {
     try {
       await _box.clear();
@@ -58,8 +52,39 @@ class RideFormOfflineStorage {
     }
   }
 
-  
   Future<void> close() async {
     await _box.close();
+  }
+
+  Future<void> _saveMap(
+    String key,
+    Map<String, dynamic> formData,
+    String action,
+  ) async {
+    try {
+      await _box.put(key, formData);
+    } catch (e) {
+      throw Exception('Error al $action: $e');
+    }
+  }
+
+  Map<String, dynamic>? _getMap(String key, String action) {
+    try {
+      final data = _box.get(key);
+      if (data != null) {
+        return Map<String, dynamic>.from(data);
+      }
+      return null;
+    } catch (e) {
+      throw Exception('Error al $action: $e');
+    }
+  }
+
+  Future<void> _deleteKey(String key, String action) async {
+    try {
+      await _box.delete(key);
+    } catch (e) {
+      throw Exception('Error al $action: $e');
+    }
   }
 }

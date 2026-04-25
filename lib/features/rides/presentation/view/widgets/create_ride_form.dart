@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:async';
 
 import '../../../../../app/routes.dart';
 import '../../../../../core/theme/app_colors.dart';
@@ -29,7 +30,18 @@ class _CreateRideFormState extends State<CreateRideForm> {
   bool _restoredDraftApplied = false;
 
   @override
+  void initState() {
+    super.initState();
+    _sourceCtrl.addListener(_persistDraft);
+    _destinationCtrl.addListener(_persistDraft);
+    _dateCtrl.addListener(_persistDraft);
+    _timeCtrl.addListener(_persistDraft);
+    _priceCtrl.addListener(_persistDraft);
+  }
+
+  @override
   void dispose() {
+    unawaited(_saveDraft());
     _sourceCtrl.dispose();
     _destinationCtrl.dispose();
     _dateCtrl.dispose();
@@ -44,12 +56,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
       initialDate: DateTime.now().add(const Duration(days: 1)),
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 90)),
-      builder: (ctx, child) => Theme(
-        data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.light(primary: AppColors.amber700),
-        ),
-        child: child!,
-      ),
+      builder: _buildPickerTheme,
     );
     if (picked != null) {
       _dateCtrl.text =
@@ -61,12 +68,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
     final picked = await showTimePicker(
       context: context,
       initialTime: TimeOfDay.now(),
-      builder: (ctx, child) => Theme(
-        data: Theme.of(ctx).copyWith(
-          colorScheme: const ColorScheme.light(primary: AppColors.amber700),
-        ),
-        child: child!,
-      ),
+      builder: _buildPickerTheme,
     );
     if (picked != null) {
       _timeCtrl.text =
@@ -85,6 +87,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
         _destinationCtrl.clear();
       }
     });
+    unawaited(_saveDraft());
   }
 
   void _applyDraft(RideFormDraft draft) {
@@ -97,6 +100,128 @@ class _CreateRideFormState extends State<CreateRideForm> {
       _priceCtrl.text = draft.price;
       _restoredDraftApplied = true;
     });
+  }
+
+  void _persistDraft() {
+    unawaited(_saveDraft());
+  }
+
+  Future<void> _saveDraft() async {
+    if (!mounted) return;
+    final vm = context.read<CreateRideCubit>();
+    await vm.saveDraft(
+      vehicleId: vm.state.selectedVehicle?.id,
+      zoneId: vm.state.selectedZone?.id,
+      source: _sourceCtrl.text,
+      destination: _destinationCtrl.text,
+      date: _dateCtrl.text,
+      departureTime: _timeCtrl.text,
+      type: _selectedType,
+      price: _priceCtrl.text,
+    );
+  }
+
+  Widget _buildPickerTheme(BuildContext context, Widget? child) {
+    final baseTheme = Theme.of(context);
+
+    return Theme(
+      data: baseTheme.copyWith(
+        colorScheme: const ColorScheme.light(
+          primary: AppColors.amber700,
+          onPrimary: Colors.white,
+          surface: Colors.white,
+          onSurface: AppColors.slate900,
+        ),
+        dialogTheme: const DialogThemeData(
+          backgroundColor: Colors.white,
+        ),
+        timePickerTheme: TimePickerThemeData(
+          backgroundColor: Colors.white,
+          hourMinuteColor: AppColors.slate100,
+          hourMinuteTextColor: AppColors.slate900,
+          hourMinuteTextStyle: AppTextStyles.primary.copyWith(
+            fontSize: 28,
+            fontWeight: FontWeight.w700,
+            color: AppColors.slate900,
+          ),
+          dayPeriodColor: AppColors.slate100,
+          dayPeriodTextColor: AppColors.slate900,
+          dayPeriodTextStyle: AppTextStyles.primary.copyWith(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: AppColors.slate900,
+          ),
+          dialBackgroundColor: AppColors.slate100,
+          dialHandColor: AppColors.amber700,
+          dialTextColor: AppColors.slate900,
+          entryModeIconColor: AppColors.amber700,
+          helpTextStyle: AppTextStyles.primary.copyWith(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: AppColors.slate400,
+          ),
+        ),
+        datePickerTheme: DatePickerThemeData(
+          backgroundColor: Colors.white,
+          headerBackgroundColor: AppColors.blue900,
+          headerForegroundColor: Colors.white,
+          dividerColor: AppColors.slate200,
+          weekdayStyle: AppTextStyles.primary.copyWith(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: AppColors.slate400,
+          ),
+          dayStyle: AppTextStyles.primary.copyWith(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.slate900,
+          ),
+          yearStyle: AppTextStyles.primary.copyWith(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: AppColors.slate900,
+          ),
+          dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return Colors.white;
+            }
+            if (states.contains(WidgetState.disabled)) {
+              return AppColors.slate300;
+            }
+            return AppColors.slate900;
+          }),
+          dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return AppColors.amber700;
+            }
+            return null;
+          }),
+          todayForegroundColor: const WidgetStatePropertyAll(
+            AppColors.amber700,
+          ),
+          todayBackgroundColor: const WidgetStatePropertyAll(Colors.white),
+          yearForegroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return Colors.white;
+            }
+            return AppColors.slate900;
+          }),
+          yearBackgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return AppColors.teal600;
+            }
+            return null;
+          }),
+          cancelButtonStyle: TextButton.styleFrom(
+            foregroundColor: AppColors.slate400,
+          ),
+          confirmButtonStyle: TextButton.styleFrom(
+            foregroundColor: AppColors.amber700,
+          ),
+        ),
+      ),
+      child: child!,
+    );
   }
 
   Widget _buildPendingSyncBanner() {
@@ -120,7 +245,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Hay un viaje pendiente por sincronizar. Mantendremos este formulario listo hasta que se publique.',
+              'Hay un viaje pendiente por publicar. Mantendremos este formulario listo cuando tengas conexión.',
               style: AppTextStyles.primary.copyWith(
                 fontSize: 12,
                 color: AppColors.teal600,
@@ -296,7 +421,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
           context.read<CreateRideCubit>().consumeRestoredDraft();
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Se restauro un formulario pendiente.'),
+              content: Text('Se restauro una oferta de viaje pendiente.'),
               backgroundColor: AppColors.teal600,
             ),
           );
@@ -412,6 +537,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
                     onChanged: (v) {
                       if (v != null) {
                         context.read<CreateRideCubit>().selectVehicle(v);
+                        unawaited(_saveDraft());
                       }
                     },
                     style: AppTextStyles.primary.copyWith(
@@ -455,6 +581,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
                     onChanged: (z) {
                       if (z != null) {
                         context.read<CreateRideCubit>().selectZone(z);
+                        unawaited(_saveDraft());
                       }
                     },
                     style: AppTextStyles.primary.copyWith(

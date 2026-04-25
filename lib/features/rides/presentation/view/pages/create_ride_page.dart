@@ -53,7 +53,7 @@ class CreateRidePage extends StatelessWidget {
       create: (_) => CreateRideCubit(
         client: sl<DioClient>(),
         syncRepository: sl<RidesOfflineSyncRepository>(),
-        userId: user!.id,
+        driverId: user!.driver!.id,
       )..loadInitialData(),
       child: Scaffold(
         backgroundColor: AppColors.slate900,
