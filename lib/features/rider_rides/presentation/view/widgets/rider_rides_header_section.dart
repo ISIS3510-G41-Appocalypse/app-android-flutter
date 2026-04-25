@@ -9,12 +9,13 @@ class RiderRidesHeaderSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
           'Mis viajes',
+          textAlign: TextAlign.center,
           style: AppTextStyles.primary.copyWith(
-            fontSize: 28,
+            fontSize: 26,
             fontWeight: FontWeight.w700,
             color: AppColors.gray50,
           ),
@@ -22,10 +23,11 @@ class RiderRidesHeaderSection extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           'Consulta el estado y los detalles de tu reserva activa.',
+          textAlign: TextAlign.center,
           style: AppTextStyles.primary.copyWith(
-            fontSize: 15,
+            fontSize: 14,
             fontWeight: FontWeight.w500,
-            color: AppColors.slate400,
+            color: const Color(0xFF64748B),
           ),
         ),
       ],

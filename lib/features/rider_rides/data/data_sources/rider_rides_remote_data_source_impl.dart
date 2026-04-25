@@ -22,7 +22,7 @@ class RiderRidesRemoteDataSourceImpl implements RiderRidesRemoteDataSource {
         queryParameters: {
           'select': 'id,ride_id,rider_id,meeting_point,state,destination_point',
           'rider_id': 'eq.$riderId',
-          'state': 'in.(PENDIENTE,CONFIRMADO)',
+          'state': 'in.(PENDIENTE,ACEPTADA,EN_CURSO)',
           'order': 'id.desc',
           'limit': 1,
         },

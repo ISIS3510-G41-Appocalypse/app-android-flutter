@@ -45,12 +45,16 @@ class RiderRideViewData {
     switch (value) {
       case 'PENDIENTE':
         return 'En espera';
-      case 'CONFIRMADO':
-        return 'Confirmado';
-      case 'CANCELADO':
-        return 'Cancelado';
-      case 'RECHAZADO':
+      case 'ACEPTADA':
+        return 'Aceptada';
+      case 'EN_CURSO':
+        return 'En curso';
+      case 'FINALIZADA':
+        return 'Finalizada';
+      case 'RECHAZADA':
         return 'Rechazado';
+      case 'CANCELADA':
+        return 'Cancelada';
       default:
         return value;
     }
