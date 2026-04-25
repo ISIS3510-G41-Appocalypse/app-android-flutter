@@ -1,6 +1,6 @@
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
-import '../../../core/network/network_checker.dart';
-import '../../../core/storage/ride_form_offline_storage.dart';
+import '../../../../core/network/network_checker.dart';
+import '../../../../core/storage/ride_form_offline_storage.dart';
 import '../../data/datasources/rides_remote_datasource.dart';
 import '../../data/models/ride_model.dart';
 
@@ -136,7 +136,7 @@ class RidesOfflineSyncRepository {
   /// Retorna un stream de estados de sincronización
   Stream<RideSyncResult> listenToConnectivityChanges() async* {
     await for (final result in InternetConnection().onStatusChange) {
-      final isConnected = result == InternetConnectionStatus.connected;
+      final isConnected = result == InternetStatus.connected;
 
       if (isConnected && offlineStorage.hasPendingRideForm()) {
         yield RideSyncResult(
