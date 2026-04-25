@@ -1,5 +1,6 @@
 import 'package:get_it/get_it.dart';
 import '../core/network/dio_client.dart';
+import '../core/network/network_checker.dart';
 import '../core/storage/session_storage.dart';
 import '../features/auth/injection/auth_injection.dart';
 import '../features/driver_rides/injection/driver_rides_injection.dart';
@@ -10,6 +11,7 @@ final sl = GetIt.instance;
 
 void setupLocator() {
   sl.registerLazySingleton<SessionStorage>(() => SessionStorage());
+  sl.registerLazySingleton<NetworkChecker>(() => NetworkChecker());
   sl.registerLazySingleton<DioClient>(() => DioClient(sessionStorage: sl()));
 
   setupAuthInjection();

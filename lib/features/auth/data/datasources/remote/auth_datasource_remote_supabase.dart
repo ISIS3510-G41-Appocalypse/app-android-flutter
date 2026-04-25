@@ -33,6 +33,11 @@ class AuthDataSourceRemoteSupabase implements AuthDataSourceRemote {
         response.data as Map<String, dynamic>,
       );
     } on DioException catch (e) {
+      if (e.response?.statusCode == 400 &&
+          e.response?.data['msg'].contains('Invalid login credentials')) {
+        throw ServerException('Credenciales invalidas');
+      }
+
       throw ServerException(ErrorHandler.getErrorMessage(e));
     } catch (_) {
       throw ServerException('Error inesperado al iniciar sesion');

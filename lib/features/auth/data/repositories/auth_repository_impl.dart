@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/failures.dart';
+import '../../../../core/network/network_checker.dart';
 import '../../domain/entities/auth.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../models/auth_model.dart';
@@ -11,10 +12,12 @@ import '../datasources/remote/auth_datasource_remote.dart';
 class AuthRepositoryImpl implements AuthRepository {
   final AuthDataSourceRemote dataSourceRemote;
   final AuthDataSourceLocal dataSourceLocal;
+  final NetworkChecker networkChecker;
 
   AuthRepositoryImpl({
     required this.dataSourceRemote,
     required this.dataSourceLocal,
+    required this.networkChecker,
   });
 
   @override
@@ -23,6 +26,12 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
   }) async {
     try {
+      if (!await networkChecker.hasInternet) {
+        return const Left(
+          NetworkFailure('No tienes internet. Intenta de nuevo mas tarde.'),
+        );
+      }
+
       final auth = await dataSourceRemote.login(
         email: email,
         password: password,

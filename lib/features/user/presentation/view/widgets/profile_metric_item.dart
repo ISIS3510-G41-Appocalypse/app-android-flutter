@@ -27,34 +27,38 @@ class ProfileMetricItem extends StatelessWidget {
         border: Border.all(color: AppColors.slate300),
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: iconColor, size: 30),
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                value,
-                textAlign: TextAlign.center,
-                style: AppTextStyles.secondary.copyWith(
-                  color: AppColors.slate900,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
+          Flexible(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  value,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.secondary.copyWith(
+                    color: AppColors.slate900,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                style: AppTextStyles.primary.copyWith(
-                  color: AppColors.slate800,
-                  fontSize: 12,
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.primary.copyWith(
+                    color: AppColors.slate800,
+                    fontSize: 12,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),

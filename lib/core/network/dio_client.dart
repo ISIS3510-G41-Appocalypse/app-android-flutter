@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:dio_cache_plus/dio_cache_plus.dart';
 import 'package:flutter/foundation.dart';
 
 import '../constants/api_constants.dart';
@@ -22,6 +23,14 @@ class DioClient {
 
     dio = Dio(baseOptions);
     final refreshClient = Dio(baseOptions);
+
+    dio.interceptors.add(
+      DioCachePlusInterceptor(
+        cacheAll: false,
+        commonCacheDuration: const Duration(hours: 1),
+        isErrorResponse: (response) => response.statusCode != null && response.statusCode! >= 400,
+      ),
+    );
 
     dio.interceptors.add(
       SessionInterceptor(
