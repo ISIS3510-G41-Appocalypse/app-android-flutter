@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
+import '../../../../../core/widgets/offline_state_card.dart';
 import '../../view_model/ride_offers_state.dart';
 import 'ride_offer_card.dart';
 
@@ -10,10 +11,16 @@ class RideOffersListSection extends StatelessWidget {
     super.key,
     required this.state,
     required this.isReserveEnabled,
+    required this.reservingRideId,
+    required this.onReserve,
+    required this.onRetry,
   });
 
   final RideOffersState state;
   final bool isReserveEnabled;
+  final String? reservingRideId;
+  final ValueChanged<int> onReserve;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +51,15 @@ class RideOffersListSection extends StatelessWidget {
           ),
         );
       case RideOffersStatus.error:
+        if (state.isOffline) {
+          return OfflineStateCard(
+            title: 'Sin conexion',
+            message:
+                'No pudimos cargar las ofertas. Algunas funciones requieren internet.',
+            onRetry: onRetry,
+          );
+        }
+
         return _StateCard(
           child: Text(
             state.message ?? 'Ocurrio un error al cargar las ofertas.',
@@ -52,20 +68,56 @@ class RideOffersListSection extends StatelessWidget {
         );
       case RideOffersStatus.success:
         return Column(
-          children: List.generate(
-            state.offers.length,
-            (index) => Padding(
-              padding: EdgeInsets.only(
-                bottom: index == state.offers.length - 1 ? 0 : 24,
-              ),
-              child: RideOfferCard(
-                offer: state.offers[index],
-                isReserveEnabled: isReserveEnabled,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (state.message != null && state.message!.isNotEmpty) ...[
+              _InlineError(message: state.message!),
+              const SizedBox(height: 16),
+            ],
+            ...List.generate(
+              state.offers.length,
+              (index) => Padding(
+                padding: EdgeInsets.only(
+                  bottom: index == state.offers.length - 1 ? 0 : 24,
+                ),
+                child: RideOfferCard(
+                  offer: state.offers[index],
+                  isReserveEnabled: isReserveEnabled,
+                  isReserving: reservingRideId == state.offers[index].id,
+                  onReserve: () => onReserve(index),
+                ),
               ),
             ),
-          ),
+          ],
         );
     }
+  }
+}
+
+class _InlineError extends StatelessWidget {
+  const _InlineError({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF1F2),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFFECACA)),
+      ),
+      child: Text(
+        message,
+        style: AppTextStyles.primary.copyWith(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: const Color(0xFFB91C1C),
+        ),
+      ),
+    );
   }
 }
 

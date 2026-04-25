@@ -2,6 +2,7 @@ import 'package:dartz/dartz.dart';
 
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/failures.dart';
+import '../../../../core/network/network_checker.dart';
 import '../../domain/entities/ride_offer.dart';
 import '../../domain/entities/ride_offer_filters.dart';
 import '../../domain/entities/zone.dart';
@@ -12,18 +13,36 @@ import '../models/zone_model.dart';
 
 class RideOffersRepositoryImpl implements RideOffersRepository {
   final RideOffersRemoteDataSource remoteDataSource;
+  final NetworkChecker networkChecker;
 
-  RideOffersRepositoryImpl({required this.remoteDataSource});
+  RideOffersRepositoryImpl({
+    required this.remoteDataSource,
+    required this.networkChecker,
+  });
 
   @override
   Future<Either<Failure, List<RideOffer>>> getRideOffers({
     required RideOfferFilters filters,
   }) async {
+    if (!await networkChecker.hasInternet) {
+      return const Left(
+        NetworkFailure(
+          'No tienes internet. Revisa tu conexion e intenta de nuevo.',
+        ),
+      );
+    }
+
     try {
       final rows = await remoteDataSource.getRideOffersRows();
 
       final filteredRows = rows.where((row) {
         if (row['state']?.toString() != 'OFERTADO') {
+          return false;
+        }
+
+        if (filters.excludedDriverId != null &&
+            row['driver_id']?.toString() ==
+                filters.excludedDriverId.toString()) {
           return false;
         }
 
@@ -68,6 +87,14 @@ class RideOffersRepositoryImpl implements RideOffersRepository {
 
   @override
   Future<Either<Failure, List<Zone>>> getZones() async {
+    if (!await networkChecker.hasInternet) {
+      return const Left(
+        NetworkFailure(
+          'No tienes internet. Revisa tu conexion e intenta de nuevo.',
+        ),
+      );
+    }
+
     try {
       final rows = await remoteDataSource.getZonesRows();
       final zones = rows
@@ -85,7 +112,9 @@ class RideOffersRepositoryImpl implements RideOffersRepository {
 
   void _sortRideOffers(List<RideOfferModel> offers, RideOfferFilters filters) {
     final effectiveSort =
-        filters.sortBy ?? _firstQuickFilter(filters.quickFilters) ?? 'driver_rating';
+        filters.sortBy ??
+        _firstQuickFilter(filters.quickFilters) ??
+        'driver_rating';
 
     switch (effectiveSort) {
       case 'price':

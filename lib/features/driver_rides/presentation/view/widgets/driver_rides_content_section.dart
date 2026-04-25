@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../app/routes.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
+import '../../../../../core/widgets/offline_state_card.dart';
+import '../../../domain/entities/driver_ride_reservation.dart';
 import '../../view_model/driver_rides_cubit.dart';
 import '../../view_model/driver_rides_state.dart';
 import '../models/driver_ride_view_data.dart';
@@ -75,6 +77,17 @@ class DriverRidesContentSection extends StatelessWidget {
           ),
         );
       case DriverRidesStatus.error:
+        if (state.isOffline) {
+          return OfflineStateCard(
+            title: 'Sin conexion',
+            message:
+                'No pudimos cargar tus viajes. Revisa tu conexion e intenta de nuevo.',
+            onRetry: () {
+              context.read<DriverRidesCubit>().reloadActiveRide();
+            },
+          );
+        }
+
         return _StateCard(
           child: Column(
             children: [
@@ -124,20 +137,28 @@ class DriverRidesContentSection extends StatelessWidget {
               message: state.message,
             ),
             const SizedBox(height: 24),
-            const _PassengersSectionCard(
+            _PassengersSectionCard(
               title: 'Solicitudes de reserva',
-              description:
-                  'Pasajeros que solicitaron un cupo',
+              description: 'Pasajeros que solicitaron un cupo',
               emptyLabel:
                   'Todavia no hay solicitudes de reserva para este viaje.',
+              reservations: state.ride!.pendingReservations,
+              showActions: true,
+              updatingReservationId: state.updatingReservationId,
+              updatingAction: state.updatingAction,
+              isUpdating: state.isUpdating,
             ),
             const SizedBox(height: 16),
-            const _PassengersSectionCard(
+            _PassengersSectionCard(
               title: 'Pasajeros confirmados',
-              description:
-                  'Pasajeros con cupo confirmado',
+              description: 'Pasajeros con cupo confirmado',
               emptyLabel:
                   'Todavia no hay pasajeros confirmados para este viaje.',
+              reservations: state.ride!.acceptedReservations,
+              showActions: false,
+              updatingReservationId: state.updatingReservationId,
+              updatingAction: state.updatingAction,
+              isUpdating: state.isUpdating,
             ),
           ],
         );
@@ -177,11 +198,21 @@ class _PassengersSectionCard extends StatelessWidget {
     required this.title,
     required this.description,
     required this.emptyLabel,
+    required this.reservations,
+    required this.showActions,
+    required this.updatingReservationId,
+    required this.updatingAction,
+    required this.isUpdating,
   });
 
   final String title;
   final String description;
   final String emptyLabel;
+  final List<DriverRideReservation> reservations;
+  final bool showActions;
+  final String? updatingReservationId;
+  final String? updatingAction;
+  final bool isUpdating;
 
   @override
   Widget build(BuildContext context) {
@@ -214,25 +245,206 @@ class _PassengersSectionCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 18),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFC),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: Text(
-              emptyLabel,
-              style: AppTextStyles.primary.copyWith(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF64748B),
+          if (reservations.isEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
               ),
+              child: Text(
+                emptyLabel,
+                style: AppTextStyles.primary.copyWith(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFF64748B),
+                ),
+              ),
+            )
+          else
+            Column(
+              children: List.generate(reservations.length, (index) {
+                final reservation = reservations[index];
+                final isThisUpdating =
+                    isUpdating &&
+                    updatingReservationId == reservation.reservationId;
+
+                return Padding(
+                  padding: EdgeInsets.only(
+                    bottom: index == reservations.length - 1 ? 0 : 12,
+                  ),
+                  child: _PassengerReservationCard(
+                    reservation: reservation,
+                    showActions: showActions,
+                    isUpdating: isThisUpdating,
+                    updatingAction: updatingAction,
+                  ),
+                );
+              }),
             ),
-          ),
         ],
       ),
+    );
+  }
+}
+
+class _PassengerReservationCard extends StatelessWidget {
+  const _PassengerReservationCard({
+    required this.reservation,
+    required this.showActions,
+    required this.isUpdating,
+    required this.updatingAction,
+  });
+
+  final DriverRideReservation reservation;
+  final bool showActions;
+  final bool isUpdating;
+  final String? updatingAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final cancellationText =
+        '${(reservation.cancellationOdds * 100).toStringAsFixed(0)}% cancelacion';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            reservation.riderName,
+            style: AppTextStyles.primary.copyWith(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: AppColors.slate900,
+            ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            children: [
+              _PassengerMetric(
+                icon: Icons.star_rounded,
+                label: reservation.rating.toStringAsFixed(1),
+                color: AppColors.amber700,
+              ),
+              _PassengerMetric(
+                icon: Icons.event_busy_rounded,
+                label: cancellationText,
+                color: const Color(0xFFDC2626),
+              ),
+            ],
+          ),
+          if (showActions) ...[
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: isUpdating
+                        ? null
+                        : () {
+                            context.read<DriverRidesCubit>().rejectReservation(
+                              reservation.reservationId,
+                            );
+                          },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFDC2626),
+                      side: const BorderSide(color: Color(0xFFDC2626)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      isUpdating && updatingAction == 'reject_reservation'
+                          ? 'Cancelando...'
+                          : 'Cancelar',
+                      style: AppTextStyles.primary.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: isUpdating
+                        ? null
+                        : () {
+                            context.read<DriverRidesCubit>().acceptReservation(
+                              reservation.reservationId,
+                            );
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.teal600,
+                      disabledBackgroundColor: AppColors.teal600.withValues(
+                        alpha: 0.6,
+                      ),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(
+                      isUpdating && updatingAction == 'accept_reservation'
+                          ? 'Aceptando...'
+                          : 'Aceptar',
+                      style: AppTextStyles.primary.copyWith(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PassengerMetric extends StatelessWidget {
+  const _PassengerMetric({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 18, color: color),
+        const SizedBox(width: 6),
+        Text(
+          label,
+          style: AppTextStyles.primary.copyWith(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: const Color(0xFF64748B),
+          ),
+        ),
+      ],
     );
   }
 }

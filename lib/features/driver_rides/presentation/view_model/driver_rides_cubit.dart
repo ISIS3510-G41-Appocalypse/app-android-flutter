@@ -1,7 +1,10 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/errors/failures.dart';
 import '../../domain/entities/driver_ride.dart';
+import '../../domain/usecases/accept_reservation.dart';
 import '../../domain/usecases/get_active_driver_ride.dart';
+import '../../domain/usecases/reject_reservation.dart';
 import '../../domain/usecases/update_ride_state.dart';
 import 'driver_rides_state.dart';
 
@@ -10,17 +13,26 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
 
   final GetActiveDriverRide getActiveDriverRide;
   final UpdateRideState updateRideState;
+  final AcceptReservation acceptReservationUseCase;
+  final RejectReservation rejectReservationUseCase;
   int? _lastDriverId;
 
   DriverRidesCubit({
     required this.getActiveDriverRide,
     required this.updateRideState,
-  })
-    : super(DriverRidesState.initial());
+    required this.acceptReservationUseCase,
+    required this.rejectReservationUseCase,
+  }) : super(DriverRidesState.initial());
 
   Future<void> loadActiveRide({required int? driverId}) async {
     _lastDriverId = driverId;
-    emit(state.copyWith(status: DriverRidesStatus.loading, message: null));
+    emit(
+      state.copyWith(
+        status: DriverRidesStatus.loading,
+        message: null,
+        isOffline: false,
+      ),
+    );
 
     final result = await getActiveDriverRide(driverId: driverId);
 
@@ -31,6 +43,7 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
             status: DriverRidesStatus.error,
             ride: null,
             message: failure.message,
+            isOffline: failure is NetworkFailure,
           ),
         );
       },
@@ -41,6 +54,7 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
               status: DriverRidesStatus.empty,
               ride: null,
               message: 'Aun no tienes un viaje activo como conductor.',
+              isOffline: false,
             ),
           );
           return;
@@ -51,8 +65,10 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
             status: DriverRidesStatus.success,
             ride: ride,
             message: null,
+            isOffline: false,
             isUpdating: false,
             updatingAction: null,
+            updatingReservationId: null,
           ),
         );
       },
@@ -87,6 +103,97 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
     await _changeRideState(nextState: 'FINALIZADO', actionLabel: 'finish');
   }
 
+  Future<void> acceptReservation(String reservationId) async {
+    final currentRide = state.ride;
+
+    if (currentRide == null || state.isUpdating) {
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        isUpdating: true,
+        updatingAction: 'accept_reservation',
+        updatingReservationId: reservationId,
+        message: null,
+      ),
+    );
+
+    final result = await acceptReservationUseCase(
+      rideId: currentRide.id,
+      reservationId: reservationId,
+    );
+
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            isUpdating: false,
+            updatingAction: null,
+            updatingReservationId: null,
+            message: failure.message,
+            isOffline: failure is NetworkFailure,
+          ),
+        );
+      },
+      (_) async {
+        emit(
+          state.copyWith(
+            isUpdating: false,
+            updatingAction: null,
+            updatingReservationId: null,
+            message: null,
+            isOffline: false,
+          ),
+        );
+        await reloadActiveRide();
+      },
+    );
+  }
+
+  Future<void> rejectReservation(String reservationId) async {
+    if (state.ride == null || state.isUpdating) {
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        isUpdating: true,
+        updatingAction: 'reject_reservation',
+        updatingReservationId: reservationId,
+        message: null,
+      ),
+    );
+
+    final result = await rejectReservationUseCase(reservationId: reservationId);
+
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            isUpdating: false,
+            updatingAction: null,
+            updatingReservationId: null,
+            message: failure.message,
+            isOffline: failure is NetworkFailure,
+          ),
+        );
+      },
+      (_) async {
+        emit(
+          state.copyWith(
+            isUpdating: false,
+            updatingAction: null,
+            updatingReservationId: null,
+            message: null,
+            isOffline: false,
+          ),
+        );
+        await reloadActiveRide();
+      },
+    );
+  }
+
   Future<void> _changeRideState({
     required String nextState,
     required String actionLabel,
@@ -116,7 +223,9 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
           state.copyWith(
             isUpdating: false,
             updatingAction: null,
+            updatingReservationId: null,
             message: failure.message,
+            isOffline: failure is NetworkFailure,
           ),
         );
       },
@@ -125,7 +234,9 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
           state.copyWith(
             isUpdating: false,
             updatingAction: null,
+            updatingReservationId: null,
             message: null,
+            isOffline: false,
           ),
         );
         await reloadActiveRide();
