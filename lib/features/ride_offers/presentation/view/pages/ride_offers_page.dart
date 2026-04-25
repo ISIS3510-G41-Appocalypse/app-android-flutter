@@ -35,15 +35,12 @@ class _RideOffersPageState extends State<RideOffersPage> {
 
     final userState = context.read<UserCubit>().state;
     final user = userState.user;
-    final activeRole = userState.activeRole;
     final preferredZoneId = user?.zoneId.toString();
 
     _cubit = _sl<RideOffersCubit>()
       ..loadInitialData(preferredZoneId: preferredZoneId);
     _driverRidesCubit = _sl<DriverRidesCubit>()
-      ..loadActiveRide(
-        driverId: activeRole == UserRole.driver ? user?.driver?.id : null,
-      );
+      ..loadActiveRide(driverId: user?.driver?.id);
   }
 
   @override
@@ -71,11 +68,9 @@ class _RideOffersPageState extends State<RideOffersPage> {
                   previous.activeRole != current.activeRole ||
                   previous.user != current.user,
               listener: (context, userState) {
-                final driverId = userState.activeRole == UserRole.driver
-                    ? userState.user?.driver?.id
-                    : null;
-
-                _driverRidesCubit.loadActiveRide(driverId: driverId);
+                _driverRidesCubit.loadActiveRide(
+                  driverId: userState.user?.driver?.id,
+                );
               },
               child: BlocListener<DriverRidesCubit, DriverRidesState>(
                 listenWhen: (previous, current) =>
