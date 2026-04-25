@@ -26,7 +26,9 @@ class RideOffersRepositoryImpl implements RideOffersRepository {
   }) async {
     if (!await networkChecker.hasInternet) {
       return const Left(
-        NetworkFailure('No tienes internet. Revisa tu conexion e intenta de nuevo.'),
+        NetworkFailure(
+          'No tienes internet. Revisa tu conexion e intenta de nuevo.',
+        ),
       );
     }
 
@@ -81,7 +83,9 @@ class RideOffersRepositoryImpl implements RideOffersRepository {
   Future<Either<Failure, List<Zone>>> getZones() async {
     if (!await networkChecker.hasInternet) {
       return const Left(
-        NetworkFailure('No tienes internet. Revisa tu conexion e intenta de nuevo.'),
+        NetworkFailure(
+          'No tienes internet. Revisa tu conexion e intenta de nuevo.',
+        ),
       );
     }
 
@@ -102,7 +106,9 @@ class RideOffersRepositoryImpl implements RideOffersRepository {
 
   void _sortRideOffers(List<RideOfferModel> offers, RideOfferFilters filters) {
     final effectiveSort =
-        filters.sortBy ?? _firstQuickFilter(filters.quickFilters) ?? 'driver_rating';
+        filters.sortBy ??
+        _firstQuickFilter(filters.quickFilters) ??
+        'driver_rating';
 
     switch (effectiveSort) {
       case 'price':

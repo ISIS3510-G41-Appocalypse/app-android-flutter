@@ -31,7 +31,9 @@ class RideOffersHeaderSection extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.amber700,
               foregroundColor: Colors.white,
-              disabledBackgroundColor: AppColors.amber700.withValues(alpha: 0.55),
+              disabledBackgroundColor: AppColors.amber700.withValues(
+                alpha: 0.55,
+              ),
               disabledForegroundColor: Colors.white70,
               elevation: 0,
               padding: const EdgeInsets.symmetric(vertical: 14),
