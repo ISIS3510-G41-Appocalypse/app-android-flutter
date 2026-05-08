@@ -43,6 +43,29 @@ class RideOffersCubit extends Cubit<RideOffersState> {
     await loadRideOffers();
   }
 
+  Future<void> syncDefaultFilters({String? preferredZoneId}) async {
+    _preferredZoneId = preferredZoneId;
+
+    final shouldUpdateZone =
+        preferredZoneId != null && state.filters.zoneId == null;
+    final shouldUpdateDate = state.filters.date == null;
+
+    if (!shouldUpdateZone && !shouldUpdateDate) {
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        filters: state.filters.copyWith(
+          zoneId: shouldUpdateZone ? preferredZoneId : state.filters.zoneId,
+          date: shouldUpdateDate ? _today() : state.filters.date,
+        ),
+      ),
+    );
+
+    await loadRideOffers();
+  }
+
   Future<void> loadRideOffers() async {
     emit(
       state.copyWith(

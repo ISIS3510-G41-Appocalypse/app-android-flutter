@@ -49,6 +49,7 @@ class RideOfferCard extends StatelessWidget {
               ),
               const SizedBox(width: 12),
               _OfferSummary(
+                dateLabel: offer.dateLabel,
                 departureTimeLabel: offer.departureTimeLabel,
                 price: offer.priceText,
               ),
@@ -214,8 +215,13 @@ class _DriverNameParts {
 }
 
 class _OfferSummary extends StatelessWidget {
-  const _OfferSummary({required this.departureTimeLabel, required this.price});
+  const _OfferSummary({
+    required this.dateLabel,
+    required this.departureTimeLabel,
+    required this.price,
+  });
 
+  final String dateLabel;
   final String departureTimeLabel;
   final String price;
 
@@ -224,6 +230,16 @@ class _OfferSummary extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
+        Text(
+          dateLabel,
+          style: AppTextStyles.primary.copyWith(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: const Color(0xFF64748B),
+          ),
+          textAlign: TextAlign.end,
+        ),
+        const SizedBox(height: 6),
         Text(
           departureTimeLabel,
           style: AppTextStyles.primary.copyWith(

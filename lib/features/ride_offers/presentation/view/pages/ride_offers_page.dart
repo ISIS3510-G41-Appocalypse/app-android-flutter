@@ -68,6 +68,9 @@ class _RideOffersPageState extends State<RideOffersPage> {
                   previous.activeRole != current.activeRole ||
                   previous.user != current.user,
               listener: (context, userState) {
+                _cubit.syncDefaultFilters(
+                  preferredZoneId: userState.user?.zoneId.toString(),
+                );
                 _driverRidesCubit.loadActiveRide(
                   driverId: userState.user?.driver?.id,
                 );
