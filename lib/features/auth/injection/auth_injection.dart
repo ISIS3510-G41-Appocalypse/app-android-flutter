@@ -1,6 +1,7 @@
 import 'package:get_it/get_it.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/network/network_checker.dart';
+import '../../../core/performance/performance_time_tracker.dart';
 import '../../../core/storage/session_storage.dart';
 import '../data/datasources/local/auth_datasource_local.dart';
 import '../data/datasources/local/auth_datasource_local_storage.dart';
@@ -23,6 +24,7 @@ void setupAuthInjection() {
   sl.registerLazySingleton<AuthDataSourceRemote>(
     () => AuthDataSourceRemoteSupabase(
       dio: sl<DioClient>().dio,
+      performanceTimeTracker: sl<PerformanceTimeTracker>(),
     ),
   );
   sl.registerLazySingleton<AuthRepositoryImpl>(
@@ -39,5 +41,6 @@ void setupAuthInjection() {
         loginUser: sl<LoginUser>(),
         logoutUser: sl<LogoutUser>(),
         verifySessionUseCase: sl<VerifySession>(),
+        performanceTimeTracker: sl<PerformanceTimeTracker>(),
       ));
 }
