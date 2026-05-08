@@ -46,8 +46,9 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> login({
     required String email,
     required String password,
+    Stopwatch? loginFrontEndStopwatch,
   }) async {
-    final stopwatch = Stopwatch()..start();
+    final stopwatch = loginFrontEndStopwatch ?? (Stopwatch()..start());
 
     emit(
       state.copyWith(

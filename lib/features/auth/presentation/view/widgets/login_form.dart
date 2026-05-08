@@ -35,10 +35,14 @@ class _LoginFormState extends State<LoginForm> {
       context.read<AuthCubit>().clearError();
       return;
     }
+
+    final loginFrontEndStopwatch = Stopwatch()..start();
+
     ScaffoldMessenger.of(context).clearSnackBars();
     context.read<AuthCubit>().login(
       email: _emailController.text.trim(),
       password: _passwordController.text.trim(),
+      loginFrontEndStopwatch: loginFrontEndStopwatch,
     );
   }
 
