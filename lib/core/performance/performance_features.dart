@@ -1,6 +1,7 @@
 class PerformanceFeatures {
   static const String login = 'Login';
   static const String createRide = 'CreateRide';
+  static const String createReservation = 'CreateReservation';
 }
 
 class PerformanceSources {

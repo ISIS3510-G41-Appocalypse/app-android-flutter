@@ -182,9 +182,13 @@ class _RideOffersPageState extends State<RideOffersPage> {
                                   reservingRideId: state.reservingRideId,
                                   onReserve: (index) {
                                     final riderId = userState.user?.rider?.id;
+                                    final createReservationFrontEndStopwatch =
+                                        Stopwatch()..start();
                                     cubit.reserveRide(
                                       offer: state.offers[index],
                                       riderId: riderId,
+                                      createReservationFrontEndStopwatch:
+                                          createReservationFrontEndStopwatch,
                                     );
                                   },
                                   onRetry: cubit.loadRideOffers,

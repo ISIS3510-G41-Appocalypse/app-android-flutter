@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/errors/failures.dart';
+import '../../../../core/performance/performance_features.dart';
+import '../../../../core/performance/performance_time_tracker.dart';
 import '../../../rider_rides/domain/usecases/create_reservation.dart';
 import '../../domain/entities/ride_offer_filters.dart';
 import '../../domain/usecases/get_ride_offers.dart';
@@ -12,6 +16,7 @@ class RideOffersCubit extends Cubit<RideOffersState> {
   final GetRideOffers getRideOffers;
   final GetZones getZones;
   final CreateReservation createReservation;
+  final PerformanceTimeTracker performanceTimeTracker;
   String? _preferredZoneId;
   String? _excludedRideId;
 
@@ -19,6 +24,7 @@ class RideOffersCubit extends Cubit<RideOffersState> {
     required this.getRideOffers,
     required this.getZones,
     required this.createReservation,
+    required this.performanceTimeTracker,
   }) : super(RideOffersState.initial());
 
   Future<void> loadInitialData({
@@ -204,10 +210,14 @@ class RideOffersCubit extends Cubit<RideOffersState> {
   Future<void> reserveRide({
     required RideOfferViewData offer,
     required int? riderId,
+    Stopwatch? createReservationFrontEndStopwatch,
   }) async {
     if (state.isReserving) {
       return;
     }
+
+    final stopwatch =
+        createReservationFrontEndStopwatch ?? (Stopwatch()..start());
 
     emit(
       state.copyWith(
@@ -228,6 +238,18 @@ class RideOffersCubit extends Cubit<RideOffersState> {
 
     result.fold(
       (failure) {
+        stopwatch.stop();
+
+        if (failure is! NetworkFailure) {
+          unawaited(
+            performanceTimeTracker.track(
+              feature: PerformanceFeatures.createReservation,
+              duration: stopwatch.elapsedMilliseconds.toDouble(),
+              source: PerformanceSources.frontEnd,
+            ),
+          );
+        }
+
         emit(
           state.copyWith(
             isReserving: false,
@@ -239,6 +261,16 @@ class RideOffersCubit extends Cubit<RideOffersState> {
         );
       },
       (_) {
+        stopwatch.stop();
+
+        unawaited(
+          performanceTimeTracker.track(
+            feature: PerformanceFeatures.createReservation,
+            duration: stopwatch.elapsedMilliseconds.toDouble(),
+            source: PerformanceSources.frontEnd,
+          ),
+        );
+
         emit(
           state.copyWith(
             isReserving: false,
