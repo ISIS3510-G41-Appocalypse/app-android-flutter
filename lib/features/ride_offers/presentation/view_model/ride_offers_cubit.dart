@@ -228,8 +228,33 @@ class RideOffersCubit extends Cubit<RideOffersState> {
   Future<void> reserveRide({
     required RideOfferViewData offer,
     required int? riderId,
+    required String? currentDriverId,
+    required bool hasActiveDriverRide,
   }) async {
     if (state.isReserving) {
+      return;
+    }
+
+    if (hasActiveDriverRide) {
+      emit(
+        state.copyWith(
+          message:
+              'Debes cancelar o finalizar tu viaje activo como conductor antes de reservar otro viaje.',
+          isOffline: false,
+          reservationCreated: false,
+        ),
+      );
+      return;
+    }
+
+    if (currentDriverId != null && offer.driverId == currentDriverId) {
+      emit(
+        state.copyWith(
+          message: 'No puedes reservar tu propio viaje.',
+          isOffline: false,
+          reservationCreated: false,
+        ),
+      );
       return;
     }
 

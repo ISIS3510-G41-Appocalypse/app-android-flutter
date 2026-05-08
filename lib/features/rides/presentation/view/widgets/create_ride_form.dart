@@ -6,6 +6,8 @@ import 'dart:async';
 import '../../../../../app/routes.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
+import '../../../../rider_rides/presentation/view_model/rider_rides_cubit.dart';
+import '../../../../rider_rides/presentation/view_model/rider_rides_state.dart';
 import '../../../domain/entities/vehicle.dart';
 import '../../../domain/entities/zone.dart';
 import '../../view_model/create_ride_cubit.dart';
@@ -499,6 +501,31 @@ class _CreateRideFormState extends State<CreateRideForm> {
 
   Future<void> _submit(Vehicle? selectedVehicle, Zone? selectedZone) async {
     final vm = context.read<CreateRideCubit>();
+    final riderRideState = context.read<RiderRidesCubit>().state;
+
+    if (riderRideState.status == RiderRidesStatus.loading) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Espera un momento mientras verificamos si tienes una reserva activa.',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (riderRideState.status == RiderRidesStatus.success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Debes cancelar o finalizar tu reserva activa antes de publicar un viaje.',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     if (vm.validateVehicleSelected(selectedVehicle) != null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -785,47 +812,65 @@ class _CreateRideFormState extends State<CreateRideForm> {
               SizedBox(
                 width: double.infinity,
                 height: 56,
-                child: ElevatedButton.icon(
-                  onPressed: (state.isSubmitting || state.isSyncing)
-                      ? null
-                      : () => _submit(
-                            state.selectedVehicle,
-                            state.selectedZone,
-                          ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.amber700,
-                    disabledBackgroundColor:
-                        AppColors.amber700.withValues(alpha: 0.6),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  icon: (state.isSubmitting || state.isSyncing)
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Icon(
-                          Icons.send_rounded,
-                          color: Colors.white,
-                          size: 20,
+                child: BlocBuilder<RiderRidesCubit, RiderRidesState>(
+                  builder: (context, riderRideState) {
+                    final publishBlockedByReservation =
+                        riderRideState.status == RiderRidesStatus.success;
+                    final isCheckingReservation =
+                        riderRideState.status == RiderRidesStatus.loading;
+
+                    return ElevatedButton.icon(
+                      onPressed: (state.isSubmitting ||
+                              state.isSyncing ||
+                              publishBlockedByReservation ||
+                              isCheckingReservation)
+                          ? null
+                          : () => _submit(
+                                state.selectedVehicle,
+                                state.selectedZone,
+                              ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.amber700,
+                        disabledBackgroundColor:
+                            AppColors.amber700.withValues(alpha: 0.6),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
                         ),
-                  label: Text(
-                    state.isSyncing
-                        ? 'Sincronizando...'
-                        : state.isSubmitting
+                      ),
+                      icon: (state.isSubmitting ||
+                              state.isSyncing ||
+                              isCheckingReservation)
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.send_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                      label: Text(
+                        isCheckingReservation
+                            ? 'Verificando...'
+                            : state.isSyncing
+                            ? 'Sincronizando...'
+                            : state.isSubmitting
                             ? 'Publicando...'
+                            : publishBlockedByReservation
+                            ? 'Reserva activa detectada'
                             : 'Publicar viaje',
-                    style: AppTextStyles.primary.copyWith(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                        style: AppTextStyles.primary.copyWith(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
