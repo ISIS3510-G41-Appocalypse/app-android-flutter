@@ -2,6 +2,7 @@ import '../../../domain/entities/ride_offer.dart';
 
 class RideOfferViewData {
   final String id;
+  final String driverId;
   final String driverName;
   final String ratingText;
   final String cancellationOddsText;
@@ -18,6 +19,7 @@ class RideOfferViewData {
 
   const RideOfferViewData({
     required this.id,
+    required this.driverId,
     required this.driverName,
     required this.ratingText,
     required this.cancellationOddsText,
@@ -36,6 +38,7 @@ class RideOfferViewData {
   factory RideOfferViewData.fromEntity(RideOffer offer) {
     return RideOfferViewData(
       id: offer.id,
+      driverId: offer.driverId,
       driverName: offer.driverName,
       ratingText: offer.driverRating.toStringAsFixed(1),
       cancellationOddsText:
