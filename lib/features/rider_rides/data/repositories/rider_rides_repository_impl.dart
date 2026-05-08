@@ -113,4 +113,32 @@ class RiderRidesRepositoryImpl implements RiderRidesRepository {
       return const Left(ServerFailure('Error inesperado al crear la reserva'));
     }
   }
+
+  @override
+  Future<Either<Failure, void>> cancelReservation({
+    required String reservationId,
+  }) async {
+    if (!await networkChecker.hasInternet) {
+      return const Left(
+        NetworkFailure(
+          'No tienes internet. Esta accion requiere conexion para completarse.',
+        ),
+      );
+    }
+
+    try {
+      await remoteDataSource.updateReservationState(
+        reservationId: reservationId,
+        state: 'CANCELADA',
+      );
+
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (_) {
+      return const Left(
+        ServerFailure('Error inesperado al cancelar la reserva'),
+      );
+    }
+  }
 }

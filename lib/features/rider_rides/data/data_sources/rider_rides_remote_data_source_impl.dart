@@ -86,6 +86,42 @@ class RiderRidesRemoteDataSourceImpl implements RiderRidesRemoteDataSource {
   }
 
   @override
+  Future<Map<String, dynamic>> updateReservationState({
+    required String reservationId,
+    required String state,
+  }) async {
+    try {
+      final response = await dio.patch(
+        _reservationsPath,
+        data: {'state': state},
+        options: Options(headers: {'Prefer': 'return=representation'}),
+        queryParameters: {'select': 'id,state', 'id': 'eq.$reservationId'},
+      );
+
+      final data = response.data;
+
+      if (data is List && data.isNotEmpty) {
+        final updatedRow = data.first as Map<String, dynamic>;
+        final updatedState = updatedRow['state']?.toString();
+
+        if (updatedState == state) {
+          return updatedRow;
+        }
+      }
+
+      throw ServerException(
+        'No fue posible persistir el cambio de estado de la reserva.',
+      );
+    } on DioException catch (e) {
+      throw ServerException(ErrorHandler.getErrorMessage(e));
+    } on ServerException {
+      rethrow;
+    } catch (_) {
+      throw ServerException('Error inesperado al actualizar la reserva');
+    }
+  }
+
+  @override
   Future<void> createReservationRow({
     required String rideId,
     required int riderId,

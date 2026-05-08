@@ -90,7 +90,39 @@ class RiderRidesContentSection extends StatelessWidget {
         );
       case RiderRidesStatus.success:
         final ride = RiderRideViewData.fromEntity(state.ride!);
-        return RiderRideCard(ride: ride);
+        return RiderRideCard(
+          ride: ride,
+          isCancelling: state.isCancelling,
+          onCancel: () => _confirmCancellation(context),
+        );
+    }
+  }
+
+  Future<void> _confirmCancellation(BuildContext context) async {
+    final shouldCancel = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Cancelar reserva'),
+          content: const Text(
+            'Si cancelas esta reserva, dejara de aparecer en tu vista de pasajero.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Volver'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Cancelar reserva'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldCancel == true && context.mounted) {
+      context.read<RiderRidesCubit>().cancelReservation();
     }
   }
 }
