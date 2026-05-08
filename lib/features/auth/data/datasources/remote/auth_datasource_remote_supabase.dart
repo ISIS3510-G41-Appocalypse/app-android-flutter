@@ -22,8 +22,9 @@ class AuthDataSourceRemoteSupabase implements AuthDataSourceRemote {
     required String email,
     required String password,
   }) async {
+    final stopwatch = Stopwatch()..start();
+
     try {
-      final stopwatch = Stopwatch()..start();
       final response = await dio.post(
         '/auth/v1/token',
         queryParameters: {
@@ -38,8 +39,9 @@ class AuthDataSourceRemoteSupabase implements AuthDataSourceRemote {
 
       unawaited(
         performanceTimeTracker.track(
-          feature: PerformanceFeatures.loginBackEnd,
+          feature: PerformanceFeatures.login,
           duration: stopwatch.elapsedMilliseconds.toDouble(),
+          source: PerformanceSources.backEnd,
         ),
       );
 
@@ -47,6 +49,16 @@ class AuthDataSourceRemoteSupabase implements AuthDataSourceRemote {
         response.data as Map<String, dynamic>,
       );
     } on DioException catch (e) {
+      stopwatch.stop();
+
+      unawaited(
+        performanceTimeTracker.track(
+          feature: PerformanceFeatures.login,
+          duration: stopwatch.elapsedMilliseconds.toDouble(),
+          source: PerformanceSources.backEnd,
+        ),
+      );
+
       if (e.response?.statusCode == 400 &&
           e.response?.data['msg'].contains('Invalid login credentials')) {
         throw ServerException('Credenciales invalidas');

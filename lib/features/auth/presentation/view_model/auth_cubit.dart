@@ -71,16 +71,18 @@ class AuthCubit extends Cubit<AuthState> {
 
         unawaited(
           performanceTimeTracker.track(
-            feature: PerformanceFeatures.loginFrontEnd,
+            feature: PerformanceFeatures.login,
             duration: stopwatch.elapsedMilliseconds.toDouble(),
+            source: PerformanceSources.frontEnd,
           ),
         );
       },
       (_) {
         unawaited(
           performanceTimeTracker.track(
-            feature: PerformanceFeatures.loginFrontEnd,
+            feature: PerformanceFeatures.login,
             duration: stopwatch.elapsedMilliseconds.toDouble(),
+            source: PerformanceSources.frontEnd,
           ),
         );
       },

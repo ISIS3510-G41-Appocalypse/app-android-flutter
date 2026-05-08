@@ -17,6 +17,7 @@ class PerformanceTimeTracker {
   Future<void> track({
     required String feature,
     required double duration,
+    required String source,
     String platform = _defaultPlatform,
   }) async {
     try {
@@ -30,6 +31,7 @@ class PerformanceTimeTracker {
           'feature': feature,
           'duration': duration,
           'platform': platform,
+          'source': source,
         },
       );
     } catch (_) {
