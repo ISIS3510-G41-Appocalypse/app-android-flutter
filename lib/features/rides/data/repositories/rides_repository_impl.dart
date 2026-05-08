@@ -1,4 +1,5 @@
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/performance/performance_time_tracker.dart';
 import '../../domain/entities/vehicle.dart';
 import '../../domain/entities/zone.dart';
 import '../../domain/entities/ride.dart';
@@ -9,8 +10,13 @@ import '../models/ride_model.dart';
 class RidesRepositoryImpl implements RidesRepository {
   final RidesRemoteDatasource datasource;
 
-  RidesRepositoryImpl({required DioClient client}): 
-    datasource = RidesRemoteDatasource(client: client);
+  RidesRepositoryImpl({
+    required DioClient client,
+    required PerformanceTimeTracker performanceTimeTracker,
+  }) : datasource = RidesRemoteDatasource(
+          client: client,
+          performanceTimeTracker: performanceTimeTracker,
+        );
 
   @override
   Future<List<Vehicle>> getVehiclesByDriver(int driverId) =>

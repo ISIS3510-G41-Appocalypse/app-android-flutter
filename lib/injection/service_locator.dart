@@ -25,7 +25,10 @@ Future<void> setupLocator() async {
     ),
   );
   sl.registerLazySingleton<RidesRemoteDatasource>(
-    () => RidesRemoteDatasource(client: sl<DioClient>()),
+    () => RidesRemoteDatasource(
+      client: sl<DioClient>(),
+      performanceTimeTracker: sl<PerformanceTimeTracker>(),
+    ),
   );
 
   // Offline storage for rides form
