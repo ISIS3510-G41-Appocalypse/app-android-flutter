@@ -10,12 +10,14 @@ class RideOfferCard extends StatelessWidget {
     required this.offer,
     required this.isReserveEnabled,
     required this.isReserving,
+    this.reserveDisabledReason,
     required this.onReserve,
   });
 
   final RideOfferViewData offer;
   final bool isReserveEnabled;
   final bool isReserving;
+  final String? reserveDisabledReason;
   final VoidCallback onReserve;
 
   @override
@@ -83,10 +85,30 @@ class RideOfferCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              _ReserveButton(
-                isEnabled: isReserveEnabled,
-                isLoading: isReserving,
-                onPressed: onReserve,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  _ReserveButton(
+                    isEnabled: isReserveEnabled,
+                    isLoading: isReserving,
+                    onPressed: onReserve,
+                  ),
+                  if (reserveDisabledReason != null) ...[
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: 140,
+                      child: Text(
+                        reserveDisabledReason!,
+                        textAlign: TextAlign.end,
+                        style: AppTextStyles.primary.copyWith(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFFB91C1C),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ],
           ),

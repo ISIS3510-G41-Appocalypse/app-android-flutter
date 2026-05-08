@@ -8,6 +8,8 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../auth/presentation/view/widgets/auth_session_listener.dart';
 import '../../../../driver_rides/presentation/view_model/driver_rides_cubit.dart';
 import '../../../../driver_rides/presentation/view_model/driver_rides_state.dart';
+import '../../../../rider_rides/presentation/view_model/rider_rides_cubit.dart';
+import '../../../../rider_rides/presentation/view_model/rider_rides_state.dart';
 import '../../../../user/domain/entities/user_role.dart';
 import '../../../../user/presentation/view_model/user_cubit.dart';
 import '../../../../user/presentation/view_model/user_state.dart';
@@ -28,6 +30,7 @@ class _RideOffersPageState extends State<RideOffersPage> {
   final GetIt _sl = GetIt.instance;
   late final RideOffersCubit _cubit;
   late final DriverRidesCubit _driverRidesCubit;
+  late final RiderRidesCubit _riderRidesCubit;
 
   @override
   void initState() {
@@ -41,12 +44,15 @@ class _RideOffersPageState extends State<RideOffersPage> {
       ..loadInitialData(preferredZoneId: preferredZoneId);
     _driverRidesCubit = _sl<DriverRidesCubit>()
       ..loadActiveRide(driverId: user?.driver?.id);
+    _riderRidesCubit = _sl<RiderRidesCubit>()
+      ..loadActiveRide(riderId: user?.rider?.id);
   }
 
   @override
   void dispose() {
     _cubit.close();
     _driverRidesCubit.close();
+    _riderRidesCubit.close();
     super.dispose();
   }
 
@@ -56,6 +62,7 @@ class _RideOffersPageState extends State<RideOffersPage> {
       providers: [
         BlocProvider.value(value: _cubit),
         BlocProvider.value(value: _driverRidesCubit),
+        BlocProvider.value(value: _riderRidesCubit),
       ],
       child: AuthSessionListener(
         child: Scaffold(
@@ -73,6 +80,9 @@ class _RideOffersPageState extends State<RideOffersPage> {
                 );
                 _driverRidesCubit.loadActiveRide(
                   driverId: userState.user?.driver?.id,
+                );
+                _riderRidesCubit.loadActiveRide(
+                  riderId: userState.user?.rider?.id,
                 );
               },
               child: BlocListener<DriverRidesCubit, DriverRidesState>(
@@ -120,26 +130,44 @@ class _RideOffersPageState extends State<RideOffersPage> {
                                   DriverRidesState
                                 >(
                                   builder: (context, driverRideState) {
-                                    final hasActiveRide =
-                                        isDriverMode &&
-                                        driverRideState.status ==
+                                    return BlocBuilder<
+                                      RiderRidesCubit,
+                                      RiderRidesState
+                                    >(
+                                      builder: (context, riderRideState) {
+                                        final hasActiveDriverRide =
+                                            driverRideState.status ==
                                             DriverRidesStatus.success;
-                                    final isCheckingAvailability =
-                                        isDriverMode &&
-                                        driverRideState.status ==
-                                            DriverRidesStatus.loading;
+                                        final hasActiveRiderReservation =
+                                            riderRideState.status ==
+                                            RiderRidesStatus.success;
+                                        final isCheckingAvailability =
+                                            driverRideState.status ==
+                                                DriverRidesStatus.loading ||
+                                            riderRideState.status ==
+                                                RiderRidesStatus.loading;
+                                        String? helperText;
 
-                                    return RideOffersHeaderSection(
-                                      showPublishAction: isDriverMode,
-                                      isPublishEnabled:
-                                          !hasActiveRide &&
-                                          !isCheckingAvailability,
-                                      helperText: isCheckingAvailability
-                                          ? 'Verificando si ya tienes un viaje activo...'
-                                          : hasActiveRide
-                                          ? 'Ya tienes un viaje activo como conductor. '
-                                                'Debes cancelarlo o finalizarlo antes de publicar otro.'
-                                          : null,
+                                        if (isCheckingAvailability) {
+                                          helperText =
+                                              'Verificando si ya tienes un viaje o una reserva activa...';
+                                        } else if (hasActiveDriverRide) {
+                                          helperText =
+                                              'Ya tienes un viaje activo como conductor. Debes cancelarlo o finalizarlo antes de publicar otro.';
+                                        } else if (hasActiveRiderReservation) {
+                                          helperText =
+                                              'Debes cancelar o finalizar tu reserva activa antes de publicar un viaje.';
+                                        }
+
+                                        return RideOffersHeaderSection(
+                                          showPublishAction: isDriverMode,
+                                          isPublishEnabled:
+                                              !hasActiveDriverRide &&
+                                              !hasActiveRiderReservation &&
+                                              !isCheckingAvailability,
+                                          helperText: helperText,
+                                        );
+                                      },
                                     );
                                   },
                                 );
@@ -165,32 +193,61 @@ class _RideOffersPageState extends State<RideOffersPage> {
                                 final userState = context
                                     .watch<UserCubit>()
                                     .state;
-                                final isDriverMode =
-                                    userState.activeRole == UserRole.driver;
-                                final hasActiveRide =
-                                    isDriverMode &&
-                                    driverRideState.status ==
+                                return BlocBuilder<
+                                  RiderRidesCubit,
+                                  RiderRidesState
+                                >(
+                                  builder: (context, riderRideState) {
+                                    final driverRidesCubit = context.read<
+                                      DriverRidesCubit
+                                    >();
+                                    final riderRidesCubit = context.read<
+                                      RiderRidesCubit
+                                    >();
+                                    final hasActiveDriverRide =
+                                        driverRideState.status ==
                                         DriverRidesStatus.success;
-                                final isCheckingAvailability =
-                                    isDriverMode &&
-                                    driverRideState.status ==
+                                    final isCheckingDriverRide =
+                                        driverRideState.status ==
                                         DriverRidesStatus.loading;
+                                    final reserveDisabledReason =
+                                        isCheckingDriverRide
+                                        ? 'Verificando si ya tienes un viaje activo como conductor...'
+                                        : hasActiveDriverRide
+                                        ? 'Debes cancelar o finalizar tu viaje activo como conductor antes de reservar otro viaje.'
+                                        : null;
 
-                                return RideOffersListSection(
-                                  state: state,
-                                  isReserveEnabled:
-                                      !hasActiveRide &&
-                                      !isCheckingAvailability &&
-                                      !state.isReserving,
-                                  reservingRideId: state.reservingRideId,
-                                  onReserve: (index) {
-                                    final riderId = userState.user?.rider?.id;
-                                    cubit.reserveRide(
-                                      offer: state.offers[index],
-                                      riderId: riderId,
+                                    return RideOffersListSection(
+                                      state: state,
+                                      isReserveEnabled:
+                                          !hasActiveDriverRide &&
+                                          !isCheckingDriverRide &&
+                                          !state.isReserving,
+                                      reserveDisabledReason:
+                                          reserveDisabledReason,
+                                      currentDriverId: userState.user?.driver?.id
+                                          .toString(),
+                                      reservingRideId: state.reservingRideId,
+                                      onReserve: (index) {
+                                        final riderId =
+                                            userState.user?.rider?.id;
+                                        cubit.reserveRide(
+                                          offer: state.offers[index],
+                                          riderId: riderId,
+                                          currentDriverId: userState.user?.driver
+                                              ?.id
+                                              .toString(),
+                                          hasActiveDriverRide:
+                                              hasActiveDriverRide,
+                                        );
+                                      },
+                                      onRetry: () async {
+                                        await cubit.loadRideOffers();
+                                        await driverRidesCubit.reloadActiveRide();
+                                        await riderRidesCubit.reloadActiveRide();
+                                      },
                                     );
                                   },
-                                  onRetry: cubit.loadRideOffers,
                                 );
                               },
                             ),
