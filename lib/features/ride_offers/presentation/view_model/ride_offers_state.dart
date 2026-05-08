@@ -29,10 +29,10 @@ class RideOffersState {
     required this.reservationCreated,
   });
 
-  factory RideOffersState.initial() {
-    return const RideOffersState(
+  factory RideOffersState.initial({DateTime? initialDate}) {
+    return RideOffersState(
       status: RideOffersStatus.initial,
-      filters: RideOfferFilters(),
+      filters: RideOfferFilters(date: initialDate),
       offers: [],
       zones: [],
       isOffline: false,

@@ -19,7 +19,7 @@ class RideOffersCubit extends Cubit<RideOffersState> {
     required this.getRideOffers,
     required this.getZones,
     required this.createReservation,
-  }) : super(RideOffersState.initial());
+  }) : super(RideOffersState.initial(initialDate: _today()));
 
   Future<void> loadInitialData({
     String? preferredZoneId,
@@ -175,6 +175,7 @@ class RideOffersCubit extends Cubit<RideOffersState> {
       state.copyWith(
         filters: RideOfferFilters(
           zoneId: _preferredZoneId,
+          date: _today(),
           excludedRideId: _excludedRideId,
         ),
       ),
@@ -250,5 +251,10 @@ class RideOffersCubit extends Cubit<RideOffersState> {
         );
       },
     );
+  }
+
+  static DateTime _today() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
   }
 }
