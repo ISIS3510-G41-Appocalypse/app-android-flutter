@@ -1,6 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/errors/failures.dart';
+import '../../../../core/performance/performance_features.dart';
+import '../../../../core/performance/performance_time_tracker.dart';
+import '../../../ride_recommendation/domain/entities/ride_recommendation.dart';
+import '../../../ride_recommendation/domain/usecases/get_ride_recommendation.dart';
 import '../../../rider_rides/domain/usecases/create_reservation.dart';
 import '../../domain/entities/ride_offer_filters.dart';
 import '../../domain/usecases/get_ride_offers.dart';
@@ -12,6 +18,8 @@ class RideOffersCubit extends Cubit<RideOffersState> {
   final GetRideOffers getRideOffers;
   final GetZones getZones;
   final CreateReservation createReservation;
+  final GetRideRecommendation getRideRecommendation;
+  final PerformanceTimeTracker performanceTimeTracker;
   String? _preferredZoneId;
   String? _excludedRideId;
 
@@ -19,7 +27,51 @@ class RideOffersCubit extends Cubit<RideOffersState> {
     required this.getRideOffers,
     required this.getZones,
     required this.createReservation,
+    required this.getRideRecommendation,
+    required this.performanceTimeTracker,
   }) : super(RideOffersState.initial());
+
+  Future<RideRecommendation?> loadRideRecommendation({
+    required int? riderId,
+    required int driverId,
+  }) async {
+    if (riderId == null) {
+      return null;
+    }
+
+    final result = await getRideRecommendation(
+      riderId: riderId,
+      driverId: driverId,
+    );
+
+    RideRecommendation? recommendation;
+    result.fold((_) {}, (value) {
+      recommendation = value;
+    });
+
+    return recommendation;
+  }
+
+  Future<Failure?> validateRecommendationAvailability({
+    required int? riderId,
+    required int driverId,
+  }) async {
+    if (riderId == null) {
+      return null;
+    }
+
+    final result = await getRideRecommendation(
+      riderId: riderId,
+      driverId: driverId,
+    );
+
+    Failure? failure;
+    result.fold((value) {
+      failure = value;
+    }, (_) {});
+
+    return failure;
+  }
 
   Future<void> loadInitialData({
     String? preferredZoneId,
@@ -204,10 +256,14 @@ class RideOffersCubit extends Cubit<RideOffersState> {
   Future<void> reserveRide({
     required RideOfferViewData offer,
     required int? riderId,
+    Stopwatch? createReservationFrontEndStopwatch,
   }) async {
     if (state.isReserving) {
       return;
     }
+
+    final stopwatch =
+        createReservationFrontEndStopwatch ?? (Stopwatch()..start());
 
     emit(
       state.copyWith(
@@ -228,6 +284,18 @@ class RideOffersCubit extends Cubit<RideOffersState> {
 
     result.fold(
       (failure) {
+        stopwatch.stop();
+
+        if (failure is! NetworkFailure) {
+          unawaited(
+            performanceTimeTracker.track(
+              feature: PerformanceFeatures.createReservation,
+              duration: stopwatch.elapsedMilliseconds.toDouble(),
+              source: PerformanceSources.frontEnd,
+            ),
+          );
+        }
+
         emit(
           state.copyWith(
             isReserving: false,
@@ -239,6 +307,16 @@ class RideOffersCubit extends Cubit<RideOffersState> {
         );
       },
       (_) {
+        stopwatch.stop();
+
+        unawaited(
+          performanceTimeTracker.track(
+            feature: PerformanceFeatures.createReservation,
+            duration: stopwatch.elapsedMilliseconds.toDouble(),
+            source: PerformanceSources.frontEnd,
+          ),
+        );
+
         emit(
           state.copyWith(
             isReserving: false,

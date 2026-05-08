@@ -1,5 +1,6 @@
 class RideOffer {
   final String id;
+  final int driverId;
   final String driverName;
   final double driverRating;
   final double cancellationOdds;
@@ -16,6 +17,7 @@ class RideOffer {
 
   const RideOffer({
     required this.id,
+    required this.driverId,
     required this.driverName,
     required this.driverRating,
     required this.cancellationOdds,

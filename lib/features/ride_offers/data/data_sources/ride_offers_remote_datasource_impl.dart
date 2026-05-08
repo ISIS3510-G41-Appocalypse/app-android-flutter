@@ -19,7 +19,7 @@ class RideOffersRemoteDataSourceImpl implements RideOffersRemoteDataSource {
       path: _rideOffersViewPath,
       queryParameters: const {
         'select':
-            'id,driver_name,driver_rating,cancellation_odds,trips_count,price,source,destination,date,departure_time,slots,car_model,zone_name,type,state,zone_id',
+            'id,driver_id,driver_name,driver_rating,cancellation_odds,trips_count,price,source,destination,date,departure_time,slots,car_model,zone_name,type,state,zone_id',
         'order': 'driver_rating.desc',
       },
     );

@@ -522,6 +522,8 @@ class _CreateRideFormState extends State<CreateRideForm> {
 
     if (!_formKey.currentState!.validate()) return;
 
+    final createRideFrontEndStopwatch = Stopwatch()..start();
+
     await vm.createRide(
       source: _sourceCtrl.text,
       destination: _destinationCtrl.text,
@@ -529,6 +531,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
       departureTime: _timeCtrl.text,
       type: _selectedType,
       price: double.tryParse(_priceCtrl.text) ?? 0,
+      createRideFrontEndStopwatch: createRideFrontEndStopwatch,
     );
   }
 

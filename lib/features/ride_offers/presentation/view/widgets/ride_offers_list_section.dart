@@ -1,25 +1,28 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../../../../core/errors/failures.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/widgets/offline_state_card.dart';
+import '../../../../user/presentation/view_model/user_cubit.dart';
 import '../../view_model/ride_offers_state.dart';
+import '../../view_model/ride_offers_cubit.dart';
 import 'ride_offer_card.dart';
+import 'reserve_ride_confirmation_dialog.dart';
 
 class RideOffersListSection extends StatelessWidget {
   const RideOffersListSection({
     super.key,
     required this.state,
     required this.isReserveEnabled,
-    required this.reservingRideId,
-    required this.onReserve,
     required this.onRetry,
   });
 
   final RideOffersState state;
   final bool isReserveEnabled;
-  final String? reservingRideId;
-  final ValueChanged<int> onReserve;
   final VoidCallback onRetry;
 
   @override
@@ -83,14 +86,75 @@ class RideOffersListSection extends StatelessWidget {
                 child: RideOfferCard(
                   offer: state.offers[index],
                   isReserveEnabled: isReserveEnabled,
-                  isReserving: reservingRideId == state.offers[index].id,
-                  onReserve: () => onReserve(index),
+                  isReserving: state.reservingRideId == state.offers[index].id,
+                  onReserve: () => unawaited(
+                    _onReserveTapped(
+                      context,
+                      index: index,
+                    ),
+                  ),
                 ),
               ),
             ),
           ],
         );
     }
+  }
+
+  Future<void> _onReserveTapped(
+    BuildContext context, {
+    required int index,
+  }) async {
+    final userState = context.read<UserCubit>().state;
+    final riderId = userState.user?.rider?.id;
+    final offer = state.offers[index];
+    final cubit = context.read<RideOffersCubit>();
+
+    final recommendationFailure = await cubit.validateRecommendationAvailability(
+      riderId: riderId,
+      driverId: offer.driverId,
+    );
+
+    if (recommendationFailure is NetworkFailure) {
+      if (!context.mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(recommendationFailure.message),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+      return;
+    }
+
+    final recommendation = await cubit.loadRideRecommendation(
+      riderId: riderId,
+      driverId: offer.driverId,
+    );
+
+    if (!context.mounted) {
+      return;
+    }
+
+    final shouldReserve = await showDialog<bool>(
+      context: context,
+      builder: (_) => ReserveRideConfirmationDialog(
+        recommendation: recommendation,
+      ),
+    );
+
+    if (shouldReserve != true) {
+      return;
+    }
+
+    final createReservationFrontEndStopwatch = Stopwatch()..start();
+    await cubit.reserveRide(
+      offer: offer,
+      riderId: riderId,
+      createReservationFrontEndStopwatch: createReservationFrontEndStopwatch,
+    );
   }
 }
 
