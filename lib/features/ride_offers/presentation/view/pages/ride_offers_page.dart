@@ -159,9 +159,8 @@ class _RideOffersPageState extends State<RideOffersPage> {
                             const SizedBox(height: 24),
                             BlocBuilder<DriverRidesCubit, DriverRidesState>(
                               builder: (context, driverRideState) {
-                                final userState = context
-                                    .watch<UserCubit>()
-                                    .state;
+                                final userState =
+                                    context.watch<UserCubit>().state;
                                 final isDriverMode =
                                     userState.activeRole == UserRole.driver;
                                 final hasActiveRide =
@@ -179,18 +178,6 @@ class _RideOffersPageState extends State<RideOffersPage> {
                                       !hasActiveRide &&
                                       !isCheckingAvailability &&
                                       !state.isReserving,
-                                  reservingRideId: state.reservingRideId,
-                                  onReserve: (index) {
-                                    final riderId = userState.user?.rider?.id;
-                                    final createReservationFrontEndStopwatch =
-                                        Stopwatch()..start();
-                                    cubit.reserveRide(
-                                      offer: state.offers[index],
-                                      riderId: riderId,
-                                      createReservationFrontEndStopwatch:
-                                          createReservationFrontEndStopwatch,
-                                    );
-                                  },
                                   onRetry: cubit.loadRideOffers,
                                 );
                               },
