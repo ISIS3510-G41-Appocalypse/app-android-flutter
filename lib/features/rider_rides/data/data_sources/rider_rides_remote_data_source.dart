@@ -3,6 +3,11 @@ abstract class RiderRidesRemoteDataSource {
 
   Future<Map<String, dynamic>?> getRideOfferRow({required String rideId});
 
+  Future<Map<String, dynamic>> updateReservationState({
+    required String reservationId,
+    required String state,
+  });
+
   Future<void> createReservationRow({
     required String rideId,
     required int riderId,

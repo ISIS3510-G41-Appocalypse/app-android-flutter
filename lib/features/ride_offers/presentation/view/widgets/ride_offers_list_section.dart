@@ -8,21 +8,29 @@ import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/widgets/offline_state_card.dart';
 import '../../../../user/presentation/view_model/user_cubit.dart';
-import '../../view_model/ride_offers_state.dart';
 import '../../view_model/ride_offers_cubit.dart';
-import 'ride_offer_card.dart';
+import '../../view_model/ride_offers_state.dart';
 import 'reserve_ride_confirmation_dialog.dart';
+import 'ride_offer_card.dart';
 
 class RideOffersListSection extends StatelessWidget {
   const RideOffersListSection({
     super.key,
     required this.state,
     required this.isReserveEnabled,
+    this.reserveDisabledReason,
+    required this.currentDriverId,
+    required this.reservingRideId,
+    required this.onReserve,
     required this.onRetry,
   });
 
   final RideOffersState state;
   final bool isReserveEnabled;
+  final String? reserveDisabledReason;
+  final String? currentDriverId;
+  final String? reservingRideId;
+  final ValueChanged<int> onReserve;
   final VoidCallback onRetry;
 
   @override
@@ -77,28 +85,50 @@ class RideOffersListSection extends StatelessWidget {
               _InlineError(message: state.message!),
               const SizedBox(height: 16),
             ],
+            if (reserveDisabledReason != null &&
+                reserveDisabledReason!.isNotEmpty) ...[
+              _InlineError(message: reserveDisabledReason!),
+              const SizedBox(height: 16),
+            ],
             ...List.generate(
               state.offers.length,
               (index) => Padding(
                 padding: EdgeInsets.only(
                   bottom: index == state.offers.length - 1 ? 0 : 24,
                 ),
-                child: RideOfferCard(
-                  offer: state.offers[index],
-                  isReserveEnabled: isReserveEnabled,
-                  isReserving: state.reservingRideId == state.offers[index].id,
-                  onReserve: () => unawaited(
-                    _onReserveTapped(
-                      context,
-                      index: index,
-                    ),
-                  ),
+                child: _buildOfferCard(
+                  context,
+                  index,
                 ),
               ),
             ),
           ],
         );
     }
+  }
+
+  Widget _buildOfferCard(BuildContext context, int index) {
+    final offer = state.offers[index];
+    final isOwnRide =
+        currentDriverId != null &&
+        currentDriverId!.isNotEmpty &&
+        offer.driverId.toString() == currentDriverId;
+    final cardDisabledReason = isOwnRide
+        ? 'No puedes reservar tu propio viaje.'
+        : reserveDisabledReason;
+
+    return RideOfferCard(
+      offer: offer,
+      isReserveEnabled: isReserveEnabled && !isOwnRide,
+      isReserving: reservingRideId == offer.id,
+      reserveDisabledReason: cardDisabledReason,
+      onReserve: () => unawaited(
+        _onReserveTapped(
+          context,
+          index: index,
+        ),
+      ),
+    );
   }
 
   Future<void> _onReserveTapped(
@@ -149,12 +179,7 @@ class RideOffersListSection extends StatelessWidget {
       return;
     }
 
-    final createReservationFrontEndStopwatch = Stopwatch()..start();
-    await cubit.reserveRide(
-      offer: offer,
-      riderId: riderId,
-      createReservationFrontEndStopwatch: createReservationFrontEndStopwatch,
-    );
+    onReserve(index);
   }
 }
 

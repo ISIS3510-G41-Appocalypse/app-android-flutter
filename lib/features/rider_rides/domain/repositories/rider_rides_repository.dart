@@ -14,4 +14,8 @@ abstract class RiderRidesRepository {
     required String meetingPoint,
     required String destinationPoint,
   });
+
+  Future<Either<Failure, void>> cancelReservation({
+    required String reservationId,
+  });
 }

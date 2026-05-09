@@ -178,14 +178,31 @@ class RideOffersFiltersSection extends StatelessWidget {
       initialTime: _initialTime(),
     );
 
+    if (!context.mounted) {
+      return;
+    }
+
     if (selectedTime != null) {
       if ((date == null || _isToday(date!)) && _isPastTime(selectedTime)) {
         onTimeChanged(null);
+        _showInvalidPastTimeMessage(context);
         return;
       }
 
       onTimeChanged(_formatTimeValue(selectedTime));
     }
+  }
+
+  void _showInvalidPastTimeMessage(BuildContext context) {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.clearSnackBars();
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text(
+          'No es posible seleccionar una hora anterior a la hora actual.',
+        ),
+      ),
+    );
   }
 
   Future<void> _selectType(BuildContext context) async {

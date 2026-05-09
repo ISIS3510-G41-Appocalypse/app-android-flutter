@@ -9,12 +9,14 @@ class RiderRidesState {
   final RiderRide? ride;
   final String? message;
   final bool isOffline;
+  final bool isCancelling;
 
   const RiderRidesState({
     required this.status,
     required this.ride,
     this.message,
     required this.isOffline,
+    required this.isCancelling,
   });
 
   factory RiderRidesState.initial() {
@@ -23,6 +25,7 @@ class RiderRidesState {
       ride: null,
       message: null,
       isOffline: false,
+      isCancelling: false,
     );
   }
 
@@ -31,6 +34,7 @@ class RiderRidesState {
     Object? ride = _sentinel,
     Object? message = _sentinel,
     bool? isOffline,
+    bool? isCancelling,
   }) {
     return RiderRidesState(
       status: status ?? this.status,
@@ -39,6 +43,7 @@ class RiderRidesState {
           ? this.message
           : message as String?,
       isOffline: isOffline ?? this.isOffline,
+      isCancelling: isCancelling ?? this.isCancelling,
     );
   }
 }
