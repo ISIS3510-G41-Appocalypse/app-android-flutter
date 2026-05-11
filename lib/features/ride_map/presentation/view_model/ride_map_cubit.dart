@@ -219,6 +219,21 @@ class RideMapCubit extends Cubit<RideMapState> {
       );
     }
 
+    if (driverUserId <= 0) {
+      emit(
+        state.copyWith(
+          status: RideMapStatus.empty,
+          locations: const [],
+          driverLatitude: riderLatitude,
+          driverLongitude: riderLongitude,
+          message:
+              'No pudimos identificar al conductor para mostrarlo en el mapa.',
+          isOffline: false,
+        ),
+      );
+      return;
+    }
+
     final result = await getRideMapLocations(
       rideId: rideId,
       passengerNamesByUserId: {driverUserId: driverName},

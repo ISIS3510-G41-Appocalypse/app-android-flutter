@@ -4,6 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/widgets/offline_state_card.dart';
+import '../../../../ride_map/presentation/view/widgets/ride_map_panel.dart';
+import '../../../../user/presentation/view_model/user_cubit.dart';
 import '../../view_model/rider_rides_cubit.dart';
 import '../../view_model/rider_rides_state.dart';
 import '../models/rider_ride_view_data.dart';
@@ -90,10 +92,22 @@ class RiderRidesContentSection extends StatelessWidget {
         );
       case RiderRidesStatus.success:
         final ride = RiderRideViewData.fromEntity(state.ride!);
-        return RiderRideCard(
-          ride: ride,
-          isCancelling: state.isCancelling,
-          onCancel: () => _confirmCancellation(context),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            RiderRideCard(
+              ride: ride,
+              isCancelling: state.isCancelling,
+              onCancel: () => _confirmCancellation(context),
+            ),
+            if (state.ride!.state == 'EN_CURSO') ...[
+              const SizedBox(height: 24),
+              RiderRideMapPanel(
+                ride: state.ride!,
+                user: context.read<UserCubit>().state.user,
+              ),
+            ],
+          ],
         );
     }
   }

@@ -7,6 +7,8 @@ import 'rider_rides_remote_data_source.dart';
 class RiderRidesRemoteDataSourceImpl implements RiderRidesRemoteDataSource {
   static const String _reservationsPath = '/rest/v1/reservations';
   static const String _rideOffersViewPath = '/rest/v1/ride_offers_view';
+  static const String _ridesPath = '/rest/v1/rides';
+  static const String _driversPath = '/rest/v1/drivers';
 
   final Dio dio;
 
@@ -82,6 +84,70 @@ class RiderRidesRemoteDataSourceImpl implements RiderRidesRemoteDataSource {
       rethrow;
     } catch (_) {
       throw ServerException('Error inesperado al consultar ride_offers_view');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getRideRow({required String rideId}) async {
+    try {
+      final response = await dio.get(
+        _ridesPath,
+        queryParameters: {
+          'select': 'id,driver_id,state',
+          'id': 'eq.$rideId',
+          'limit': 1,
+        },
+      );
+
+      final data = response.data;
+
+      if (data is List) {
+        if (data.isEmpty) {
+          return null;
+        }
+
+        return data.first as Map<String, dynamic>;
+      }
+
+      throw ServerException('Formato de respuesta invalido para rides');
+    } on DioException catch (e) {
+      throw ServerException(ErrorHandler.getErrorMessage(e));
+    } on ServerException {
+      rethrow;
+    } catch (_) {
+      throw ServerException('Error inesperado al consultar rides');
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> getDriverRow({required int driverId}) async {
+    try {
+      final response = await dio.get(
+        _driversPath,
+        queryParameters: {
+          'select': 'id,user_id',
+          'id': 'eq.$driverId',
+          'limit': 1,
+        },
+      );
+
+      final data = response.data;
+
+      if (data is List) {
+        if (data.isEmpty) {
+          return null;
+        }
+
+        return data.first as Map<String, dynamic>;
+      }
+
+      throw ServerException('Formato de respuesta invalido para drivers');
+    } on DioException catch (e) {
+      throw ServerException(ErrorHandler.getErrorMessage(e));
+    } on ServerException {
+      rethrow;
+    } catch (_) {
+      throw ServerException('Error inesperado al consultar drivers');
     }
   }
 

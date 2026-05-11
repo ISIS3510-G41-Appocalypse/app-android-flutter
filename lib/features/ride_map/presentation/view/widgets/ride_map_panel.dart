@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -206,13 +207,35 @@ class _RideMapCanvasState extends State<_RideMapCanvas> {
     return MapWidget(
       key: const ValueKey('driverRideMap'),
       cameraOptions: CameraOptions(center: _centerPoint(), zoom: 13),
+      gestureRecognizers: {
+        Factory<OneSequenceGestureRecognizer>(() => EagerGestureRecognizer()),
+      },
       styleUri: MapboxStyles.MAPBOX_STREETS,
       onMapCreated: (mapboxMap) async {
         _mapboxMap = mapboxMap;
+        await _enableMapGestures(mapboxMap);
         _annotationManager = await mapboxMap.annotations
             .createPointAnnotationManager();
         await _syncAnnotations();
       },
+    );
+  }
+
+  Future<void> _enableMapGestures(MapboxMap mapboxMap) async {
+    await mapboxMap.gestures.updateSettings(
+      GesturesSettings(
+        pinchToZoomEnabled: true,
+        pinchPanEnabled: true,
+        scrollEnabled: true,
+        rotateEnabled: true,
+        pitchEnabled: true,
+        doubleTapToZoomInEnabled: true,
+        doubleTouchToZoomOutEnabled: true,
+        quickZoomEnabled: true,
+        pinchToZoomDecelerationEnabled: true,
+        scrollDecelerationEnabled: true,
+        rotateDecelerationEnabled: true,
+      ),
     );
   }
 
