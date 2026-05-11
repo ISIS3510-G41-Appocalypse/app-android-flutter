@@ -123,7 +123,7 @@ class DriverRidesRemoteDataSourceImpl implements DriverRidesRemoteDataSource {
         queryParameters: {
           'select': 'id,ride_id,rider_id,state',
           'ride_id': 'eq.$rideId',
-          'state': 'in.(PENDIENTE,ACEPTADA)',
+          'state': 'in.(PENDIENTE,ACEPTADA,EN_CURSO)',
           'order': 'id.asc',
         },
       );
