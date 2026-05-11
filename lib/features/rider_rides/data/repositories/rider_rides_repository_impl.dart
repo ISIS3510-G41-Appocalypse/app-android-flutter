@@ -52,19 +52,10 @@ class RiderRidesRepositoryImpl implements RiderRidesRepository {
         );
       }
 
-      final baseRideRow = await remoteDataSource.getRideRow(
-        rideId: reservationRow['ride_id'].toString(),
-      );
-      final driverRow = baseRideRow == null
-          ? null
-          : await remoteDataSource.getDriverRow(
-              driverId: _toInt(baseRideRow['driver_id']),
-            );
-
       return Right(
         RiderRideModel.fromRows(
           reservationRow: reservationRow,
-          rideRow: {...rideRow, 'driver_user_id': driverRow?['user_id']},
+          rideRow: rideRow,
         ).toEntity(),
       );
     } on ServerException catch (e) {
@@ -123,15 +114,31 @@ class RiderRidesRepositoryImpl implements RiderRidesRepository {
     }
   }
 
-  int _toInt(dynamic value) {
-    if (value is int) {
-      return value;
+  @override
+  Future<Either<Failure, void>> cancelReservation({
+    required String reservationId,
+  }) async {
+    if (!await networkChecker.hasInternet) {
+      return const Left(
+        NetworkFailure(
+          'No tienes internet. Esta accion requiere conexion para completarse.',
+        ),
+      );
     }
 
-    if (value is double) {
-      return value.toInt();
-    }
+    try {
+      await remoteDataSource.updateReservationState(
+        reservationId: reservationId,
+        state: 'CANCELADA',
+      );
 
-    return int.tryParse(value.toString()) ?? 0;
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (_) {
+      return const Left(
+        ServerFailure('Error inesperado al cancelar la reserva'),
+      );
+    }
   }
 }

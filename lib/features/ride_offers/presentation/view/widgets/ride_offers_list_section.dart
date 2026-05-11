@@ -11,6 +11,8 @@ class RideOffersListSection extends StatelessWidget {
     super.key,
     required this.state,
     required this.isReserveEnabled,
+    this.reserveDisabledReason,
+    required this.currentDriverId,
     required this.reservingRideId,
     required this.onReserve,
     required this.onRetry,
@@ -18,6 +20,8 @@ class RideOffersListSection extends StatelessWidget {
 
   final RideOffersState state;
   final bool isReserveEnabled;
+  final String? reserveDisabledReason;
+  final String? currentDriverId;
   final String? reservingRideId;
   final ValueChanged<int> onReserve;
   final VoidCallback onRetry;
@@ -74,23 +78,42 @@ class RideOffersListSection extends StatelessWidget {
               _InlineError(message: state.message!),
               const SizedBox(height: 16),
             ],
+            if (reserveDisabledReason != null &&
+                reserveDisabledReason!.isNotEmpty) ...[
+              _InlineError(message: reserveDisabledReason!),
+              const SizedBox(height: 16),
+            ],
             ...List.generate(
               state.offers.length,
               (index) => Padding(
                 padding: EdgeInsets.only(
                   bottom: index == state.offers.length - 1 ? 0 : 24,
                 ),
-                child: RideOfferCard(
-                  offer: state.offers[index],
-                  isReserveEnabled: isReserveEnabled,
-                  isReserving: reservingRideId == state.offers[index].id,
-                  onReserve: () => onReserve(index),
-                ),
+                child: _buildOfferCard(index),
               ),
             ),
           ],
         );
     }
+  }
+
+  Widget _buildOfferCard(int index) {
+    final offer = state.offers[index];
+    final isOwnRide =
+        currentDriverId != null &&
+        currentDriverId!.isNotEmpty &&
+        offer.driverId == currentDriverId;
+    final cardDisabledReason = isOwnRide
+        ? 'No puedes reservar tu propio viaje.'
+        : reserveDisabledReason;
+
+    return RideOfferCard(
+      offer: offer,
+      isReserveEnabled: isReserveEnabled && !isOwnRide,
+      isReserving: reservingRideId == offer.id,
+      reserveDisabledReason: cardDisabledReason,
+      onReserve: () => onReserve(index),
+    );
   }
 }
 

@@ -2,6 +2,7 @@ import '../../../domain/entities/ride_offer.dart';
 
 class RideOfferViewData {
   final String id;
+  final String driverId;
   final String driverName;
   final String ratingText;
   final String cancellationOddsText;
@@ -9,6 +10,7 @@ class RideOfferViewData {
   final String priceText;
   final String source;
   final String destination;
+  final String dateLabel;
   final String departureTimeLabel;
   final String slotsText;
   final String carModel;
@@ -17,6 +19,7 @@ class RideOfferViewData {
 
   const RideOfferViewData({
     required this.id,
+    required this.driverId,
     required this.driverName,
     required this.ratingText,
     required this.cancellationOddsText,
@@ -24,6 +27,7 @@ class RideOfferViewData {
     required this.priceText,
     required this.source,
     required this.destination,
+    required this.dateLabel,
     required this.departureTimeLabel,
     required this.slotsText,
     required this.carModel,
@@ -34,6 +38,7 @@ class RideOfferViewData {
   factory RideOfferViewData.fromEntity(RideOffer offer) {
     return RideOfferViewData(
       id: offer.id,
+      driverId: offer.driverId,
       driverName: offer.driverName,
       ratingText: offer.driverRating.toStringAsFixed(1),
       cancellationOddsText:
@@ -44,6 +49,7 @@ class RideOfferViewData {
       priceText: _formatCurrency(offer.price),
       source: offer.source,
       destination: offer.destination,
+      dateLabel: 'Fecha: ${_formatDate(offer.date)}',
       departureTimeLabel: 'Salida: ${_formatTime(offer.departureTime)}',
       slotsText: offer.slots == 1 ? '1 cupo' : '${offer.slots} cupos',
       carModel: offer.carModel,
@@ -74,6 +80,13 @@ class RideOfferViewData {
     final minute = parsedMinute.toString().padLeft(2, '0');
     final period = parsedHour >= 12 ? 'PM' : 'AM';
     return '$hour:$minute $period';
+  }
+
+  static String _formatDate(DateTime value) {
+    final day = value.day.toString().padLeft(2, '0');
+    final month = value.month.toString().padLeft(2, '0');
+    final year = value.year.toString();
+    return '$day/$month/$year';
   }
 
   static String _formatType(String value) {

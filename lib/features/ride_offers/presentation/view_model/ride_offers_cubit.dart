@@ -19,7 +19,7 @@ class RideOffersCubit extends Cubit<RideOffersState> {
     required this.getRideOffers,
     required this.getZones,
     required this.createReservation,
-  }) : super(RideOffersState.initial());
+  }) : super(RideOffersState.initial(initialDate: _today()));
 
   Future<void> loadInitialData({
     String? preferredZoneId,
@@ -40,6 +40,29 @@ class RideOffersCubit extends Cubit<RideOffersState> {
     }
 
     await _loadZones();
+    await loadRideOffers();
+  }
+
+  Future<void> syncDefaultFilters({String? preferredZoneId}) async {
+    _preferredZoneId = preferredZoneId;
+
+    final shouldUpdateZone =
+        preferredZoneId != null && state.filters.zoneId == null;
+    final shouldUpdateDate = state.filters.date == null;
+
+    if (!shouldUpdateZone && !shouldUpdateDate) {
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        filters: state.filters.copyWith(
+          zoneId: shouldUpdateZone ? preferredZoneId : state.filters.zoneId,
+          date: shouldUpdateDate ? _today() : state.filters.date,
+        ),
+      ),
+    );
+
     await loadRideOffers();
   }
 
@@ -175,6 +198,7 @@ class RideOffersCubit extends Cubit<RideOffersState> {
       state.copyWith(
         filters: RideOfferFilters(
           zoneId: _preferredZoneId,
+          date: _today(),
           excludedRideId: _excludedRideId,
         ),
       ),
@@ -204,8 +228,33 @@ class RideOffersCubit extends Cubit<RideOffersState> {
   Future<void> reserveRide({
     required RideOfferViewData offer,
     required int? riderId,
+    required String? currentDriverId,
+    required bool hasActiveDriverRide,
   }) async {
     if (state.isReserving) {
+      return;
+    }
+
+    if (hasActiveDriverRide) {
+      emit(
+        state.copyWith(
+          message:
+              'Debes cancelar o finalizar tu viaje activo como conductor antes de reservar otro viaje.',
+          isOffline: false,
+          reservationCreated: false,
+        ),
+      );
+      return;
+    }
+
+    if (currentDriverId != null && offer.driverId == currentDriverId) {
+      emit(
+        state.copyWith(
+          message: 'No puedes reservar tu propio viaje.',
+          isOffline: false,
+          reservationCreated: false,
+        ),
+      );
       return;
     }
 
@@ -250,5 +299,10 @@ class RideOffersCubit extends Cubit<RideOffersState> {
         );
       },
     );
+  }
+
+  static DateTime _today() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
   }
 }

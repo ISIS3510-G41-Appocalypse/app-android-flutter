@@ -61,7 +61,18 @@ class _RiderRidesPageState extends State<RiderRidesPage> {
               listener: (context, userState) {
                 _cubit.loadActiveRide(riderId: userState.user?.rider?.id);
               },
-              child: BlocBuilder<RiderRidesCubit, RiderRidesState>(
+              child: BlocConsumer<RiderRidesCubit, RiderRidesState>(
+                listenWhen: (previous, current) =>
+                    previous.isCancelling &&
+                    !current.isCancelling &&
+                    current.message != null,
+                listener: (context, state) {
+                  final messenger = ScaffoldMessenger.of(context);
+                  messenger.clearSnackBars();
+                  messenger.showSnackBar(
+                    SnackBar(content: Text(state.message!)),
+                  );
+                },
                 builder: (context, state) {
                   return ScrollConfiguration(
                     behavior: const MaterialScrollBehavior().copyWith(
