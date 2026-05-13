@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/network/dio_client.dart';
+import '../../../../core/performance/performance_features.dart';
+import '../../../../core/performance/performance_time_tracker.dart';
 import '../../data/models/ride_model.dart';
 import '../../data/repositories/rides_repository_impl.dart';
 import '../../domain/entities/vehicle.dart';
@@ -11,13 +15,18 @@ import 'create_ride_state.dart';
 class CreateRideCubit extends Cubit<CreateRideState> {
   final RidesRepositoryImpl repository;
   final RidesOfflineSyncRepository syncRepository;
+  final PerformanceTimeTracker performanceTimeTracker;
   final int _driverId;
 
   CreateRideCubit({
     required DioClient client,
     required this.syncRepository,
+    required this.performanceTimeTracker,
     required int driverId,
-  })  : repository = RidesRepositoryImpl(client: client),
+  })  : repository = RidesRepositoryImpl(
+          client: client,
+          performanceTimeTracker: performanceTimeTracker,
+        ),
         _driverId = driverId,
         super(const CreateRideState());
 
@@ -117,8 +126,11 @@ class CreateRideCubit extends Cubit<CreateRideState> {
     required String departureTime,
     required String type,
     required double price,
+    Stopwatch? createRideFrontEndStopwatch,
   }) async {
     if (!state.isReadyLike) return;
+
+    final stopwatch = createRideFrontEndStopwatch ?? (Stopwatch()..start());
 
     if (state.selectedVehicle == null || state.selectedZone == null) {
       emit(
@@ -153,6 +165,18 @@ class CreateRideCubit extends Cubit<CreateRideState> {
       );
 
       final result = await syncRepository.createRideWithOfflineSupport(ride);
+      stopwatch.stop();
+
+      if (result.status != RideSyncStatus.networkError) {
+        unawaited(
+          performanceTimeTracker.track(
+            feature: PerformanceFeatures.createRide,
+            duration: stopwatch.elapsedMilliseconds.toDouble(),
+            source: PerformanceSources.frontEnd,
+          ),
+        );
+      }
+
       _applySyncResult(
         result,
         fallbackDraft: RideFormDraft(
@@ -167,6 +191,16 @@ class CreateRideCubit extends Cubit<CreateRideState> {
         ),
       );
     } catch (e) {
+      stopwatch.stop();
+
+      unawaited(
+        performanceTimeTracker.track(
+          feature: PerformanceFeatures.createRide,
+          duration: stopwatch.elapsedMilliseconds.toDouble(),
+          source: PerformanceSources.frontEnd,
+        ),
+      );
+
       emit(
         state.copyWith(
           status: CreateRideStatus.error,

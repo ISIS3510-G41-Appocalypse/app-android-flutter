@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 
 import '../../../../core/errors/error_handler.dart';
 import '../../../../core/errors/exceptions.dart';
+import '../../../../core/performance/performance_features.dart';
+import '../../../../core/performance/performance_time_tracker.dart';
 import 'rider_rides_remote_data_source.dart';
 
 class RiderRidesRemoteDataSourceImpl implements RiderRidesRemoteDataSource {
@@ -11,8 +15,12 @@ class RiderRidesRemoteDataSourceImpl implements RiderRidesRemoteDataSource {
   static const String _driversPath = '/rest/v1/drivers';
 
   final Dio dio;
+  final PerformanceTimeTracker performanceTimeTracker;
 
-  RiderRidesRemoteDataSourceImpl({required this.dio});
+  RiderRidesRemoteDataSourceImpl({
+    required this.dio,
+    required this.performanceTimeTracker,
+  });
 
   @override
   Future<Map<String, dynamic>?> getActiveReservationRow({
@@ -194,6 +202,8 @@ class RiderRidesRemoteDataSourceImpl implements RiderRidesRemoteDataSource {
     required String meetingPoint,
     required String destinationPoint,
   }) async {
+    final stopwatch = Stopwatch()..start();
+
     try {
       await dio.post(
         _reservationsPath,
@@ -206,7 +216,26 @@ class RiderRidesRemoteDataSourceImpl implements RiderRidesRemoteDataSource {
         },
         options: Options(headers: {'Prefer': 'return=minimal'}),
       );
+      stopwatch.stop();
+
+      unawaited(
+        performanceTimeTracker.track(
+          feature: PerformanceFeatures.createReservation,
+          duration: stopwatch.elapsedMilliseconds.toDouble(),
+          source: PerformanceSources.backEnd,
+        ),
+      );
     } on DioException catch (e) {
+      stopwatch.stop();
+
+      unawaited(
+        performanceTimeTracker.track(
+          feature: PerformanceFeatures.createReservation,
+          duration: stopwatch.elapsedMilliseconds.toDouble(),
+          source: PerformanceSources.backEnd,
+        ),
+      );
+
       throw ServerException(ErrorHandler.getErrorMessage(e));
     } catch (_) {
       throw ServerException('Error inesperado al crear la reserva');

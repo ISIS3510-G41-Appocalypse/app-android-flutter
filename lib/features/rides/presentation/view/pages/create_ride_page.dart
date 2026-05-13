@@ -4,6 +4,7 @@ import 'package:get_it/get_it.dart';
 import '../../../../../core/layout/header.dart';
 import '../../../../../core/layout/navigation_bar.dart' as navigation_layout;
 import '../../../../../core/network/dio_client.dart';
+import '../../../../../core/performance/performance_time_tracker.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../user/presentation/view_model/user_cubit.dart';
@@ -57,6 +58,7 @@ class CreateRidePage extends StatelessWidget {
           create: (_) => CreateRideCubit(
             client: sl<DioClient>(),
             syncRepository: sl<RidesOfflineSyncRepository>(),
+            performanceTimeTracker: sl<PerformanceTimeTracker>(),
             driverId: user!.driver!.id,
           )..loadInitialData(),
         ),

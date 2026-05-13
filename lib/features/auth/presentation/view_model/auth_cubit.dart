@@ -1,4 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/errors/failures.dart';
+import '../../../../core/performance/performance_features.dart';
+import '../../../../core/performance/performance_time_tracker.dart';
 import '../../domain/usecases/login_user.dart';
 import '../../domain/usecases/logout_user.dart';
 import '../../domain/usecases/verify_session.dart';
@@ -8,11 +13,13 @@ class AuthCubit extends Cubit<AuthState> {
   final LoginUser loginUser;
   final LogoutUser logoutUser;
   final VerifySession verifySessionUseCase;
+  final PerformanceTimeTracker performanceTimeTracker;
 
   AuthCubit({
     required this.loginUser,
     required this.logoutUser,
     required this.verifySessionUseCase,
+    required this.performanceTimeTracker,
   }) : super(const AuthState(status: AuthStatus.unauthenticated));
 
   Future<void> verifySession() async {
@@ -39,7 +46,10 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> login({
     required String email,
     required String password,
+    Stopwatch? loginFrontEndStopwatch,
   }) async {
+    final stopwatch = loginFrontEndStopwatch ?? (Stopwatch()..start());
+
     emit(
       state.copyWith(
         status: AuthStatus.loading,
@@ -50,6 +60,32 @@ class AuthCubit extends Cubit<AuthState> {
     final result = await loginUser(
       email: email,
       password: password,
+    );
+    stopwatch.stop();
+
+    result.fold(
+      (failure) {
+        if (failure is NetworkFailure) {
+          return;
+        }
+
+        unawaited(
+          performanceTimeTracker.track(
+            feature: PerformanceFeatures.login,
+            duration: stopwatch.elapsedMilliseconds.toDouble(),
+            source: PerformanceSources.frontEnd,
+          ),
+        );
+      },
+      (_) {
+        unawaited(
+          performanceTimeTracker.track(
+            feature: PerformanceFeatures.login,
+            duration: stopwatch.elapsedMilliseconds.toDouble(),
+            source: PerformanceSources.frontEnd,
+          ),
+        );
+      },
     );
 
     result.fold(

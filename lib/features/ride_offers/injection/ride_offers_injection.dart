@@ -2,11 +2,13 @@ import 'package:get_it/get_it.dart';
 
 import '../../../core/network/dio_client.dart';
 import '../../../core/network/network_checker.dart';
+import '../../../core/performance/performance_time_tracker.dart';
 import '../data/data_sources/ride_offers_remote_datasource.dart';
 import '../data/data_sources/ride_offers_remote_datasource_impl.dart';
 import '../data/repositories/ride_offers_repository_impl.dart';
 import '../domain/usecases/get_ride_offers.dart';
 import '../domain/usecases/get_zones.dart';
+import '../../ride_recommendation/domain/usecases/get_ride_recommendation.dart';
 import '../../rider_rides/domain/usecases/create_reservation.dart';
 import '../presentation/view_model/ride_offers_cubit.dart';
 
@@ -29,6 +31,8 @@ void setupRideOffersInjection() {
       getRideOffers: sl<GetRideOffers>(),
       getZones: sl<GetZones>(),
       createReservation: sl<CreateReservation>(),
+      getRideRecommendation: sl<GetRideRecommendation>(),
+      performanceTimeTracker: sl<PerformanceTimeTracker>(),
     ),
   );
 }

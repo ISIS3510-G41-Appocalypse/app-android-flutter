@@ -1,6 +1,6 @@
 class RideOffer {
   final String id;
-  final String driverId;
+  final int driverId;
   final String driverName;
   final double driverRating;
   final double cancellationOdds;
