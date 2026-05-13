@@ -6,6 +6,7 @@ import '../core/storage/session_storage.dart';
 import '../features/auth/injection/auth_injection.dart';
 import '../features/driver_rides/injection/driver_rides_injection.dart';
 import '../features/ride_offers/injection/ride_offers_injection.dart';
+import '../features/ride_map/injection/ride_map_injection.dart';
 import '../features/ride_recommendation/injection/ride_recommendation_injection.dart';
 import '../features/rider_rides/injection/rider_rides_injection.dart';
 import '../features/user/injection/user_injection.dart';
@@ -32,12 +33,10 @@ Future<void> setupLocator() async {
     ),
   );
 
-  // Offline storage for rides form
   final offlineStorage = RideFormOfflineStorage();
   await offlineStorage.initialize();
   sl.registerLazySingleton<RideFormOfflineStorage>(() => offlineStorage);
 
-  // Offline sync repository
   sl.registerLazySingleton<RidesOfflineSyncRepository>(
     () => RidesOfflineSyncRepository(
       networkChecker: sl<NetworkChecker>(),
@@ -47,6 +46,7 @@ Future<void> setupLocator() async {
   );
 
   setupAuthInjection();
+  await setupRideMapInjection();
   setupDriverRidesInjection();
   setupRideRecommendationInjection();
   setupRiderRidesInjection();

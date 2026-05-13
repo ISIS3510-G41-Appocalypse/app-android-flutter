@@ -59,7 +59,11 @@ class DriverRidesRepositoryImpl implements DriverRidesRepository {
           .where((reservation) => reservation.state == 'PENDIENTE')
           .toList();
       final acceptedReservations = reservations
-          .where((reservation) => reservation.state == 'ACEPTADA')
+          .where(
+            (reservation) =>
+                reservation.state == 'ACEPTADA' ||
+                reservation.state == 'EN_CURSO',
+          )
           .toList();
       final availableSlots = (passengerCapacity - acceptedReservations.length)
           .clamp(0, 99);

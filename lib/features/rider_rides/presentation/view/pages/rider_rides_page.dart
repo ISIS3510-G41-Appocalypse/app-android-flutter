@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
@@ -23,6 +25,7 @@ class RiderRidesPage extends StatefulWidget {
 class _RiderRidesPageState extends State<RiderRidesPage> {
   final GetIt _sl = GetIt.instance;
   late final RiderRidesCubit _cubit;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
@@ -31,10 +34,14 @@ class _RiderRidesPageState extends State<RiderRidesPage> {
     final riderId = context.read<UserCubit>().state.user?.rider?.id;
 
     _cubit = _sl<RiderRidesCubit>()..loadActiveRide(riderId: riderId);
+    _refreshTimer = Timer.periodic(const Duration(seconds: 20), (_) {
+      _cubit.reloadActiveRide();
+    });
   }
 
   @override
   void dispose() {
+    _refreshTimer?.cancel();
     _cubit.close();
     super.dispose();
   }

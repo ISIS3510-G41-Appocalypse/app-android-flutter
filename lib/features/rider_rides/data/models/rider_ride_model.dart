@@ -4,6 +4,7 @@ import '../../domain/entities/rider_ride.dart';
 class RiderRideModel {
   final String reservationId;
   final String rideId;
+  final int driverUserId;
   final String driverName;
   final int price;
   final String source;
@@ -18,6 +19,7 @@ class RiderRideModel {
   const RiderRideModel({
     required this.reservationId,
     required this.rideId,
+    required this.driverUserId,
     required this.driverName,
     required this.price,
     required this.source,
@@ -37,6 +39,7 @@ class RiderRideModel {
     return RiderRideModel(
       reservationId: reservationRow['id'].toString(),
       rideId: reservationRow['ride_id'].toString(),
+      driverUserId: JsonParsers.parseInt(rideRow['driver_user_id']),
       driverName: rideRow['driver_name'] as String? ?? '',
       price: JsonParsers.parseInt(rideRow['price']),
       source: rideRow['source'] as String? ?? '',
@@ -54,6 +57,7 @@ class RiderRideModel {
     return RiderRide(
       reservationId: reservationId,
       rideId: rideId,
+      driverUserId: driverUserId,
       driverName: driverName,
       price: price,
       source: source,

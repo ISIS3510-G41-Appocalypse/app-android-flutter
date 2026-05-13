@@ -5,6 +5,8 @@ import '../../../../../app/routes.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/widgets/offline_state_card.dart';
+import '../../../../ride_map/presentation/view/widgets/ride_map_panel.dart';
+import '../../../../user/presentation/view_model/user_cubit.dart';
 import '../../../domain/entities/driver_ride_reservation.dart';
 import '../../view_model/driver_rides_cubit.dart';
 import '../../view_model/driver_rides_state.dart';
@@ -155,6 +157,13 @@ class DriverRidesContentSection extends StatelessWidget {
               updatingAction: state.updatingAction,
               message: state.message,
             ),
+            if (state.ride!.state == 'EN_CURSO') ...[
+              const SizedBox(height: 24),
+              RideMapPanel(
+                ride: state.ride!,
+                user: context.read<UserCubit>().state.user,
+              ),
+            ],
             const SizedBox(height: 24),
             _PassengersSectionCard(
               title: 'Solicitudes de reserva',

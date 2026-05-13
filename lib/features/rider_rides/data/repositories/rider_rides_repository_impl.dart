@@ -52,10 +52,19 @@ class RiderRidesRepositoryImpl implements RiderRidesRepository {
         );
       }
 
+      final baseRideRow = await remoteDataSource.getRideRow(
+        rideId: reservationRow['ride_id'].toString(),
+      );
+      final driverRow = baseRideRow == null
+          ? null
+          : await remoteDataSource.getDriverRow(
+              driverId: _toInt(baseRideRow['driver_id']),
+            );
+
       return Right(
         RiderRideModel.fromRows(
           reservationRow: reservationRow,
-          rideRow: rideRow,
+          rideRow: {...rideRow, 'driver_user_id': driverRow?['user_id']},
         ).toEntity(),
       );
     } on ServerException catch (e) {
@@ -140,5 +149,17 @@ class RiderRidesRepositoryImpl implements RiderRidesRepository {
         ServerFailure('Error inesperado al cancelar la reserva'),
       );
     }
+  }
+
+  int _toInt(dynamic value) {
+    if (value is int) {
+      return value;
+    }
+
+    if (value is double) {
+      return value.toInt();
+    }
+
+    return int.tryParse(value.toString()) ?? 0;
   }
 }
