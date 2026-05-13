@@ -3,6 +3,7 @@ import 'package:get_it/get_it.dart';
 import '../../../core/location/device_location_service.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/network/network_checker.dart';
+import '../../../core/notifications/local_notification_service.dart';
 import '../data/data_sources/ride_map_remote_data_source.dart';
 import '../data/data_sources/ride_map_remote_data_source_impl.dart';
 import '../data/local/ride_map_location_cache.dart';
@@ -41,6 +42,7 @@ Future<void> setupRideMapInjection() async {
       locationService: sl<DeviceLocationService>(),
       getRideMapLocations: sl<GetRideMapLocations>(),
       publishRideMapLocation: sl<PublishRideMapLocation>(),
+      localNotificationService: sl<LocalNotificationService>(),
     ),
   );
 }

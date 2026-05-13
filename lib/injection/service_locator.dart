@@ -1,4 +1,5 @@
 import 'package:get_it/get_it.dart';
+import '../core/notifications/local_notification_service.dart';
 import '../core/network/dio_client.dart';
 import '../core/network/network_checker.dart';
 import '../core/performance/performance_time_tracker.dart';
@@ -17,6 +18,12 @@ import '../features/rides/domain/repositories/rides_offline_sync_repository.dart
 final sl = GetIt.instance;
 
 Future<void> setupLocator() async {
+  final localNotificationService = LocalNotificationService();
+  await localNotificationService.initialize();
+  sl.registerLazySingleton<LocalNotificationService>(
+    () => localNotificationService,
+  );
+
   sl.registerLazySingleton<SessionStorage>(() => SessionStorage());
   sl.registerLazySingleton<NetworkChecker>(() => NetworkChecker());
   sl.registerLazySingleton<DioClient>(() => DioClient(sessionStorage: sl()));
