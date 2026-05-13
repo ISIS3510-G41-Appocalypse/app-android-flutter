@@ -40,8 +40,8 @@ class _RideMapPanelState extends State<RideMapPanel> {
   void didUpdateWidget(covariant RideMapPanel oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.ride.id != widget.ride.id ||
-        oldWidget.ride.acceptedReservations !=
-            widget.ride.acceptedReservations) {
+        _acceptedPassengerSignature(oldWidget.ride) !=
+            _acceptedPassengerSignature(widget.ride)) {
       _load();
     }
   }
@@ -64,6 +64,16 @@ class _RideMapPanelState extends State<RideMapPanel> {
       driverUserId: widget.user?.id,
       passengerNamesByUserId: passengerNamesByUserId,
     );
+  }
+
+  String _acceptedPassengerSignature(DriverRide ride) {
+    final ids = ride.acceptedReservations
+        .map((reservation) => reservation.riderUserId)
+        .where((riderUserId) => riderUserId > 0)
+        .toList()
+      ..sort();
+
+    return ids.join('|');
   }
 
   @override
