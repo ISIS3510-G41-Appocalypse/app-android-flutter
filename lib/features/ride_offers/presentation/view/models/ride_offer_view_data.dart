@@ -2,7 +2,7 @@ import '../../../domain/entities/ride_offer.dart';
 
 class RideOfferViewData {
   final String id;
-  final String driverId;
+  final int driverId;
   final String driverName;
   final String ratingText;
   final String cancellationOddsText;

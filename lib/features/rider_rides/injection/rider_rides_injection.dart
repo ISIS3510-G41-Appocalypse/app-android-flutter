@@ -2,6 +2,7 @@ import 'package:get_it/get_it.dart';
 
 import '../../../core/network/dio_client.dart';
 import '../../../core/network/network_checker.dart';
+import '../../../core/performance/performance_time_tracker.dart';
 import '../data/data_sources/rider_rides_remote_data_source.dart';
 import '../data/data_sources/rider_rides_remote_data_source_impl.dart';
 import '../data/repositories/rider_rides_repository_impl.dart';
@@ -14,7 +15,10 @@ final sl = GetIt.instance;
 
 void setupRiderRidesInjection() {
   sl.registerLazySingleton<RiderRidesRemoteDataSource>(
-    () => RiderRidesRemoteDataSourceImpl(dio: sl<DioClient>().dio),
+    () => RiderRidesRemoteDataSourceImpl(
+      dio: sl<DioClient>().dio,
+      performanceTimeTracker: sl<PerformanceTimeTracker>(),
+    ),
   );
   sl.registerLazySingleton<RiderRidesRepositoryImpl>(
     () => RiderRidesRepositoryImpl(

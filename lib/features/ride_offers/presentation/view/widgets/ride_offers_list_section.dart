@@ -1,9 +1,16 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../../../../core/errors/failures.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../../core/widgets/offline_state_card.dart';
+import '../../../../user/presentation/view_model/user_cubit.dart';
+import '../../view_model/ride_offers_cubit.dart';
 import '../../view_model/ride_offers_state.dart';
+import 'reserve_ride_confirmation_dialog.dart';
 import 'ride_offer_card.dart';
 
 class RideOffersListSection extends StatelessWidget {
@@ -89,7 +96,10 @@ class RideOffersListSection extends StatelessWidget {
                 padding: EdgeInsets.only(
                   bottom: index == state.offers.length - 1 ? 0 : 24,
                 ),
-                child: _buildOfferCard(index),
+                child: _buildOfferCard(
+                  context,
+                  index,
+                ),
               ),
             ),
           ],
@@ -97,12 +107,12 @@ class RideOffersListSection extends StatelessWidget {
     }
   }
 
-  Widget _buildOfferCard(int index) {
+  Widget _buildOfferCard(BuildContext context, int index) {
     final offer = state.offers[index];
     final isOwnRide =
         currentDriverId != null &&
         currentDriverId!.isNotEmpty &&
-        offer.driverId == currentDriverId;
+        offer.driverId.toString() == currentDriverId;
     final cardDisabledReason = isOwnRide
         ? 'No puedes reservar tu propio viaje.'
         : reserveDisabledReason;
@@ -112,8 +122,64 @@ class RideOffersListSection extends StatelessWidget {
       isReserveEnabled: isReserveEnabled && !isOwnRide,
       isReserving: reservingRideId == offer.id,
       reserveDisabledReason: cardDisabledReason,
-      onReserve: () => onReserve(index),
+      onReserve: () => unawaited(
+        _onReserveTapped(
+          context,
+          index: index,
+        ),
+      ),
     );
+  }
+
+  Future<void> _onReserveTapped(
+    BuildContext context, {
+    required int index,
+  }) async {
+    final userState = context.read<UserCubit>().state;
+    final riderId = userState.user?.rider?.id;
+    final offer = state.offers[index];
+    final cubit = context.read<RideOffersCubit>();
+
+    final recommendationFailure = await cubit.validateRecommendationAvailability(
+      riderId: riderId,
+      driverId: offer.driverId,
+    );
+
+    if (recommendationFailure is NetworkFailure) {
+      if (!context.mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(recommendationFailure.message),
+          backgroundColor: AppColors.errorRed,
+        ),
+      );
+      return;
+    }
+
+    final recommendation = await cubit.loadRideRecommendation(
+      riderId: riderId,
+      driverId: offer.driverId,
+    );
+
+    if (!context.mounted) {
+      return;
+    }
+
+    final shouldReserve = await showDialog<bool>(
+      context: context,
+      builder: (_) => ReserveRideConfirmationDialog(
+        recommendation: recommendation,
+      ),
+    );
+
+    if (shouldReserve != true) {
+      return;
+    }
+
+    onReserve(index);
   }
 }
 

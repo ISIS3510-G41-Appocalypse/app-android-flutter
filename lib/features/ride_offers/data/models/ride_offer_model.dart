@@ -3,7 +3,7 @@ import '../../domain/entities/ride_offer.dart';
 
 class RideOfferModel {
   final String id;
-  final String driverId;
+  final int driverId;
   final String driverName;
   final double driverRating;
   final double cancellationOdds;
@@ -39,7 +39,7 @@ class RideOfferModel {
   factory RideOfferModel.fromJson(Map<String, dynamic> json) {
     return RideOfferModel(
       id: json['id'].toString(),
-      driverId: json['driver_id']?.toString() ?? '',
+      driverId: JsonParsers.parseInt(json['driver_id']),
       driverName: json['driver_name'] as String,
       driverRating: JsonParsers.parseDouble(json['driver_rating']),
       cancellationOdds: JsonParsers.parseDouble(json['cancellation_odds']),
