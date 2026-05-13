@@ -22,12 +22,12 @@ Future<void> setupLocator() async {
     () => RidesRemoteDatasource(client: sl<DioClient>()),
   );
 
-  // Offline storage for rides form
+  
   final offlineStorage = RideFormOfflineStorage();
   await offlineStorage.initialize();
   sl.registerLazySingleton<RideFormOfflineStorage>(() => offlineStorage);
 
-  // Offline sync repository
+
   sl.registerLazySingleton<RidesOfflineSyncRepository>(
     () => RidesOfflineSyncRepository(
       networkChecker: sl<NetworkChecker>(),
