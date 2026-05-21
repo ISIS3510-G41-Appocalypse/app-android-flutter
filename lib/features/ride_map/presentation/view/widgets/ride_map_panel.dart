@@ -59,7 +59,7 @@ class _RideMapPanelState extends State<RideMapPanel> {
           reservation.riderUserId: reservation.riderName,
     };
 
-    _cubit.loadDriverRideMap(
+    _cubit.startDriverRideMapRealtime(
       rideId: widget.ride.id,
       driverUserId: widget.user?.id,
       passengerNamesByUserId: passengerNamesByUserId,
@@ -520,7 +520,7 @@ class _RiderRideMapPanelState extends State<RiderRideMapPanel> {
   }
 
   void _load() {
-    _cubit.loadRiderRideMap(
+    _cubit.startRiderRideMapRealtime(
       rideId: widget.ride.rideId,
       riderUserId: widget.user?.id,
       driverUserId: widget.ride.driverUserId,
