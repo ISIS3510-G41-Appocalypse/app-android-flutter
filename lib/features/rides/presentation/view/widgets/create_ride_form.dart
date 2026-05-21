@@ -21,7 +21,7 @@ class CreateRideForm extends StatefulWidget {
 }
 
 class _CreateRideFormState extends State<CreateRideForm> {
-  static const int _locationMaxLength = 40;
+  static const int _locationMaxLength = 30;
   static const int _priceMaxDigits = 5;
 
   final _formKey = GlobalKey<FormState>();
@@ -38,6 +38,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
   @override
   void initState() {
     super.initState();
+    _applyUniversityRouteDefaults();
     _sourceCtrl.addListener(_persistDraft);
     _destinationCtrl.addListener(_persistDraft);
     _dateCtrl.addListener(_persistDraft);
@@ -127,15 +128,19 @@ class _CreateRideFormState extends State<CreateRideForm> {
   void _onTypeChanged(String newType) {
     setState(() {
       _selectedType = newType;
-      if (newType == 'TO_UNIVERSITY') {
-        _destinationCtrl.text = _universityName;
-        _sourceCtrl.clear();
-      } else if (newType == 'FROM_UNIVERSITY') {
-        _sourceCtrl.text = _universityName;
-        _destinationCtrl.clear();
-      }
+      _applyUniversityRouteDefaults();
     });
     unawaited(_saveDraft());
+  }
+
+  void _applyUniversityRouteDefaults() {
+    if (_selectedType == 'TO_UNIVERSITY') {
+      _destinationCtrl.text = _universityName;
+      _sourceCtrl.clear();
+    } else if (_selectedType == 'FROM_UNIVERSITY') {
+      _sourceCtrl.text = _universityName;
+      _destinationCtrl.clear();
+    }
   }
 
   void _applyDraft(RideFormDraft draft) {
