@@ -9,6 +9,7 @@ import '../features/ride_offers/injection/ride_offers_injection.dart';
 import '../features/ride_map/injection/ride_map_injection.dart';
 import '../features/ride_recommendation/injection/ride_recommendation_injection.dart';
 import '../features/ratings/injection/ratings_injection.dart';
+import '../features/ratings/data/local/ratings_draft_storage.dart';
 import '../features/rider_rides/injection/rider_rides_injection.dart';
 import '../features/user/injection/user_injection.dart';
 import '../core/storage/ride_form_offline_storage.dart';
@@ -37,6 +38,10 @@ Future<void> setupLocator() async {
   final offlineStorage = RideFormOfflineStorage();
   await offlineStorage.initialize();
   sl.registerLazySingleton<RideFormOfflineStorage>(() => offlineStorage);
+
+  final ratingsDraftStorage = RatingsDraftStorage();
+  await ratingsDraftStorage.initialize();
+  sl.registerLazySingleton<RatingsDraftStorage>(() => ratingsDraftStorage);
 
   sl.registerLazySingleton<RidesOfflineSyncRepository>(
     () => RidesOfflineSyncRepository(

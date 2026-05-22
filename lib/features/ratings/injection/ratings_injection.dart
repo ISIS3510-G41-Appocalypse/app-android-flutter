@@ -4,6 +4,7 @@ import '../../../core/network/dio_client.dart';
 import '../../../core/network/network_checker.dart';
 import '../data/data_sources/ratings_remote_data_source.dart';
 import '../data/data_sources/ratings_remote_data_source_impl.dart';
+import '../data/local/ratings_draft_storage.dart';
 import '../data/repositories/ratings_repository_impl.dart';
 import '../domain/repositories/ratings_repository.dart';
 import '../domain/usecases/submit_driver_rating.dart';
@@ -28,6 +29,8 @@ void setupRatingsInjection() {
     () => RatingsCubit(
       submitDriverRatingUseCase: sl<SubmitDriverRating>(),
       submitRiderRatingsUseCase: sl<SubmitRiderRatings>(),
+      draftStorage: sl<RatingsDraftStorage>(),
+      networkChecker: sl<NetworkChecker>(),
     ),
   );
 }

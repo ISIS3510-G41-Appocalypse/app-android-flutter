@@ -37,6 +37,8 @@ class _RatingsView extends StatefulWidget {
 
 class _RatingsViewState extends State<_RatingsView> {
   late final Map<int, _RatingScores> _scoresByRiderId;
+  late final String _draftKey;
+  bool _draftRequested = false;
 
   @override
   void initState() {
@@ -50,6 +52,20 @@ class _RatingsViewState extends State<_RatingsView> {
         widget.args.riderId != null) {
       _scoresByRiderId[widget.args.riderId!] = _RatingScores();
     }
+
+    _draftKey = _buildDraftKey();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    if (_draftRequested) {
+      return;
+    }
+
+    _draftRequested = true;
+    context.read<RatingsCubit>().loadDraft(_draftKey);
   }
 
   @override
@@ -57,8 +73,14 @@ class _RatingsViewState extends State<_RatingsView> {
     final isDriverMode = widget.args.mode == RatingsMode.driverRatesRiders;
 
     return BlocConsumer<RatingsCubit, RatingsState>(
-      listenWhen: (previous, current) => previous.status != current.status,
+      listenWhen: (previous, current) =>
+          previous.status != current.status ||
+          previous.draftData != current.draftData,
       listener: (context, state) {
+        if (state.draftData != null) {
+          _restoreDraft(state.draftData!);
+        }
+
         if (state.status == RatingsStatus.success) {
           Navigator.of(context).pop(true);
         }
@@ -112,6 +134,10 @@ class _RatingsViewState extends State<_RatingsView> {
                       const SizedBox(height: 18),
                       _MessageBox(message: state.message!),
                     ],
+                    if (state.isOffline) ...[
+                      const SizedBox(height: 18),
+                      _OfflineDraftCard(onRetry: _submit),
+                    ],
                     const SizedBox(height: 24),
                     ElevatedButton(
                       onPressed: state.status == RatingsStatus.submitting
@@ -145,7 +171,14 @@ class _RatingsViewState extends State<_RatingsView> {
                     TextButton(
                       onPressed: state.status == RatingsStatus.submitting
                           ? null
-                          : () => Navigator.of(context).pop(false),
+                          : () async {
+                              await context.read<RatingsCubit>().clearDraft(
+                                _draftKey,
+                              );
+                              if (context.mounted) {
+                                Navigator.of(context).pop(false);
+                              }
+                            },
                       child: Text(
                         'Omitir',
                         style: AppTextStyles.primary.copyWith(
@@ -218,7 +251,10 @@ class _RatingsViewState extends State<_RatingsView> {
         );
       }).toList();
 
-      context.read<RatingsCubit>().submitRiderRatings(ratings);
+      context.read<RatingsCubit>().submitRiderRatings(
+        draftKey: _draftKey,
+        ratings: ratings,
+      );
       return;
     }
 
@@ -232,7 +268,8 @@ class _RatingsViewState extends State<_RatingsView> {
 
     final scores = _scoresByRiderId[riderId]!;
     context.read<RatingsCubit>().submitDriverRating(
-      RateDriver(
+      draftKey: _draftKey,
+      rating: RateDriver(
         riderId: riderId,
         driverId: widget.args.driverId,
         punctuality: scores.punctuality!,
@@ -260,6 +297,46 @@ class _RatingsViewState extends State<_RatingsView> {
   }
 
   void _refresh() {
+    context.read<RatingsCubit>().saveDraft(_draftKey, _toDraftData());
+    setState(() {});
+  }
+
+  String _buildDraftKey() {
+    if (widget.args.mode == RatingsMode.driverRatesRiders) {
+      return 'driver:${widget.args.rideId}:${widget.args.driverId}';
+    }
+
+    return 'rider:${widget.args.rideId}:${widget.args.riderId}:${widget.args.driverId}';
+  }
+
+  Map<String, dynamic> _toDraftData() {
+    return {
+      'scores': {
+        for (final entry in _scoresByRiderId.entries)
+          entry.key.toString(): entry.value.toJson(),
+      },
+    };
+  }
+
+  void _restoreDraft(Map<String, dynamic> draftData) {
+    final rawScores = draftData['scores'];
+    if (rawScores is! Map) {
+      return;
+    }
+
+    for (final entry in rawScores.entries) {
+      final riderId = int.tryParse(entry.key.toString());
+      final scores = entry.value;
+
+      if (riderId == null ||
+          scores is! Map ||
+          !_scoresByRiderId.containsKey(riderId)) {
+        continue;
+      }
+
+      _scoresByRiderId[riderId]!.loadFromMap(Map<String, dynamic>.from(scores));
+    }
+
     setState(() {});
   }
 }
@@ -444,12 +521,90 @@ class _MessageBox extends StatelessWidget {
   }
 }
 
+class _OfflineDraftCard extends StatelessWidget {
+  const _OfflineDraftCard({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFBEB),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFFDE68A)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Sin conexion',
+            style: AppTextStyles.primary.copyWith(
+              color: const Color(0xFF92400E),
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Guardamos tu calificacion en este dispositivo. Cuando tengas internet, toca Reintentar para enviarla.',
+            style: AppTextStyles.primary.copyWith(
+              color: const Color(0xFF92400E),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton(
+            onPressed: onRetry,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF92400E),
+              side: const BorderSide(color: Color(0xFF92400E)),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: Text(
+              'Reintentar',
+              style: AppTextStyles.primary.copyWith(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _RatingScores {
   int? punctuality;
   int? behavior;
   int? communication;
   int? paymentPunctuality;
   int? security;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'punctuality': punctuality,
+      'behavior': behavior,
+      'communication': communication,
+      'paymentPunctuality': paymentPunctuality,
+      'security': security,
+    };
+  }
+
+  void loadFromMap(Map<String, dynamic> data) {
+    punctuality = _toInt(data['punctuality']);
+    behavior = _toInt(data['behavior']);
+    communication = _toInt(data['communication']);
+    paymentPunctuality = _toInt(data['paymentPunctuality']);
+    security = _toInt(data['security']);
+  }
 
   bool isComplete(RatingsMode mode) {
     final baseComplete =
@@ -460,5 +615,13 @@ class _RatingScores {
     }
 
     return baseComplete && security != null;
+  }
+
+  int? _toInt(dynamic value) {
+    if (value is int) {
+      return value;
+    }
+
+    return int.tryParse(value.toString());
   }
 }
