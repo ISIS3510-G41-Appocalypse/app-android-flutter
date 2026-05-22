@@ -9,7 +9,7 @@ String? nameValidator(
   String? value, {
   required String fieldName,
   int minLength = 3,
-  int maxLength = 20,
+  int maxLength = 32,
 }) {
   final normalizedValue = value?.trim() ?? '';
   final empty = emptyFieldValidator(normalizedValue, fieldName: fieldName);
@@ -39,27 +39,27 @@ String? passwordStrengthValidator(String? value) {
   final password = value?.trim() ?? '';
 
   if (password.length < 8) {
-    return 'La contraseña debe tener al menos 8 caracteres';
+    return 'La contrasena debe tener al menos 8 caracteres';
   }
 
-  if (password.length > 30) {
-    return 'La contraseña no puede superar 30 caracteres';
+  if (password.length > 32) {
+    return 'La contrasena no puede superar 32 caracteres';
   }
 
   if (!RegExp(r'[A-Z]').hasMatch(password)) {
-    return 'La contraseña debe tener al menos una mayúscula';
+    return 'La contrasena debe tener al menos una mayuscula';
   }
 
   if (!RegExp(r'[a-z]').hasMatch(password)) {
-    return 'La contraseña debe tener al menos una minúscula';
+    return 'La contrasena debe tener al menos una minuscula';
   }
 
   if (!RegExp(r'[0-9]').hasMatch(password)) {
-    return 'La contraseña debe tener al menos un número';
+    return 'La contrasena debe tener al menos un numero';
   }
 
   if (!RegExp(r'[!@#$%^&*(),.?":{}|<>_\-\\/\[\];+=`~]').hasMatch(password)) {
-    return 'La contraseña debe tener al menos un signo';
+    return 'La contrasena debe tener al menos un signo';
   }
 
   return null;
@@ -69,11 +69,11 @@ String? confirmPasswordValidator(
   String? value, {
   required String originalPassword,
 }) {
-  final empty = emptyFieldValidator(value, fieldName: 'Validar contraseña');
+  final empty = emptyFieldValidator(value, fieldName: 'Validar contrasena');
   if (empty != null) return empty;
 
   if ((value?.trim() ?? '') != originalPassword.trim()) {
-    return 'Las contraseñas no coinciden';
+    return 'Las contrasenas no coinciden';
   }
 
   return null;

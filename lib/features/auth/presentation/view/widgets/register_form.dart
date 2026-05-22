@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import '../../../../../core/theme/app_colors.dart';
-import '../../../../../core/theme/app_text_styles.dart';
-import '../../../../../core/validators/form_validators.dart';
 import '../../../../home/presentation/view/widgets/brand_header_section.dart';
-import 'primary_action_button.dart';
-import 'register_password_field.dart';
-import 'register_text_field.dart';
+import '../../../../ride_offers/domain/entities/zone.dart';
+import '../../../injection/auth_injection.dart';
+import '../../../data/datasources/remote/auth_datasource_remote.dart';
+import '../models/register_payment_method.dart';
+import '../models/register_vehicle_draft.dart';
+import 'register_basic_info_step.dart';
+import 'register_card_shell.dart';
+import 'register_setup_step.dart';
 
 class RegisterForm extends StatefulWidget {
   const RegisterForm({super.key});
@@ -15,12 +17,67 @@ class RegisterForm extends StatefulWidget {
 }
 
 class _RegisterFormState extends State<RegisterForm> {
-  final _formKey = GlobalKey<FormState>();
+  final _basicInfoFormKey = GlobalKey<FormState>();
+  final _setupFormKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _paymentControllers = {
+    RegisterPaymentMethod.nequi: TextEditingController(),
+    RegisterPaymentMethod.daviplata: TextEditingController(),
+    RegisterPaymentMethod.llave: TextEditingController(),
+  };
+
+  int _currentStep = 0;
+  String? _selectedZoneId;
+  String? _zoneErrorText;
+  String? _paymentErrorText;
+  bool _wantsDriverRole = false;
+  bool _isLoadingZones = true;
+  late final List<RegisterVehicleDraft> _vehicles;
+  List<Zone> _zones = const [];
+  Set<RegisterPaymentMethod> _selectedPaymentMethods = {
+    RegisterPaymentMethod.efectivo,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _vehicles = [RegisterVehicleDraft()];
+    _loadZones();
+  }
+
+  Future<void> _loadZones() async {
+    try {
+      final rows = await sl<AuthDataSourceRemote>().getZonesRows();
+      final zones = rows
+          .map(
+            (row) => Zone(
+              id: row['id'].toString(),
+              name: row['name'] as String? ?? '',
+            ),
+          )
+          .where((zone) => zone.name.isNotEmpty)
+          .toList();
+
+      if (!mounted) return;
+
+      setState(() {
+        _zones = zones;
+        _isLoadingZones = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _zones = const [];
+        _isLoadingZones = false;
+        _zoneErrorText = 'No fue posible cargar las zonas';
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -29,11 +86,117 @@ class _RegisterFormState extends State<RegisterForm> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    for (final controller in _paymentControllers.values) {
+      controller.dispose();
+    }
+    for (final vehicle in _vehicles) {
+      vehicle.dispose();
+    }
     super.dispose();
   }
 
-  void _validateForm() {
-    _formKey.currentState!.validate();
+  void _goToSetupStep() {
+    if (!_basicInfoFormKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _currentStep = 1;
+    });
+  }
+
+  void _goBackToBasicStep() {
+    setState(() {
+      _currentStep = 0;
+    });
+  }
+
+  void _toggleDriverRole(bool wantsDriverRole) {
+    setState(() {
+      _wantsDriverRole = wantsDriverRole;
+      if (!wantsDriverRole) {
+        _paymentErrorText = null;
+        _selectedPaymentMethods = {RegisterPaymentMethod.efectivo};
+        for (final controller in _paymentControllers.values) {
+          controller.clear();
+        }
+      }
+    });
+  }
+
+  void _selectZone(String? zoneId) {
+    setState(() {
+      _selectedZoneId = zoneId;
+      _zoneErrorText = null;
+    });
+  }
+
+  void _addVehicle() {
+    setState(() {
+      _vehicles.add(RegisterVehicleDraft());
+    });
+  }
+
+  void _removeVehicle(int index) {
+    if (_vehicles.length == 1) {
+      return;
+    }
+
+    setState(() {
+      final vehicle = _vehicles.removeAt(index);
+      vehicle.dispose();
+    });
+  }
+
+  void _togglePaymentMethod(RegisterPaymentMethod method) {
+    if (method == RegisterPaymentMethod.efectivo) {
+      return;
+    }
+
+    setState(() {
+      if (_selectedPaymentMethods.contains(method)) {
+        _selectedPaymentMethods.remove(method);
+        _paymentControllers[method]?.clear();
+      } else {
+        _selectedPaymentMethods = {..._selectedPaymentMethods, method};
+      }
+      _paymentErrorText = null;
+    });
+  }
+
+  bool _validateSetupSelections() {
+    String? zoneError;
+    String? paymentError;
+
+    if (_selectedZoneId == null || _selectedZoneId!.isEmpty) {
+      zoneError = 'Debes seleccionar una zona preferida';
+    }
+
+    if (_wantsDriverRole && _selectedPaymentMethods.isEmpty) {
+      paymentError = 'Selecciona al menos un metodo de pago';
+    }
+
+    setState(() {
+      _zoneErrorText = zoneError;
+      _paymentErrorText = paymentError;
+    });
+
+    return zoneError == null && paymentError == null;
+  }
+
+  void _submitSetup() {
+    final formsAreValid = _setupFormKey.currentState!.validate();
+    final selectionsAreValid = _validateSetupSelections();
+
+    if (!formsAreValid || !selectionsAreValid) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Formulario listo para conectar con el backend.'),
+      ),
+    );
   }
 
   @override
@@ -42,111 +205,36 @@ class _RegisterFormState extends State<RegisterForm> {
       children: [
         const BrandHeaderSection(),
         const SizedBox(height: 32),
-        Container(
-          decoration: BoxDecoration(
-            color: AppColors.gray50,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.black.withAlpha(26),
-                blurRadius: 24,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                Text(
-                  'Registrate',
-                  style: AppTextStyles.secondary.copyWith(
-                    color: AppColors.slate800,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 24,
-                  ),
-                  textAlign: TextAlign.center,
+        RegisterCardShell(
+          child: _currentStep == 0
+              ? RegisterBasicInfoStep(
+                  formKey: _basicInfoFormKey,
+                  nameController: _nameController,
+                  lastNameController: _lastNameController,
+                  emailController: _emailController,
+                  passwordController: _passwordController,
+                  confirmPasswordController: _confirmPasswordController,
+                  onNext: _goToSetupStep,
+                )
+              : RegisterSetupStep(
+                  formKey: _setupFormKey,
+                  zones: _zones,
+                  isLoadingZones: _isLoadingZones,
+                  selectedZoneId: _selectedZoneId,
+                  zoneErrorText: _zoneErrorText,
+                  wantsDriverRole: _wantsDriverRole,
+                  vehicles: _vehicles,
+                  selectedPaymentMethods: _selectedPaymentMethods,
+                  paymentControllers: _paymentControllers,
+                  paymentErrorText: _paymentErrorText,
+                  onZoneSelected: _selectZone,
+                  onDriverRoleChanged: _toggleDriverRole,
+                  onAddVehicle: _addVehicle,
+                  onRemoveVehicle: _removeVehicle,
+                  onPaymentMethodToggled: _togglePaymentMethod,
+                  onBack: _goBackToBasicStep,
+                  onSubmit: _submitSetup,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'Crea tu cuenta para comenzar esta experiencia',
-                  style: AppTextStyles.primary.copyWith(
-                    color: AppColors.slate400,
-                    fontSize: 14,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                RegisterTextField(
-                  label: 'Nombre',
-                  hintText: 'Tu nombre',
-                  icon: Icons.person_outline,
-                  controller: _nameController,
-                  maxLength: 25,
-                  validator: (value) =>
-                      nameValidator(value, fieldName: 'Nombre'),
-                ),
-                const SizedBox(height: 16),
-                RegisterTextField(
-                  label: 'Apellido',
-                  hintText: 'Tu apellido',
-                  icon: Icons.badge_outlined,
-                  controller: _lastNameController,
-                  maxLength: 25,
-                  validator: (value) =>
-                      nameValidator(value, fieldName: 'Apellido'),
-                ),
-                const SizedBox(height: 16),
-                RegisterTextField(
-                  label: 'Correo electronico',
-                  hintText: 'ejemplo@uniandes.edu.co',
-                  icon: Icons.mail_outline,
-                  controller: _emailController,
-                  maxLength: 50,
-                  keyboardType: TextInputType.emailAddress,
-                  textCapitalization: TextCapitalization.none,
-                  validator: (value) {
-                    final empty = emptyFieldValidator(
-                      value,
-                      fieldName: 'Correo',
-                    );
-                    if (empty != null) return empty;
-                    return uniandesEmailValidator(value);
-                  },
-                ),
-                const SizedBox(height: 16),
-                RegisterPasswordField(
-                  label: 'Contrasena',
-                  hintText: 'Minimo 8 caracteres',
-                  controller: _passwordController,
-                  validator: (value) {
-                    final empty = emptyFieldValidator(
-                      value,
-                      fieldName: 'Contrasena',
-                    );
-                    if (empty != null) return empty;
-                    return passwordStrengthValidator(value);
-                  },
-                ),
-                const SizedBox(height: 16),
-                RegisterPasswordField(
-                  label: 'Validar contrasena',
-                  hintText: 'Repite tu contrasena',
-                  controller: _confirmPasswordController,
-                  validator: (value) => confirmPasswordValidator(
-                    value,
-                    originalPassword: _passwordController.text,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                PrimaryActionButton(
-                  label: 'Crear cuenta',
-                  onPressed: _validateForm,
-                ),
-              ],
-            ),
-          ),
         ),
       ],
     );

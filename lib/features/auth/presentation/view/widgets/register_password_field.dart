@@ -44,7 +44,7 @@ class _RegisterPasswordFieldState extends State<RegisterPasswordField> {
           controller: widget.controller,
           validator: widget.validator,
           obscureText: _obscureText,
-          inputFormatters: [LengthLimitingTextInputFormatter(30)],
+          inputFormatters: [LengthLimitingTextInputFormatter(32)],
           style: const TextStyle(color: AppColors.slate800),
           autovalidateMode: AutovalidateMode.onUserInteraction,
           decoration: InputDecoration(

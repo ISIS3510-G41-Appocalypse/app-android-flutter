@@ -7,4 +7,6 @@ abstract class AuthDataSourceRemote {
   });
 
   Future<AuthModel> verifySession();
+
+  Future<List<Map<String, dynamic>>> getZonesRows();
 }

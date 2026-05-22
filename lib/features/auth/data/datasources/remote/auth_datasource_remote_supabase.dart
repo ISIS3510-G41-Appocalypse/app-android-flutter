@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
+import 'package:dio_cache_plus/dio_cache_plus.dart';
 
 import '../../../../../core/errors/error_handler.dart';
 import '../../../../../core/errors/exceptions.dart';
@@ -87,6 +88,34 @@ class AuthDataSourceRemoteSupabase implements AuthDataSourceRemote {
       throw ServerException(ErrorHandler.getErrorMessage(e));
     } catch (_) {
       throw ServerException('Error inesperado al verificar la sesion');
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getZonesRows() async {
+    try {
+      final response = await dio.get(
+        '/rest/v1/zones',
+        queryParameters: const {'select': 'id,name'},
+        options: Options().setCachingWithDuration(
+          enableCache: true,
+          duration: const Duration(hours: 6),
+        ),
+      );
+
+      final data = response.data;
+
+      if (data is List) {
+        return data.map((item) => item as Map<String, dynamic>).toList();
+      }
+
+      throw ServerException('Formato de respuesta invalido para /rest/v1/zones');
+    } on DioException catch (e) {
+      throw ServerException(ErrorHandler.getErrorMessage(e));
+    } on ServerException {
+      rethrow;
+    } catch (_) {
+      throw ServerException('Error inesperado al consultar zonas');
     }
   }
 }
