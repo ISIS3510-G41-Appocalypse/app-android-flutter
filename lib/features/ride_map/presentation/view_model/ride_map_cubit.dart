@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:dartz/dartz.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/errors/failures.dart';
@@ -12,12 +13,16 @@ import 'ride_map_state.dart';
 
 class RideMapCubit extends Cubit<RideMapState> {
   static const Duration _realtimeRefreshInterval = Duration(seconds: 20);
+  static const double _minimumPublishDistanceMeters = 20;
 
   final DeviceLocationService locationService;
   final GetRideMapLocations getRideMapLocations;
   final PublishRideMapLocation publishRideMapLocation;
   final LocalNotificationService localNotificationService;
   final Set<String> _nearbyNotifiedRideIds = {};
+  final Map<String, _PublishedLocation> _lastPublishedLocations = {};
+  Timer? _realtimeTimer;
+  bool _isRealtimeRefreshRunning = false;
 
   RideMapCubit({
     required this.locationService,
@@ -112,7 +117,8 @@ class RideMapCubit extends Cubit<RideMapState> {
     required Map<int, String> passengerNamesByUserId,
     bool showLoading = true,
   }) async {
-    final keepCurrentMap = !showLoading &&
+    final keepCurrentMap =
+        !showLoading &&
         (state.status == RideMapStatus.success ||
             state.status == RideMapStatus.empty);
 
@@ -137,7 +143,7 @@ class RideMapCubit extends Cubit<RideMapState> {
       driverLongitude = currentLocation.longitude;
 
       if (driverUserId != null) {
-        await publishRideMapLocation(
+        await _publishUserLocationIfMoved(
           rideId: rideId,
           userId: driverUserId,
           latitude: driverLatitude,
@@ -147,10 +153,7 @@ class RideMapCubit extends Cubit<RideMapState> {
     } on LocationPermissionException catch (e) {
       if (keepCurrentMap) {
         _emitIfOpen(
-          state.copyWith(
-            message: e.message,
-            isPermissionBlocked: true,
-          ),
+          state.copyWith(message: e.message, isPermissionBlocked: true),
         );
         return;
       }
@@ -242,11 +245,12 @@ class RideMapCubit extends Cubit<RideMapState> {
 
     try {
       final currentLocation = await locationService.getCurrentLocation();
-      final result = await publishRideMapLocation(
+      final result = await _publishUserLocationIfMoved(
         rideId: rideId,
         userId: userId,
         latitude: currentLocation.latitude,
         longitude: currentLocation.longitude,
+        force: true,
       );
 
       result.fold(
@@ -294,7 +298,8 @@ class RideMapCubit extends Cubit<RideMapState> {
     required String driverName,
     bool showLoading = true,
   }) async {
-    final keepCurrentMap = !showLoading &&
+    final keepCurrentMap =
+        !showLoading &&
         (state.status == RideMapStatus.success ||
             state.status == RideMapStatus.empty);
 
@@ -319,7 +324,7 @@ class RideMapCubit extends Cubit<RideMapState> {
       riderLongitude = currentLocation.longitude;
 
       if (riderUserId != null) {
-        await publishRideMapLocation(
+        await _publishUserLocationIfMoved(
           rideId: rideId,
           userId: riderUserId,
           latitude: riderLatitude,
@@ -329,10 +334,7 @@ class RideMapCubit extends Cubit<RideMapState> {
     } on LocationPermissionException catch (e) {
       if (keepCurrentMap) {
         _emitIfOpen(
-          state.copyWith(
-            message: e.message,
-            isPermissionBlocked: true,
-          ),
+          state.copyWith(message: e.message, isPermissionBlocked: true),
         );
         return;
       }
@@ -407,7 +409,7 @@ class RideMapCubit extends Cubit<RideMapState> {
           locations: locations,
         );
 
-        emit(
+        _emitIfOpen(
           state.copyWith(
             status: locations.isEmpty
                 ? RideMapStatus.empty
@@ -454,4 +456,57 @@ class RideMapCubit extends Cubit<RideMapState> {
 
     _nearbyNotifiedRideIds.remove(rideId);
   }
+
+  Future<Either<Failure, void>> _publishUserLocationIfMoved({
+    required String rideId,
+    required int userId,
+    required double latitude,
+    required double longitude,
+    bool force = false,
+  }) async {
+    final key = '$rideId|$userId';
+    final lastPublishedLocation = _lastPublishedLocations[key];
+
+    if (!force && lastPublishedLocation != null) {
+      final distanceMeters = locationService.distanceBetween(
+        startLatitude: lastPublishedLocation.latitude,
+        startLongitude: lastPublishedLocation.longitude,
+        endLatitude: latitude,
+        endLongitude: longitude,
+      );
+
+      if (distanceMeters < _minimumPublishDistanceMeters) {
+        return const Right(null);
+      }
+    }
+
+    final result = await publishRideMapLocation(
+      rideId: rideId,
+      userId: userId,
+      latitude: latitude,
+      longitude: longitude,
+    );
+
+    result.fold((_) {}, (_) {
+      _lastPublishedLocations[key] = _PublishedLocation(
+        latitude: latitude,
+        longitude: longitude,
+      );
+    });
+
+    return result;
+  }
+
+  @override
+  Future<void> close() {
+    stopRealtimeUpdates();
+    return super.close();
+  }
+}
+
+class _PublishedLocation {
+  final double latitude;
+  final double longitude;
+
+  const _PublishedLocation({required this.latitude, required this.longitude});
 }

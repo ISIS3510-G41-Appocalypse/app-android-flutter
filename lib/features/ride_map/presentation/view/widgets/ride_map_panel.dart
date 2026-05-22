@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/gestures.dart';
@@ -67,11 +68,12 @@ class _RideMapPanelState extends State<RideMapPanel> {
   }
 
   String _acceptedPassengerSignature(DriverRide ride) {
-    final ids = ride.acceptedReservations
-        .map((reservation) => reservation.riderUserId)
-        .where((riderUserId) => riderUserId > 0)
-        .toList()
-      ..sort();
+    final ids =
+        ride.acceptedReservations
+            .map((reservation) => reservation.riderUserId)
+            .where((riderUserId) => riderUserId > 0)
+            .toList()
+          ..sort();
 
     return ids.join('|');
   }
@@ -178,14 +180,28 @@ class _RideMapCanvas extends StatefulWidget {
 }
 
 class _RideMapCanvasState extends State<_RideMapCanvas> {
+  static const double _coordinateEpsilon = 0.00001;
+
   MapboxMap? _mapboxMap;
   PointAnnotationManager? _annotationManager;
+  final Map<String, PointAnnotation> _annotationsByKey = {};
+  final Map<String, String> _annotationSignaturesByKey = {};
   final Map<String, Uint8List> _markerImageCache = {};
+  String? _lastMapSignature;
+  Timer? _userInteractionTimer;
+  bool _isUserInteractingWithMap = false;
+
+  @override
+  void dispose() {
+    _userInteractionTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   void didUpdateWidget(covariant _RideMapCanvas oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_mapboxMap != null && oldWidget.state != widget.state) {
+    final nextMapSignature = _mapSignature(widget.state);
+    if (_mapboxMap != null && _lastMapSignature != nextMapSignature) {
       _syncAnnotations();
     }
   }
@@ -221,6 +237,8 @@ class _RideMapCanvasState extends State<_RideMapCanvas> {
         Factory<OneSequenceGestureRecognizer>(() => EagerGestureRecognizer()),
       },
       styleUri: MapboxStyles.MAPBOX_STREETS,
+      onScrollListener: (_) => _markUserMapInteraction(),
+      onZoomListener: (_) => _markUserMapInteraction(),
       onMapCreated: (mapboxMap) async {
         _mapboxMap = mapboxMap;
         await _enableMapGestures(mapboxMap);
@@ -229,6 +247,14 @@ class _RideMapCanvasState extends State<_RideMapCanvas> {
         await _syncAnnotations();
       },
     );
+  }
+
+  void _markUserMapInteraction() {
+    _isUserInteractingWithMap = true;
+    _userInteractionTimer?.cancel();
+    _userInteractionTimer = Timer(const Duration(seconds: 3), () {
+      _isUserInteractingWithMap = false;
+    });
   }
 
   Future<void> _enableMapGestures(MapboxMap mapboxMap) async {
@@ -271,52 +297,171 @@ class _RideMapCanvasState extends State<_RideMapCanvas> {
       return;
     }
 
-    await manager.deleteAll();
+    final nextMapSignature = _mapSignature(widget.state);
+    if (_lastMapSignature == nextMapSignature) {
+      return;
+    }
 
+    final nextKeys = <String>{};
     if (widget.state.driverLatitude != null &&
         widget.state.driverLongitude != null) {
-      await manager.create(
-        PointAnnotationOptions(
-          geometry: Point(
-            coordinates: Position(
-              widget.state.driverLongitude!,
-              widget.state.driverLatitude!,
-            ),
-          ),
-          image: await _markerImage(
-            label: widget.currentLabel,
-            meta: widget.currentMeta,
-            initial: widget.currentInitial,
-            color: widget.currentColor,
-          ),
-          iconAnchor: IconAnchor.BOTTOM,
-          iconSize: 1,
-        ),
+      const key = 'current-user';
+      nextKeys.add(key);
+      await _upsertAnnotation(
+        manager: manager,
+        key: key,
+        latitude: widget.state.driverLatitude!,
+        longitude: widget.state.driverLongitude!,
+        label: widget.currentLabel,
+        meta: widget.currentMeta,
+        initial: widget.currentInitial,
+        color: widget.currentColor,
       );
     }
 
     for (final location in widget.state.locations) {
-      await manager.create(
+      final key = 'participant-${location.userId}';
+      nextKeys.add(key);
+      await _upsertAnnotation(
+        manager: manager,
+        key: key,
+        latitude: location.latitude,
+        longitude: location.longitude,
+        label: _shortName(location.participantName),
+        meta: _distanceLabel(location.distanceMeters),
+        initial: _initial(location.participantName),
+        color: widget.remoteColor,
+      );
+    }
+
+    final staleKeys = _annotationsByKey.keys
+        .where((key) => !nextKeys.contains(key))
+        .toList();
+    for (final key in staleKeys) {
+      await manager.delete(_annotationsByKey[key]!);
+      _annotationsByKey.remove(key);
+      _annotationSignaturesByKey.remove(key);
+    }
+
+    _lastMapSignature = nextMapSignature;
+
+    if (!_isUserInteractingWithMap) {
+      await map.flyTo(
+        CameraOptions(center: _centerPoint(), zoom: 13),
+        MapAnimationOptions(duration: 650),
+      );
+    }
+  }
+
+  Future<void> _upsertAnnotation({
+    required PointAnnotationManager manager,
+    required String key,
+    required double latitude,
+    required double longitude,
+    required String label,
+    required String meta,
+    required String initial,
+    required Color color,
+  }) async {
+    final signature = _annotationSignature(
+      latitude: latitude,
+      longitude: longitude,
+      label: label,
+      meta: meta,
+      initial: initial,
+      color: color,
+    );
+    if (_annotationSignaturesByKey[key] == signature) {
+      return;
+    }
+
+    final geometry = Point(coordinates: Position(longitude, latitude));
+    final image = await _markerImage(
+      label: label,
+      meta: meta,
+      initial: initial,
+      color: color,
+    );
+    final annotation = _annotationsByKey[key];
+
+    if (annotation == null) {
+      _annotationsByKey[key] = await manager.create(
         PointAnnotationOptions(
-          geometry: Point(
-            coordinates: Position(location.longitude, location.latitude),
-          ),
-          image: await _markerImage(
-            label: _shortName(location.participantName),
-            meta: _distanceLabel(location.distanceMeters),
-            initial: _initial(location.participantName),
-            color: widget.remoteColor,
-          ),
+          geometry: geometry,
+          image: image,
           iconAnchor: IconAnchor.BOTTOM,
           iconSize: 1,
         ),
       );
+    } else {
+      annotation.geometry = geometry;
+      annotation.image = image;
+      annotation.iconAnchor = IconAnchor.BOTTOM;
+      annotation.iconSize = 1;
+      await manager.update(annotation);
     }
 
-    await map.flyTo(
-      CameraOptions(center: _centerPoint(), zoom: 13),
-      MapAnimationOptions(duration: 650),
-    );
+    _annotationSignaturesByKey[key] = signature;
+  }
+
+  String _mapSignature(RideMapState state) {
+    final buffer = StringBuffer()
+      ..write(_coordinateKey(state.driverLatitude))
+      ..write(',')
+      ..write(_coordinateKey(state.driverLongitude));
+    final locations = [...state.locations]
+      ..sort((first, second) => first.userId.compareTo(second.userId));
+
+    for (final location in locations) {
+      buffer
+        ..write('|')
+        ..write(location.userId)
+        ..write(':')
+        ..write(_coordinateKey(location.latitude))
+        ..write(',')
+        ..write(_coordinateKey(location.longitude))
+        ..write(':')
+        ..write(_distanceKey(location.distanceMeters))
+        ..write(':')
+        ..write(location.participantName);
+    }
+
+    return buffer.toString();
+  }
+
+  String _annotationSignature({
+    required double latitude,
+    required double longitude,
+    required String label,
+    required String meta,
+    required String initial,
+    required Color color,
+  }) {
+    return [
+      _coordinateKey(latitude),
+      _coordinateKey(longitude),
+      label,
+      meta,
+      initial,
+      color.toARGB32(),
+    ].join('|');
+  }
+
+  String _coordinateKey(double? value) {
+    if (value == null) {
+      return '';
+    }
+
+    final normalized = (value / _coordinateEpsilon).round();
+    return normalized.toString();
+  }
+
+  String _distanceKey(double? value) {
+    if (value == null) {
+      return '';
+    }
+
+    return value.round().toString();
   }
 
   Future<Uint8List> _markerImage({
