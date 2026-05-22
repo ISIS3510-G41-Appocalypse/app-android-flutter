@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/errors/failures.dart';
 import '../../../../core/location/device_location_service.dart';
+import '../../../../core/notifications/local_notification_service.dart';
+import '../../domain/entities/ride_map_location.dart';
 import '../../domain/usecases/get_ride_map_locations.dart';
 import '../../domain/usecases/publish_ride_map_location.dart';
 import 'ride_map_state.dart';
@@ -10,11 +14,14 @@ class RideMapCubit extends Cubit<RideMapState> {
   final DeviceLocationService locationService;
   final GetRideMapLocations getRideMapLocations;
   final PublishRideMapLocation publishRideMapLocation;
+  final LocalNotificationService localNotificationService;
+  final Set<String> _nearbyNotifiedRideIds = {};
 
   RideMapCubit({
     required this.locationService,
     required this.getRideMapLocations,
     required this.publishRideMapLocation,
+    required this.localNotificationService,
   }) : super(RideMapState.initial());
 
   Future<void> loadDriverRideMap({
@@ -254,6 +261,12 @@ class RideMapCubit extends Cubit<RideMapState> {
         );
       },
       (locations) {
+        _syncNearbyDriverNotification(
+          rideId: rideId,
+          driverName: driverName,
+          locations: locations,
+        );
+
         emit(
           state.copyWith(
             status: locations.isEmpty
@@ -271,5 +284,34 @@ class RideMapCubit extends Cubit<RideMapState> {
         );
       },
     );
+  }
+
+  void _syncNearbyDriverNotification({
+    required String rideId,
+    required String driverName,
+    required List<RideMapLocation> locations,
+  }) {
+    if (locations.isEmpty) {
+      _nearbyNotifiedRideIds.remove(rideId);
+      return;
+    }
+
+    final driverLocation = locations.first;
+    final distanceMeters = driverLocation.distanceMeters;
+
+    if (distanceMeters != null && distanceMeters <= 200) {
+      if (_nearbyNotifiedRideIds.add(rideId)) {
+        unawaited(
+          localNotificationService.showDriverNearbyNotification(
+            rideId: rideId,
+            driverName: driverName,
+            distanceMeters: distanceMeters,
+          ),
+        );
+      }
+      return;
+    }
+
+    _nearbyNotifiedRideIds.remove(rideId);
   }
 }
