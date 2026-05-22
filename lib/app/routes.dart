@@ -1,5 +1,7 @@
 import 'package:app_ios_flutter/features/driver_rides/presentation/view/pages/driver_rides_page.dart';
 import 'package:app_ios_flutter/features/ride_offers/presentation/view/pages/ride_offers_page.dart';
+import 'package:app_ios_flutter/features/ratings/presentation/view/pages/ratings_page.dart';
+import 'package:app_ios_flutter/features/ratings/presentation/view/pages/ratings_page_args.dart';
 import 'package:app_ios_flutter/features/rider_rides/presentation/view/pages/rider_rides_page.dart';
 import 'package:app_ios_flutter/features/rides/presentation/view/pages/create_ride_page.dart';
 import 'package:flutter/material.dart';
@@ -16,6 +18,7 @@ class AppRoutes {
   static const String rideOffers = '/ride-offers';
   static const String driverRides = '/driver-rides';
   static const String riderRides = '/rider-rides';
+  static const String ratings = '/ratings';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -33,6 +36,12 @@ class AppRoutes {
         return MaterialPageRoute(builder: (_) => const DriverRidesPage());
       case riderRides:
         return MaterialPageRoute(builder: (_) => const RiderRidesPage());
+      case ratings:
+        final args = settings.arguments;
+        if (args is RatingsPageArgs) {
+          return MaterialPageRoute(builder: (_) => RatingsPage(args: args));
+        }
+        return MaterialPageRoute(builder: (context) => const AuthGate());
       default:
         return MaterialPageRoute(builder: (context) => const AuthGate());
     }

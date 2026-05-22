@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 
+import '../../../../../app/routes.dart';
 import '../../../../../core/layout/header.dart' as header_layout;
 import '../../../../../core/layout/navigation_bar.dart' as navigation_layout;
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../auth/presentation/view/widgets/auth_session_listener.dart';
+import '../../../../ratings/presentation/view/pages/ratings_page_args.dart';
 import '../../../../user/presentation/view_model/user_cubit.dart';
 import '../../../../user/presentation/view_model/user_state.dart';
 import '../../view_model/driver_rides_cubit.dart';
@@ -54,7 +56,32 @@ class _DriverRidesPageState extends State<DriverRidesPage> {
               listener: (context, userState) {
                 _cubit.loadActiveRide(driverId: userState.user?.driver?.id);
               },
-              child: BlocBuilder<DriverRidesCubit, DriverRidesState>(
+              child: BlocConsumer<DriverRidesCubit, DriverRidesState>(
+                listenWhen: (previous, current) =>
+                    previous.ratingPrompt != current.ratingPrompt &&
+                    current.ratingPrompt != null,
+                listener: (context, state) async {
+                  final prompt = state.ratingPrompt;
+                  if (prompt == null) {
+                    return;
+                  }
+
+                  await Navigator.pushNamed(
+                    context,
+                    AppRoutes.ratings,
+                    arguments: RatingsPageArgs.driverRatesRiders(
+                      rideId: prompt.rideId,
+                      driverId: prompt.driverId,
+                      passengers: prompt.passengers,
+                    ),
+                  );
+
+                  if (!context.mounted) {
+                    return;
+                  }
+
+                  await context.read<DriverRidesCubit>().completeRatingPrompt();
+                },
                 builder: (context, state) {
                   return ScrollConfiguration(
                     behavior: const MaterialScrollBehavior().copyWith(

@@ -2,6 +2,20 @@ import '../../domain/entities/rider_ride.dart';
 
 enum RiderRidesStatus { initial, loading, success, empty, error }
 
+class RiderRatingPrompt {
+  final String rideId;
+  final int riderId;
+  final int driverId;
+  final String driverName;
+
+  const RiderRatingPrompt({
+    required this.rideId,
+    required this.riderId,
+    required this.driverId,
+    required this.driverName,
+  });
+}
+
 class RiderRidesState {
   static const Object _sentinel = Object();
 
@@ -10,6 +24,7 @@ class RiderRidesState {
   final String? message;
   final bool isOffline;
   final bool isCancelling;
+  final RiderRatingPrompt? ratingPrompt;
 
   const RiderRidesState({
     required this.status,
@@ -17,6 +32,7 @@ class RiderRidesState {
     this.message,
     required this.isOffline,
     required this.isCancelling,
+    this.ratingPrompt,
   });
 
   factory RiderRidesState.initial() {
@@ -26,6 +42,7 @@ class RiderRidesState {
       message: null,
       isOffline: false,
       isCancelling: false,
+      ratingPrompt: null,
     );
   }
 
@@ -35,6 +52,7 @@ class RiderRidesState {
     Object? message = _sentinel,
     bool? isOffline,
     bool? isCancelling,
+    Object? ratingPrompt = _sentinel,
   }) {
     return RiderRidesState(
       status: status ?? this.status,
@@ -44,6 +62,9 @@ class RiderRidesState {
           : message as String?,
       isOffline: isOffline ?? this.isOffline,
       isCancelling: isCancelling ?? this.isCancelling,
+      ratingPrompt: identical(ratingPrompt, _sentinel)
+          ? this.ratingPrompt
+          : ratingPrompt as RiderRatingPrompt?,
     );
   }
 }
