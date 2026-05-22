@@ -1,6 +1,19 @@
 import '../../domain/entities/driver_ride.dart';
+import '../../../ratings/domain/entities/rating_passenger.dart';
 
 enum DriverRidesStatus { initial, loading, success, empty, error }
+
+class DriverRatingPrompt {
+  final String rideId;
+  final int driverId;
+  final List<RatingPassenger> passengers;
+
+  const DriverRatingPrompt({
+    required this.rideId,
+    required this.driverId,
+    required this.passengers,
+  });
+}
 
 class DriverRidesState {
   static const Object _sentinel = Object();
@@ -12,6 +25,7 @@ class DriverRidesState {
   final bool isUpdating;
   final String? updatingAction;
   final String? updatingReservationId;
+  final DriverRatingPrompt? ratingPrompt;
 
   const DriverRidesState({
     required this.status,
@@ -21,6 +35,7 @@ class DriverRidesState {
     required this.isUpdating,
     this.updatingAction,
     this.updatingReservationId,
+    this.ratingPrompt,
   });
 
   factory DriverRidesState.initial() {
@@ -32,6 +47,7 @@ class DriverRidesState {
       isUpdating: false,
       updatingAction: null,
       updatingReservationId: null,
+      ratingPrompt: null,
     );
   }
 
@@ -43,6 +59,7 @@ class DriverRidesState {
     bool? isUpdating,
     Object? updatingAction = _sentinel,
     Object? updatingReservationId = _sentinel,
+    Object? ratingPrompt = _sentinel,
   }) {
     return DriverRidesState(
       status: status ?? this.status,
@@ -58,6 +75,9 @@ class DriverRidesState {
       updatingReservationId: identical(updatingReservationId, _sentinel)
           ? this.updatingReservationId
           : updatingReservationId as String?,
+      ratingPrompt: identical(ratingPrompt, _sentinel)
+          ? this.ratingPrompt
+          : ratingPrompt as DriverRatingPrompt?,
     );
   }
 }

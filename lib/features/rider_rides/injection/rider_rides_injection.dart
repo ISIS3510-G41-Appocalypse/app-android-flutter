@@ -9,6 +9,7 @@ import '../data/repositories/rider_rides_repository_impl.dart';
 import '../domain/usecases/cancel_reservation.dart';
 import '../domain/usecases/create_reservation.dart';
 import '../domain/usecases/get_active_rider_ride.dart';
+import '../domain/usecases/get_rider_ride_by_ride_id.dart';
 import '../presentation/view_model/rider_rides_cubit.dart';
 
 final sl = GetIt.instance;
@@ -27,11 +28,15 @@ void setupRiderRidesInjection() {
     ),
   );
   sl.registerFactory(() => GetActiveRiderRide(sl<RiderRidesRepositoryImpl>()));
+  sl.registerFactory(
+    () => GetRiderRideByRideId(sl<RiderRidesRepositoryImpl>()),
+  );
   sl.registerFactory(() => CancelReservation(sl<RiderRidesRepositoryImpl>()));
   sl.registerFactory(() => CreateReservation(sl<RiderRidesRepositoryImpl>()));
   sl.registerFactory(
     () => RiderRidesCubit(
       getActiveRiderRide: sl<GetActiveRiderRide>(),
+      getRiderRideByRideId: sl<GetRiderRideByRideId>(),
       cancelReservationUseCase: sl<CancelReservation>(),
     ),
   );
