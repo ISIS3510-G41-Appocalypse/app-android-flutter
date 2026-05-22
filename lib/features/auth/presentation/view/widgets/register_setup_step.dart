@@ -22,6 +22,7 @@ class RegisterSetupStep extends StatelessWidget {
     required this.zoneErrorText,
     required this.wantsDriverRole,
     required this.vehicles,
+    required this.maxVehicles,
     required this.selectedPaymentMethods,
     required this.paymentControllers,
     required this.paymentErrorText,
@@ -32,6 +33,7 @@ class RegisterSetupStep extends StatelessWidget {
     required this.onPaymentMethodToggled,
     required this.onBack,
     required this.onSubmit,
+    required this.submitLabel,
   });
 
   final GlobalKey<FormState> formKey;
@@ -41,6 +43,7 @@ class RegisterSetupStep extends StatelessWidget {
   final String? zoneErrorText;
   final bool wantsDriverRole;
   final List<RegisterVehicleDraft> vehicles;
+  final int maxVehicles;
   final Set<RegisterPaymentMethod> selectedPaymentMethods;
   final Map<RegisterPaymentMethod, TextEditingController> paymentControllers;
   final String? paymentErrorText;
@@ -51,9 +54,12 @@ class RegisterSetupStep extends StatelessWidget {
   final ValueChanged<RegisterPaymentMethod> onPaymentMethodToggled;
   final VoidCallback onBack;
   final VoidCallback onSubmit;
+  final String submitLabel;
 
   @override
   Widget build(BuildContext context) {
+    final hasReachedVehicleLimit = vehicles.length >= maxVehicles;
+
     return Form(
       key: formKey,
       child: Column(
@@ -103,7 +109,7 @@ class RegisterSetupStep extends StatelessWidget {
               );
             }),
             OutlinedButton.icon(
-              onPressed: onAddVehicle,
+              onPressed: hasReachedVehicleLimit ? null : onAddVehicle,
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size.fromHeight(50),
                 side: const BorderSide(color: AppColors.slate300),
@@ -120,6 +126,19 @@ class RegisterSetupStep extends StatelessWidget {
                 ),
               ),
             ),
+            if (hasReachedVehicleLimit) ...[
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Solo puedes registrar hasta 3 vehiculos por usuario.',
+                  style: AppTextStyles.secondary.copyWith(
+                    color: AppColors.errorRed,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 18),
           ],
           if (wantsDriverRole)
@@ -131,7 +150,7 @@ class RegisterSetupStep extends StatelessWidget {
             ),
           const SizedBox(height: 24),
           PrimaryActionButton(
-            label: wantsDriverRole ? 'Crear cuenta' : 'Crear cuenta',
+            label: submitLabel,
             onPressed: onSubmit,
           ),
           const SizedBox(height: 12),

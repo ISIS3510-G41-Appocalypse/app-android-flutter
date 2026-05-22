@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../home/presentation/view/widgets/brand_header_section.dart';
-import '../../../../ride_offers/domain/entities/zone.dart';
-import '../../../injection/auth_injection.dart';
-import '../../../data/datasources/remote/auth_datasource_remote.dart';
+import '../../../../../app/routes.dart';
+import '../../../../../core/theme/app_colors.dart';
+import '../../view_model/auth_cubit.dart';
+import '../../view_model/auth_state.dart';
 import '../models/register_payment_method.dart';
 import '../models/register_vehicle_draft.dart';
 import 'register_basic_info_step.dart';
@@ -17,6 +19,8 @@ class RegisterForm extends StatefulWidget {
 }
 
 class _RegisterFormState extends State<RegisterForm> {
+  static const int _maxVehicles = 3;
+
   final _basicInfoFormKey = GlobalKey<FormState>();
   final _setupFormKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
@@ -35,9 +39,7 @@ class _RegisterFormState extends State<RegisterForm> {
   String? _zoneErrorText;
   String? _paymentErrorText;
   bool _wantsDriverRole = false;
-  bool _isLoadingZones = true;
   late final List<RegisterVehicleDraft> _vehicles;
-  List<Zone> _zones = const [];
   Set<RegisterPaymentMethod> _selectedPaymentMethods = {
     RegisterPaymentMethod.efectivo,
   };
@@ -46,37 +48,10 @@ class _RegisterFormState extends State<RegisterForm> {
   void initState() {
     super.initState();
     _vehicles = [RegisterVehicleDraft()];
-    _loadZones();
-  }
-
-  Future<void> _loadZones() async {
-    try {
-      final rows = await sl<AuthDataSourceRemote>().getZonesRows();
-      final zones = rows
-          .map(
-            (row) => Zone(
-              id: row['id'].toString(),
-              name: row['name'] as String? ?? '',
-            ),
-          )
-          .where((zone) => zone.name.isNotEmpty)
-          .toList();
-
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-
-      setState(() {
-        _zones = zones;
-        _isLoadingZones = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-
-      setState(() {
-        _zones = const [];
-        _isLoadingZones = false;
-        _zoneErrorText = 'No fue posible cargar las zonas';
-      });
-    }
+      context.read<AuthCubit>().loadRegisterZones();
+    });
   }
 
   @override
@@ -132,6 +107,10 @@ class _RegisterFormState extends State<RegisterForm> {
   }
 
   void _addVehicle() {
+    if (_vehicles.length >= _maxVehicles) {
+      return;
+    }
+
     setState(() {
       _vehicles.add(RegisterVehicleDraft());
     });
@@ -184,6 +163,33 @@ class _RegisterFormState extends State<RegisterForm> {
     return zoneError == null && paymentError == null;
   }
 
+  List<Map<String, dynamic>> _buildPaymentMethodsPayload() {
+    return _selectedPaymentMethods.map((method) {
+      final controller = _paymentControllers[method];
+      return {
+        'type': switch (method) {
+          RegisterPaymentMethod.nequi => 'NEQUI',
+          RegisterPaymentMethod.daviplata => 'DAVIPLATA',
+          RegisterPaymentMethod.llave => 'KEY',
+          RegisterPaymentMethod.efectivo => 'CASH',
+        },
+        'number_account': method.requiresValue ? controller?.text.trim() : null,
+      };
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> _buildVehiclesPayload() {
+    return _vehicles.map((vehicle) {
+      return {
+        'license_plate': vehicle.plateController.text.trim().toUpperCase(),
+        'number_slots': int.parse(vehicle.seatsController.text.trim()),
+        'brand': vehicle.brandController.text.trim(),
+        'model': vehicle.modelController.text.trim(),
+        'color': vehicle.colorController.text.trim(),
+      };
+    }).toList();
+  }
+
   void _submitSetup() {
     final formsAreValid = _setupFormKey.currentState!.validate();
     final selectionsAreValid = _validateSetupSelections();
@@ -192,51 +198,110 @@ class _RegisterFormState extends State<RegisterForm> {
       return;
     }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Formulario listo para conectar con el backend.'),
-      ),
+    final zoneId = int.tryParse(_selectedZoneId ?? '');
+    if (zoneId == null) {
+      setState(() {
+        _zoneErrorText = 'Debes seleccionar una zona preferida';
+      });
+      return;
+    }
+
+    final roles = _wantsDriverRole ? ['rider', 'driver'] : ['rider'];
+
+    context.read<AuthCubit>().signup(
+      firstName: _nameController.text.trim(),
+      lastName: _lastNameController.text.trim(),
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+      zoneId: zoneId,
+      roles: roles,
+      paymentMethods: _wantsDriverRole ? _buildPaymentMethodsPayload() : const [],
+      vehicles: _wantsDriverRole ? _buildVehiclesPayload() : const [],
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const BrandHeaderSection(),
-        const SizedBox(height: 32),
-        RegisterCardShell(
-          child: _currentStep == 0
-              ? RegisterBasicInfoStep(
-                  formKey: _basicInfoFormKey,
-                  nameController: _nameController,
-                  lastNameController: _lastNameController,
-                  emailController: _emailController,
-                  passwordController: _passwordController,
-                  confirmPasswordController: _confirmPasswordController,
-                  onNext: _goToSetupStep,
-                )
-              : RegisterSetupStep(
-                  formKey: _setupFormKey,
-                  zones: _zones,
-                  isLoadingZones: _isLoadingZones,
-                  selectedZoneId: _selectedZoneId,
-                  zoneErrorText: _zoneErrorText,
-                  wantsDriverRole: _wantsDriverRole,
-                  vehicles: _vehicles,
-                  selectedPaymentMethods: _selectedPaymentMethods,
-                  paymentControllers: _paymentControllers,
-                  paymentErrorText: _paymentErrorText,
-                  onZoneSelected: _selectZone,
-                  onDriverRoleChanged: _toggleDriverRole,
-                  onAddVehicle: _addVehicle,
-                  onRemoveVehicle: _removeVehicle,
-                  onPaymentMethodToggled: _togglePaymentMethod,
-                  onBack: _goBackToBasicStep,
-                  onSubmit: _submitSetup,
-                ),
-        ),
-      ],
+    return BlocConsumer<AuthCubit, AuthState>(
+      listener: (context, state) {
+        if (state.status == AuthStatus.authenticated) {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            AppRoutes.rideOffers,
+            (route) => false,
+          );
+        }
+
+        if (state.registerZonesErrorMessage != null) {
+          setState(() {
+            _zoneErrorText = state.registerZonesErrorMessage;
+          });
+        } else if (state.registerZones.isNotEmpty && _zoneErrorText != null) {
+          setState(() {
+            _zoneErrorText = null;
+          });
+        }
+      },
+      builder: (context, state) {
+        final isLoading = state.status == AuthStatus.loading;
+        final errorMessage =
+            state.status == AuthStatus.error ? state.errorMessage : null;
+
+        return Column(
+          children: [
+            const BrandHeaderSection(),
+            const SizedBox(height: 32),
+            RegisterCardShell(
+              child: Column(
+                children: [
+                  _currentStep == 0
+                      ? RegisterBasicInfoStep(
+                          formKey: _basicInfoFormKey,
+                          nameController: _nameController,
+                          lastNameController: _lastNameController,
+                          emailController: _emailController,
+                          passwordController: _passwordController,
+                          confirmPasswordController: _confirmPasswordController,
+                          onNext: _goToSetupStep,
+                        )
+                      : RegisterSetupStep(
+                          formKey: _setupFormKey,
+                          zones: state.registerZones,
+                          isLoadingZones: state.isLoadingRegisterZones,
+                          selectedZoneId: _selectedZoneId,
+                          zoneErrorText: _zoneErrorText,
+                          wantsDriverRole: _wantsDriverRole,
+                          vehicles: _vehicles,
+                          maxVehicles: _maxVehicles,
+                          selectedPaymentMethods: _selectedPaymentMethods,
+                          paymentControllers: _paymentControllers,
+                          paymentErrorText: _paymentErrorText,
+                          onZoneSelected: _selectZone,
+                          onDriverRoleChanged: _toggleDriverRole,
+                          onAddVehicle: _addVehicle,
+                          onRemoveVehicle: _removeVehicle,
+                          onPaymentMethodToggled: _togglePaymentMethod,
+                          onBack: _goBackToBasicStep,
+                          onSubmit: isLoading ? () {} : _submitSetup,
+                          submitLabel: isLoading ? 'Creando cuenta...' : 'Crear cuenta',
+                        ),
+                  if (_currentStep == 1 && errorMessage != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      errorMessage,
+                      style: const TextStyle(
+                        color: AppColors.errorRed,
+                        fontSize: 14,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

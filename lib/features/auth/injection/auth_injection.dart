@@ -10,6 +10,8 @@ import '../data/datasources/remote/auth_datasource_remote_supabase.dart';
 import '../data/repositories/auth_repository_impl.dart';
 import '../domain/usecases/login_user.dart';
 import '../domain/usecases/logout_user.dart';
+import '../domain/usecases/get_register_zones.dart';
+import '../domain/usecases/signup_user.dart';
 import '../domain/usecases/verify_session.dart';
 import '../presentation/view_model/auth_cubit.dart';
 
@@ -34,10 +36,14 @@ void setupAuthInjection() {
       networkChecker: sl<NetworkChecker>(),
     ),
   );
+  sl.registerFactory(() => GetRegisterZones(sl<AuthRepositoryImpl>()));
+  sl.registerFactory(() => SignupUser(sl<AuthRepositoryImpl>()));
   sl.registerFactory(() => LoginUser(sl<AuthRepositoryImpl>()));
   sl.registerFactory(() => LogoutUser(sl<AuthRepositoryImpl>()));
   sl.registerFactory(() => VerifySession(sl<AuthRepositoryImpl>()));
-  sl.registerFactory(() => AuthCubit(
+      sl.registerFactory(() => AuthCubit(
+        getRegisterZones: sl<GetRegisterZones>(),
+        signupUser: sl<SignupUser>(),
         loginUser: sl<LoginUser>(),
         logoutUser: sl<LogoutUser>(),
         verifySessionUseCase: sl<VerifySession>(),
