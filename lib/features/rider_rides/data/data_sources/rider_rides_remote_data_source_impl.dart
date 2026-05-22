@@ -59,6 +59,43 @@ class RiderRidesRemoteDataSourceImpl implements RiderRidesRemoteDataSource {
   }
 
   @override
+  Future<Map<String, dynamic>?> getReservationRowForRide({
+    required int riderId,
+    required String rideId,
+  }) async {
+    try {
+      final response = await dio.get(
+        _reservationsPath,
+        queryParameters: {
+          'select': 'id,ride_id,rider_id,meeting_point,state,destination_point',
+          'rider_id': 'eq.$riderId',
+          'ride_id': 'eq.$rideId',
+          'state': 'in.(PENDIENTE,ACEPTADA,EN_CURSO,FINALIZADA)',
+          'limit': 1,
+        },
+      );
+
+      final data = response.data;
+
+      if (data is List) {
+        if (data.isEmpty) {
+          return null;
+        }
+
+        return data.first as Map<String, dynamic>;
+      }
+
+      throw ServerException('Formato de respuesta invalido para reservations');
+    } on DioException catch (e) {
+      throw ServerException(ErrorHandler.getErrorMessage(e));
+    } on ServerException {
+      rethrow;
+    } catch (_) {
+      throw ServerException('Error inesperado al consultar reservations');
+    }
+  }
+
+  @override
   Future<Map<String, dynamic>?> getRideOfferRow({
     required String rideId,
   }) async {
