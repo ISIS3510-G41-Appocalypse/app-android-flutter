@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/errors/failures.dart';
+import '../../../../core/realtime/supabase_realtime_service.dart';
 import '../../domain/usecases/cancel_reservation.dart';
 import '../../domain/usecases/get_active_rider_ride.dart';
 import '../../domain/usecases/get_rider_ride_by_ride_id.dart';
@@ -10,12 +11,17 @@ class RiderRidesCubit extends Cubit<RiderRidesState> {
   final GetActiveRiderRide getActiveRiderRide;
   final GetRiderRideByRideId getRiderRideByRideId;
   final CancelReservation cancelReservationUseCase;
+  final SupabaseRealtimeService realtimeService;
   int? _lastRiderId;
+  RealtimeSubscription? _activeRideSubscription;
+  String? _subscribedRideKey;
+  bool _isRealtimeReloadRunning = false;
 
   RiderRidesCubit({
     required this.getActiveRiderRide,
     required this.getRiderRideByRideId,
     required this.cancelReservationUseCase,
+    required this.realtimeService,
   }) : super(RiderRidesState.initial());
 
   Future<void> loadActiveRide({
@@ -66,6 +72,7 @@ class RiderRidesCubit extends Cubit<RiderRidesState> {
       },
       (ride) {
         if (ride == null) {
+          _clearRealtimeSubscription();
           emit(
             state.copyWith(
               status: RiderRidesStatus.empty,
@@ -79,6 +86,10 @@ class RiderRidesCubit extends Cubit<RiderRidesState> {
           return;
         }
 
+        _syncRealtimeSubscription(
+          rideId: ride.rideId,
+          reservationId: ride.reservationId,
+        );
         emit(
           state.copyWith(
             status: RiderRidesStatus.success,
@@ -107,6 +118,41 @@ class RiderRidesCubit extends Cubit<RiderRidesState> {
     }
 
     await loadActiveRide(riderId: _lastRiderId, showLoading: false);
+  }
+
+  void _syncRealtimeSubscription({
+    required String rideId,
+    required String reservationId,
+  }) {
+    final key = '$rideId|$reservationId';
+    if (_subscribedRideKey == key) {
+      return;
+    }
+
+    _clearRealtimeSubscription();
+    _subscribedRideKey = key;
+    _activeRideSubscription = realtimeService.watchRiderRide(
+      rideId: rideId,
+      reservationId: reservationId,
+      onChange: _handleRealtimeChange,
+    );
+  }
+
+  void _handleRealtimeChange() {
+    if (_isRealtimeReloadRunning || isClosed) {
+      return;
+    }
+
+    _isRealtimeReloadRunning = true;
+    reloadActiveRide().whenComplete(() {
+      _isRealtimeReloadRunning = false;
+    });
+  }
+
+  void _clearRealtimeSubscription() {
+    _activeRideSubscription?.cancel();
+    _activeRideSubscription = null;
+    _subscribedRideKey = null;
   }
 
   Future<void> completeRatingPrompt() async {
@@ -149,7 +195,13 @@ class RiderRidesCubit extends Cubit<RiderRidesState> {
         );
       },
       (_) async {
-        await reloadActiveRide();
+        emit(
+          state.copyWith(
+            message: 'Reserva cancelada.',
+            isOffline: false,
+            isCancelling: false,
+          ),
+        );
       },
     );
   }
@@ -205,6 +257,7 @@ class RiderRidesCubit extends Cubit<RiderRidesState> {
       },
       (ride) {
         if (ride == null) {
+          _clearRealtimeSubscription();
           emit(
             state.copyWith(
               status: RiderRidesStatus.empty,
@@ -218,6 +271,10 @@ class RiderRidesCubit extends Cubit<RiderRidesState> {
           return;
         }
 
+        _syncRealtimeSubscription(
+          rideId: ride.rideId,
+          reservationId: ride.reservationId,
+        );
         emit(
           state.copyWith(
             status: RiderRidesStatus.success,
@@ -240,5 +297,11 @@ class RiderRidesCubit extends Cubit<RiderRidesState> {
         );
       },
     );
+  }
+
+  @override
+  Future<void> close() {
+    _clearRealtimeSubscription();
+    return super.close();
   }
 }

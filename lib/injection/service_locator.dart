@@ -3,6 +3,7 @@ import '../core/notifications/local_notification_service.dart';
 import '../core/network/dio_client.dart';
 import '../core/network/network_checker.dart';
 import '../core/performance/performance_time_tracker.dart';
+import '../core/realtime/supabase_realtime_service.dart';
 import '../core/storage/session_storage.dart';
 import '../core/storage/signup_form_local_storage.dart';
 import '../features/auth/injection/auth_injection.dart';
@@ -30,6 +31,9 @@ Future<void> setupLocator() async {
 
   sl.registerLazySingleton<SessionStorage>(() => SessionStorage());
   sl.registerLazySingleton<NetworkChecker>(() => NetworkChecker());
+  sl.registerLazySingleton<SupabaseRealtimeService>(
+    () => SupabaseRealtimeService(sessionStorage: sl<SessionStorage>()),
+  );
   sl.registerLazySingleton<DioClient>(() => DioClient(sessionStorage: sl()));
   sl.registerLazySingleton<PerformanceTimeTracker>(
     () => PerformanceTimeTracker(

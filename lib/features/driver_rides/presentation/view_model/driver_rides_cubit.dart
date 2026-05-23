@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/errors/failures.dart';
+import '../../../../core/realtime/supabase_realtime_service.dart';
 import '../../../payments/domain/usecases/create_pending_payments_for_ride.dart';
 import '../../../ratings/domain/entities/rating_passenger.dart';
 import '../../domain/entities/driver_ride.dart';
@@ -18,7 +19,11 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
   final AcceptReservation acceptReservationUseCase;
   final RejectReservation rejectReservationUseCase;
   final CreatePendingPaymentsForRide createPendingPaymentsForRide;
+  final SupabaseRealtimeService realtimeService;
   int? _lastDriverId;
+  RealtimeSubscription? _activeRideSubscription;
+  String? _subscribedRideId;
+  bool _isRealtimeReloadRunning = false;
 
   DriverRidesCubit({
     required this.getActiveDriverRide,
@@ -26,6 +31,7 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
     required this.acceptReservationUseCase,
     required this.rejectReservationUseCase,
     required this.createPendingPaymentsForRide,
+    required this.realtimeService,
   }) : super(DriverRidesState.initial());
 
   Future<void> loadActiveRide({
@@ -71,6 +77,7 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
       },
       (ride) {
         if (ride == null) {
+          _clearRealtimeSubscription();
           emit(
             state.copyWith(
               status: DriverRidesStatus.empty,
@@ -82,6 +89,7 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
           return;
         }
 
+        _syncRealtimeSubscription(ride.id);
         emit(
           state.copyWith(
             status: DriverRidesStatus.success,
@@ -99,6 +107,36 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
 
   Future<void> reloadActiveRide() async {
     await loadActiveRide(driverId: _lastDriverId, showLoading: false);
+  }
+
+  void _syncRealtimeSubscription(String rideId) {
+    if (_subscribedRideId == rideId) {
+      return;
+    }
+
+    _clearRealtimeSubscription();
+    _subscribedRideId = rideId;
+    _activeRideSubscription = realtimeService.watchDriverRide(
+      rideId: rideId,
+      onChange: _handleRealtimeChange,
+    );
+  }
+
+  void _handleRealtimeChange() {
+    if (_isRealtimeReloadRunning || isClosed) {
+      return;
+    }
+
+    _isRealtimeReloadRunning = true;
+    reloadActiveRide().whenComplete(() {
+      _isRealtimeReloadRunning = false;
+    });
+  }
+
+  void _clearRealtimeSubscription() {
+    _activeRideSubscription?.cancel();
+    _activeRideSubscription = null;
+    _subscribedRideId = null;
   }
 
   Future<void> startRide() async {
@@ -201,10 +239,6 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
                 : null,
           ),
         );
-
-        if (driverId == null || passengers.isEmpty) {
-          reloadActiveRide();
-        }
       },
     );
   }
@@ -257,7 +291,6 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
             isOffline: false,
           ),
         );
-        await reloadActiveRide();
       },
     );
   }
@@ -300,7 +333,6 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
             isOffline: false,
           ),
         );
-        await reloadActiveRide();
       },
     );
   }
@@ -350,7 +382,6 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
             isOffline: false,
           ),
         );
-        await reloadActiveRide();
       },
     );
   }
@@ -409,5 +440,11 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
     final minute = dateTime.minute.toString().padLeft(2, '0');
     final period = dateTime.hour >= 12 ? 'PM' : 'AM';
     return '$hour:$minute $period';
+  }
+
+  @override
+  Future<void> close() {
+    _clearRealtimeSubscription();
+    return super.close();
   }
 }
