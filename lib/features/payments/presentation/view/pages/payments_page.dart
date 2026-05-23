@@ -9,6 +9,7 @@ import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../auth/presentation/view/widgets/auth_session_listener.dart';
 import '../../../../user/domain/entities/user_role.dart';
 import '../../../../user/presentation/view_model/user_cubit.dart';
+import '../../../../user/presentation/view_model/user_state.dart';
 import '../../../domain/entities/payment_method.dart';
 import '../../../domain/entities/ride_payment.dart';
 import '../../view_model/payments_cubit.dart';
@@ -20,9 +21,7 @@ class PaymentsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final userState = context.read<UserCubit>().state;
-    final preferredRole = userState.activeRole == UserRole.rider
-        ? PaymentsRole.rider
-        : PaymentsRole.driver;
+    final preferredRole = _roleFromUserState(userState);
 
     return BlocProvider(
       create: (_) => GetIt.instance<PaymentsCubit>()
@@ -36,142 +35,94 @@ class PaymentsPage extends StatelessWidget {
   }
 }
 
+PaymentsRole _roleFromUserState(UserState userState) {
+  if (userState.activeRole == UserRole.driver) {
+    return PaymentsRole.driver;
+  }
+  if (userState.activeRole == UserRole.rider) {
+    return PaymentsRole.rider;
+  }
+  if (userState.user?.driver != null && userState.user?.rider == null) {
+    return PaymentsRole.driver;
+  }
+  return PaymentsRole.rider;
+}
+
 class _PaymentsView extends StatelessWidget {
   const _PaymentsView();
 
   @override
   Widget build(BuildContext context) {
     return AuthSessionListener(
-      child: Scaffold(
-        backgroundColor: AppColors.slate900,
-        appBar: const header_layout.Header(),
-        body: SafeArea(
-          top: false,
-          child: BlocConsumer<PaymentsCubit, PaymentsState>(
-            listener: (context, state) {
-              if (state.message == null || state.message!.trim().isEmpty) {
-                return;
-              }
+      child: BlocListener<UserCubit, UserState>(
+        listenWhen: (previous, current) =>
+            previous.activeRole != current.activeRole ||
+            previous.user != current.user,
+        listener: (context, userState) {
+          context.read<PaymentsCubit>().load(
+            driverId: userState.user?.driver?.id,
+            riderId: userState.user?.rider?.id,
+            preferredRole: _roleFromUserState(userState),
+          );
+        },
+        child: Scaffold(
+          backgroundColor: AppColors.slate900,
+          appBar: const header_layout.Header(),
+          body: SafeArea(
+            top: false,
+            child: BlocConsumer<PaymentsCubit, PaymentsState>(
+              listener: (context, state) {
+                if (state.message == null || state.message!.trim().isEmpty) {
+                  return;
+                }
 
-              ScaffoldMessenger.of(context)
-                ..clearSnackBars()
-                ..showSnackBar(SnackBar(content: Text(state.message!)));
-            },
-            builder: (context, state) {
-              return ScrollConfiguration(
-                behavior: const MaterialScrollBehavior().copyWith(
-                  overscroll: false,
-                ),
-                child: SingleChildScrollView(
-                  physics: const ClampingScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        'Mis pagos',
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.primary.copyWith(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Consulta tu informacion de pagos como conductor o pasajero.',
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.primary.copyWith(
-                          color: AppColors.slate300,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      _RoleSelector(state: state),
-                      const SizedBox(height: 28),
-                      _PaymentsContent(state: state),
-                    ],
+                ScaffoldMessenger.of(context)
+                  ..clearSnackBars()
+                  ..showSnackBar(SnackBar(content: Text(state.message!)));
+              },
+              builder: (context, state) {
+                return ScrollConfiguration(
+                  behavior: const MaterialScrollBehavior().copyWith(
+                    overscroll: false,
                   ),
-                ),
-              );
-            },
-          ),
-        ),
-        bottomNavigationBar: const navigation_layout.NavigationBar(
-          selectedItem: navigation_layout.NavigationBarItem.payments,
-        ),
-      ),
-    );
-  }
-}
-
-class _RoleSelector extends StatelessWidget {
-  const _RoleSelector({required this.state});
-
-  final PaymentsState state;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        children: [
-          _RoleButton(
-            label: 'Conductor',
-            selected: state.selectedRole == PaymentsRole.driver,
-            onTap: () =>
-                context.read<PaymentsCubit>().changeRole(PaymentsRole.driver),
-          ),
-          const SizedBox(width: 8),
-          _RoleButton(
-            label: 'Pasajero',
-            selected: state.selectedRole == PaymentsRole.rider,
-            onTap: () =>
-                context.read<PaymentsCubit>().changeRole(PaymentsRole.rider),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RoleButton extends StatelessWidget {
-  const _RoleButton({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            color: selected ? const Color(0xFFF97316) : Colors.transparent,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: AppTextStyles.primary.copyWith(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
+                  child: SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Mis pagos',
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.primary.copyWith(
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          state.selectedRole == PaymentsRole.driver
+                              ? 'Consulta los pagos asociados a tus viajes como conductor.'
+                              : 'Consulta los pagos pendientes de tus viajes como pasajero.',
+                          textAlign: TextAlign.center,
+                          style: AppTextStyles.primary.copyWith(
+                            color: AppColors.slate300,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 28),
+                        _PaymentsContent(state: state),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
+          ),
+          bottomNavigationBar: const navigation_layout.NavigationBar(
+            selectedItem: navigation_layout.NavigationBarItem.payments,
           ),
         ),
       ),
@@ -265,195 +216,349 @@ class _RidePaymentGroupCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final first = payments.first;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          '${first.source} -> ${first.destination}',
-          style: AppTextStyles.primary.copyWith(
-            color: Colors.white,
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _RideRouteTable(payment: first),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _MetaPill(
+                    icon: Icons.calendar_month_outlined,
+                    label: first.date,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _MetaPill(
+                    icon: Icons.schedule_outlined,
+                    label: first.departureTime,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 8),
-        Text('Fecha: ${first.date}', style: _metaStyle()),
-        const SizedBox(height: 6),
-        Text('Hora: ${first.departureTime}', style: _metaStyle()),
-        const SizedBox(height: 18),
-        Text(
-          role == PaymentsRole.driver ? 'Pagos del viaje' : 'Pagos pendientes',
-          style: AppTextStyles.primary.copyWith(
-            color: Colors.white,
-            fontSize: 17,
-            fontWeight: FontWeight.w800,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 8),
+            child: Text(
+              role == PaymentsRole.driver ? 'Pasajeros' : 'Pagos pendientes',
+              style: AppTextStyles.primary.copyWith(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-        for (final payment in payments) ...[
-          _PaymentCard(payment: payment, role: role, state: state),
-          const SizedBox(height: 12),
+          for (var index = 0; index < payments.length; index++) ...[
+            _PaymentRow(
+              payment: payments[index],
+              role: role,
+              state: state,
+              isLast: index == payments.length - 1,
+            ),
+          ],
         ],
-      ],
-    );
-  }
-
-  TextStyle _metaStyle() {
-    return AppTextStyles.primary.copyWith(
-      color: Colors.white.withValues(alpha: 0.88),
-      fontSize: 15,
-      fontWeight: FontWeight.w600,
+      ),
     );
   }
 }
 
-class _PaymentCard extends StatelessWidget {
-  const _PaymentCard({
+class _RideRouteTable extends StatelessWidget {
+  const _RideRouteTable({required this.payment});
+
+  final RidePayment payment;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+      child: Table(
+        columnWidths: const {0: FlexColumnWidth(), 1: FlexColumnWidth()},
+        border: TableBorder(
+          horizontalInside: BorderSide(
+            color: Colors.white.withValues(alpha: 0.10),
+          ),
+          verticalInside: BorderSide(
+            color: Colors.white.withValues(alpha: 0.10),
+          ),
+        ),
+        children: [
+          TableRow(
+            children: const [
+              _RouteCell(text: 'Origen', isHeader: true),
+              _RouteCell(text: 'Destino', isHeader: true),
+            ],
+          ),
+          TableRow(
+            children: [
+              _RouteCell(text: payment.source),
+              _RouteCell(text: payment.destination),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RouteCell extends StatelessWidget {
+  const _RouteCell({required this.text, this.isHeader = false});
+
+  final String text;
+  final bool isHeader;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: isHeader ? 9 : 12,
+      ),
+      child: Text(
+        text.isEmpty ? '-' : text,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: AppTextStyles.primary.copyWith(
+          color: isHeader ? AppColors.slate300 : Colors.white,
+          fontSize: isHeader ? 11 : 15,
+          fontWeight: isHeader ? FontWeight.w800 : FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _MetaPill extends StatelessWidget {
+  const _MetaPill({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 36,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: AppColors.slate300),
+          const SizedBox(width: 6),
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.primary.copyWith(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PaymentRow extends StatelessWidget {
+  const _PaymentRow({
     required this.payment,
     required this.role,
     required this.state,
+    required this.isLast,
   });
 
   final RidePayment payment;
   final PaymentsRole role;
   final PaymentsState state;
+  final bool isLast;
 
   @override
   Widget build(BuildContext context) {
     final isUpdating =
         state.isUpdating && state.updatingPaymentId == payment.id;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.20),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-      ),
+    return Padding(
+      padding: EdgeInsets.fromLTRB(14, 0, 14, isLast ? 14 : 10),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      role == PaymentsRole.driver
-                          ? payment.riderName
-                          : payment.driverName,
-                      style: AppTextStyles.primary.copyWith(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            role == PaymentsRole.driver
+                                ? payment.riderName
+                                : payment.driverName,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.primary.copyWith(
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [
+                              _StatusBadge(label: _stateLabel(payment.state)),
+                              if (payment.type != null &&
+                                  payment.type!.trim().isNotEmpty)
+                                _StatusBadge(
+                                  label: 'Metodo: ${payment.type}',
+                                  muted: true,
+                                ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(width: 10),
                     Text(
-                      _stateLabel(payment.state),
+                      '\$ ${payment.amount}',
                       style: AppTextStyles.primary.copyWith(
-                        color: Colors.white.withValues(alpha: 0.82),
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFFF97316),
+                        fontSize: 19,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
-                    if (payment.type != null &&
-                        payment.type!.trim().isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        'Metodo: ${payment.type}',
-                        style: AppTextStyles.primary.copyWith(
-                          color: Colors.white.withValues(alpha: 0.74),
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                  ],
+                ),
+                if (role == PaymentsRole.rider && payment.isPending) ...[
+                  const SizedBox(height: 14),
+                  _PaymentMethodSelector(payment: payment, state: state),
+                  const SizedBox(height: 10),
+                  ElevatedButton(
+                    onPressed: isUpdating
+                        ? null
+                        : () => context
+                              .read<PaymentsCubit>()
+                              .submitPassengerPayment(payment),
+                    style: _primaryButtonStyle(),
+                    child: Text(isUpdating ? 'Enviando...' : 'Pagado'),
+                  ),
+                ],
+                if (role == PaymentsRole.driver &&
+                    payment.isWaitingDriverConfirmation) ...[
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: isUpdating
+                              ? null
+                              : () => context
+                                    .read<PaymentsCubit>()
+                                    .rejectPayment(payment),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: const BorderSide(color: Colors.white70),
+                            padding: const EdgeInsets.symmetric(vertical: 13),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text('No se pago'),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: isUpdating
+                              ? null
+                              : () => context
+                                    .read<PaymentsCubit>()
+                                    .confirmPayment(payment),
+                          style: _primaryButtonStyle(),
+                          child: Text(isUpdating ? 'Confirmando...' : 'Pago'),
                         ),
                       ),
                     ],
-                  ],
-                ),
-              ),
-              Text(
-                '\$ ${payment.amount}',
-                style: AppTextStyles.primary.copyWith(
-                  color: const Color(0xFFF97316),
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ],
-          ),
-          if (role == PaymentsRole.rider && payment.isPending) ...[
-            const SizedBox(height: 14),
-            _PaymentMethodSelector(payment: payment, state: state),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: isUpdating
-                  ? null
-                  : () => context.read<PaymentsCubit>().submitPassengerPayment(
-                      payment,
-                    ),
-              style: _primaryButtonStyle(),
-              child: Text(isUpdating ? 'Enviando...' : 'Confirmar pago'),
-            ),
-          ],
-          if (role == PaymentsRole.driver &&
-              payment.isWaitingDriverConfirmation) ...[
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: isUpdating
-                        ? null
-                        : () => context.read<PaymentsCubit>().rejectPayment(
-                            payment,
-                          ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: Colors.white70),
-                    ),
-                    child: const Text('No recibido'),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: isUpdating
-                        ? null
-                        : () => context.read<PaymentsCubit>().confirmPayment(
-                            payment,
-                          ),
-                    style: _primaryButtonStyle(),
-                    child: Text(isUpdating ? 'Confirmando...' : 'Recibido'),
-                  ),
-                ),
+                ],
               ],
             ),
-          ],
+          ),
         ],
       ),
     );
   }
+}
 
-  String _stateLabel(String state) {
-    return switch (state) {
-      'PENDIENTE' => 'Pago pendiente',
-      'POR CONFIRMAR' => 'Por confirmar',
-      'COMPLETADO' => 'Pago confirmado',
-      _ => state,
-    };
-  }
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.label, this.muted = false});
 
-  ButtonStyle _primaryButtonStyle() {
-    return ElevatedButton.styleFrom(
-      backgroundColor: const Color(0xFFF97316),
-      disabledBackgroundColor: const Color(0xFFF97316).withValues(alpha: 0.55),
-      foregroundColor: Colors.white,
-      padding: const EdgeInsets.symmetric(vertical: 13),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  final String label;
+  final bool muted;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+      decoration: BoxDecoration(
+        color: muted
+            ? Colors.white.withValues(alpha: 0.08)
+            : const Color(0xFFF97316).withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        label,
+        style: AppTextStyles.primary.copyWith(
+          color: muted ? AppColors.slate200 : const Color(0xFFFFB37A),
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
     );
   }
+}
+
+String _stateLabel(String state) {
+  return switch (state) {
+    'PENDIENTE' => 'Pago pendiente',
+    'POR CONFIRMAR' => 'Por confirmar',
+    'COMPLETADO' => 'Pago confirmado',
+    _ => state,
+  };
+}
+
+ButtonStyle _primaryButtonStyle() {
+  return ElevatedButton.styleFrom(
+    backgroundColor: const Color(0xFFF97316),
+    disabledBackgroundColor: const Color(0xFFF97316).withValues(alpha: 0.55),
+    foregroundColor: Colors.white,
+    padding: const EdgeInsets.symmetric(vertical: 13),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+  );
 }
 
 class _PaymentMethodSelector extends StatelessWidget {
