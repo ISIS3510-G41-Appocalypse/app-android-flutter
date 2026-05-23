@@ -4,6 +4,14 @@ import '../entities/auth.dart';
 import '../../../ride_offers/domain/entities/zone.dart';
 
 abstract class AuthRepository {
+  Future<Either<Failure, void>> saveSignupDraft(Map<String, dynamic> formData);
+
+  Either<Failure, Map<String, dynamic>?> getSignupDraft();
+
+  Future<Either<Failure, void>> clearSignupDraft();
+
+  bool hasSignupDraft();
+
   Future<Either<Failure, List<Zone>>> getZones();
 
   Future<Either<Failure, String>> signup({

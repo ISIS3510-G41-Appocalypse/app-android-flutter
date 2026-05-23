@@ -2,17 +2,27 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/errors/failures.dart';
+import '../../../../core/network/network_checker.dart';
 import '../../../../core/performance/performance_features.dart';
 import '../../../../core/performance/performance_time_tracker.dart';
+import '../../domain/usecases/clear_signup_draft.dart';
 import '../../domain/usecases/get_register_zones.dart';
+import '../../domain/usecases/get_signup_draft.dart';
+import '../../domain/usecases/has_signup_draft.dart';
 import '../../domain/usecases/login_user.dart';
 import '../../domain/usecases/logout_user.dart';
+import '../../domain/usecases/save_signup_draft.dart';
 import '../../domain/usecases/signup_user.dart';
 import '../../domain/usecases/verify_session.dart';
 import 'auth_state.dart';
 
 class AuthCubit extends Cubit<AuthState> {
   final GetRegisterZones getRegisterZones;
+  final NetworkChecker networkChecker;
+  final SaveSignupDraft saveSignupDraft;
+  final GetSignupDraft getSignupDraft;
+  final ClearSignupDraft clearSignupDraft;
+  final HasSignupDraft hasSignupDraft;
   final SignupUser signupUser;
   final LoginUser loginUser;
   final LogoutUser logoutUser;
@@ -21,6 +31,11 @@ class AuthCubit extends Cubit<AuthState> {
 
   AuthCubit({
     required this.getRegisterZones,
+    required this.networkChecker,
+    required this.saveSignupDraft,
+    required this.getSignupDraft,
+    required this.clearSignupDraft,
+    required this.hasSignupDraft,
     required this.signupUser,
     required this.loginUser,
     required this.logoutUser,
@@ -57,6 +72,42 @@ class AuthCubit extends Cubit<AuthState> {
         );
       },
     );
+  }
+
+  Future<bool> ensureRegisterZonesLoaded() async {
+    if (state.registerZones.isNotEmpty) {
+      return true;
+    }
+
+    final hasInternet = await networkChecker.hasInternet;
+    if (!hasInternet) {
+      emit(
+        state.copyWith(
+          registerZonesErrorMessage:
+              'No tienes internet. Intenta de nuevo mas tarde.',
+        ),
+      );
+      return false;
+    }
+
+    await loadRegisterZones();
+    return state.registerZones.isNotEmpty;
+  }
+
+  Future<void> saveRegisterDraft(Map<String, dynamic> formData) async {
+    await saveSignupDraft(formData);
+  }
+
+  Map<String, dynamic>? getRegisterDraft() {
+    return getSignupDraft().fold((_) => null, (draft) => draft);
+  }
+
+  Future<void> clearRegisterDraft() async {
+    await clearSignupDraft();
+  }
+
+  bool hasRegisterDraft() {
+    return hasSignupDraft();
   }
 
   Future<void> signup({

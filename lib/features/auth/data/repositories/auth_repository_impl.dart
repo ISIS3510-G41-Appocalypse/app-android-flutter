@@ -23,6 +23,40 @@ class AuthRepositoryImpl implements AuthRepository {
   });
 
   @override
+  Future<Either<Failure, void>> saveSignupDraft(Map<String, dynamic> formData) async {
+    try {
+      await dataSourceLocal.saveSignupDraft(formData);
+      return const Right(null);
+    } catch (_) {
+      return const Left(ServerFailure('No fue posible guardar tu informacion.'));
+    }
+  }
+
+  @override
+  Either<Failure, Map<String, dynamic>?> getSignupDraft() {
+    try {
+      return Right(dataSourceLocal.getSignupDraft());
+    } catch (_) {
+      return const Left(ServerFailure('No fue posible recuperar tu informacion.'));
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> clearSignupDraft() async {
+    try {
+      await dataSourceLocal.clearSignupDraft();
+      return const Right(null);
+    } catch (_) {
+      return const Left(ServerFailure('No fue posible limpiar tu informacion guardada.'));
+    }
+  }
+
+  @override
+  bool hasSignupDraft() {
+    return dataSourceLocal.hasSignupDraft();
+  }
+
+  @override
   Future<Either<Failure, List<Zone>>> getZones() async {
     try {
       if (!await networkChecker.hasInternet) {
@@ -73,6 +107,8 @@ class AuthRepositoryImpl implements AuthRepository {
         paymentMethods: paymentMethods,
         vehicles: vehicles,
       );
+
+      await dataSourceLocal.clearSignupDraft();
 
       return Right(authId);
     } on ServerException catch (e) {

@@ -23,8 +23,8 @@ class RegisterVehicleCard extends StatelessWidget {
     if (normalized.isEmpty) {
       return '$fieldName es obligatorio';
     }
-    if (normalized.length < 4) {
-      return '$fieldName debe tener al menos 4 caracteres';
+    if (normalized.length < 3) {
+      return '$fieldName debe tener al menos 3 caracteres';
     }
     return null;
   }
