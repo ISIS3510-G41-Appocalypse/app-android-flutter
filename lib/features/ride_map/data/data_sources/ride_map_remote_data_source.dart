@@ -10,4 +10,14 @@ abstract class RideMapRemoteDataSource {
     required double latitude,
     required double longitude,
   });
+
+  Future<void> disableUserLocationSharing({
+    required String rideId,
+    required int userId,
+  });
+
+  Future<bool?> getUserLocationSharingEnabled({
+    required String rideId,
+    required int userId,
+  });
 }

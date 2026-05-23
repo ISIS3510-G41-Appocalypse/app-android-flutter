@@ -10,7 +10,9 @@ import '../data/local/ride_map_location_cache.dart';
 import '../data/repositories/ride_map_repository_impl.dart';
 import '../domain/repositories/ride_map_repository.dart';
 import '../domain/usecases/get_ride_map_locations.dart';
+import '../domain/usecases/is_ride_map_location_sharing_enabled.dart';
 import '../domain/usecases/publish_ride_map_location.dart';
+import '../domain/usecases/stop_ride_map_location_sharing.dart';
 import '../presentation/view_model/ride_map_cubit.dart';
 
 final sl = GetIt.instance;
@@ -37,11 +39,17 @@ Future<void> setupRideMapInjection() async {
   );
   sl.registerFactory(() => GetRideMapLocations(sl<RideMapRepository>()));
   sl.registerFactory(() => PublishRideMapLocation(sl<RideMapRepository>()));
+  sl.registerFactory(() => StopRideMapLocationSharing(sl<RideMapRepository>()));
+  sl.registerFactory(
+    () => IsRideMapLocationSharingEnabled(sl<RideMapRepository>()),
+  );
   sl.registerFactory(
     () => RideMapCubit(
       locationService: sl<DeviceLocationService>(),
       getRideMapLocations: sl<GetRideMapLocations>(),
       publishRideMapLocation: sl<PublishRideMapLocation>(),
+      stopRideMapLocationSharing: sl<StopRideMapLocationSharing>(),
+      isRideMapLocationSharingEnabled: sl<IsRideMapLocationSharingEnabled>(),
       localNotificationService: sl<LocalNotificationService>(),
     ),
   );

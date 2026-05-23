@@ -94,6 +94,64 @@ class RideMapRemoteDataSourceImpl implements RideMapRemoteDataSource {
     }
   }
 
+  @override
+  Future<void> disableUserLocationSharing({
+    required String rideId,
+    required int userId,
+  }) async {
+    try {
+      await dio.patch(
+        ApiConstants.userSharedLocations,
+        queryParameters: {'ride_id': 'eq.$rideId', 'user_id': 'eq.$userId'},
+        data: {'is_sharing_enabled': false},
+        options: Options(headers: {'Prefer': 'return=minimal'}),
+      );
+    } on DioException catch (e) {
+      throw ServerException(ErrorHandler.getErrorMessage(e));
+    } catch (_) {
+      throw ServerException('Error inesperado al detener la ubicacion');
+    }
+  }
+
+  @override
+  Future<bool?> getUserLocationSharingEnabled({
+    required String rideId,
+    required int userId,
+  }) async {
+    try {
+      final response = await dio.get(
+        ApiConstants.userSharedLocations,
+        queryParameters: {
+          'select': 'is_sharing_enabled',
+          'ride_id': 'eq.$rideId',
+          'user_id': 'eq.$userId',
+          'order': 'timestamp.desc',
+          'limit': 1,
+        },
+      );
+
+      final data = response.data;
+      if (data is List) {
+        if (data.isEmpty) {
+          return null;
+        }
+
+        final row = data.first as Map<String, dynamic>;
+        return row['is_sharing_enabled'] == true;
+      }
+
+      throw ServerException(
+        'Formato de respuesta invalido para user_shared_locations',
+      );
+    } on DioException catch (e) {
+      throw ServerException(ErrorHandler.getErrorMessage(e));
+    } on ServerException {
+      rethrow;
+    } catch (_) {
+      throw ServerException('Error inesperado al consultar tu ubicacion');
+    }
+  }
+
   Future<bool> _hasUserRideLocation({
     required String rideId,
     required int userId,

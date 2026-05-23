@@ -8,7 +8,9 @@ import '../../../../core/location/device_location_service.dart';
 import '../../../../core/notifications/local_notification_service.dart';
 import '../../domain/entities/ride_map_location.dart';
 import '../../domain/usecases/get_ride_map_locations.dart';
+import '../../domain/usecases/is_ride_map_location_sharing_enabled.dart';
 import '../../domain/usecases/publish_ride_map_location.dart';
+import '../../domain/usecases/stop_ride_map_location_sharing.dart';
 import 'ride_map_state.dart';
 
 class RideMapCubit extends Cubit<RideMapState> {
@@ -18,6 +20,8 @@ class RideMapCubit extends Cubit<RideMapState> {
   final DeviceLocationService locationService;
   final GetRideMapLocations getRideMapLocations;
   final PublishRideMapLocation publishRideMapLocation;
+  final StopRideMapLocationSharing stopRideMapLocationSharing;
+  final IsRideMapLocationSharingEnabled isRideMapLocationSharingEnabled;
   final LocalNotificationService localNotificationService;
   final Set<String> _nearbyNotifiedRideIds = {};
   final Map<String, _PublishedLocation> _lastPublishedLocations = {};
@@ -28,6 +32,8 @@ class RideMapCubit extends Cubit<RideMapState> {
     required this.locationService,
     required this.getRideMapLocations,
     required this.publishRideMapLocation,
+    required this.stopRideMapLocationSharing,
+    required this.isRideMapLocationSharingEnabled,
     required this.localNotificationService,
   }) : super(RideMapState.initial());
 
@@ -319,6 +325,29 @@ class RideMapCubit extends Cubit<RideMapState> {
     double? riderLongitude;
 
     try {
+      if (riderUserId != null) {
+        final canShareLocation = await _canCurrentUserShareLocation(
+          rideId: rideId,
+          userId: riderUserId,
+        );
+
+        if (!canShareLocation) {
+          stopRealtimeUpdates();
+          _emitIfOpen(
+            state.copyWith(
+              status: RideMapStatus.empty,
+              locations: const [],
+              driverLatitude: null,
+              driverLongitude: null,
+              message: 'Ya fuiste recogido. El mapa se detuvo.',
+              isOffline: false,
+              isPermissionBlocked: false,
+            ),
+          );
+          return;
+        }
+      }
+
       final currentLocation = await locationService.getCurrentLocation();
       riderLatitude = currentLocation.latitude;
       riderLongitude = currentLocation.longitude;
@@ -426,6 +455,63 @@ class RideMapCubit extends Cubit<RideMapState> {
         );
       },
     );
+  }
+
+  Future<void> markPassengerPickedUp({
+    required String rideId,
+    required int userId,
+  }) async {
+    final result = await stopRideMapLocationSharing(
+      rideId: rideId,
+      userId: userId,
+    );
+
+    result.fold(
+      (failure) {
+        _emitIfOpen(state.copyWith(message: failure.message));
+      },
+      (_) {
+        final nextLocations = state.locations
+            .where((location) => location.userId != userId)
+            .toList();
+
+        if (nextLocations.isEmpty) {
+          stopRealtimeUpdates();
+          _emitIfOpen(
+            state.copyWith(
+              status: RideMapStatus.empty,
+              locations: const [],
+              message:
+                  'Todos los pasajeros fueron recogidos. El mapa se detuvo.',
+              clearMessage: false,
+              isOffline: false,
+            ),
+          );
+          return;
+        }
+
+        _emitIfOpen(
+          state.copyWith(
+            status: RideMapStatus.success,
+            locations: nextLocations,
+            message: 'Pasajero marcado como recogido.',
+            isOffline: false,
+          ),
+        );
+      },
+    );
+  }
+
+  Future<bool> _canCurrentUserShareLocation({
+    required String rideId,
+    required int userId,
+  }) async {
+    final result = await isRideMapLocationSharingEnabled(
+      rideId: rideId,
+      userId: userId,
+    );
+
+    return result.getOrElse(() => true);
   }
 
   void _syncNearbyDriverNotification({

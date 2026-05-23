@@ -17,4 +17,14 @@ abstract class RideMapRepository {
     required double latitude,
     required double longitude,
   });
+
+  Future<Either<Failure, void>> stopUserLocationSharing({
+    required String rideId,
+    required int userId,
+  });
+
+  Future<Either<Failure, bool>> isUserLocationSharingEnabled({
+    required String rideId,
+    required int userId,
+  });
 }

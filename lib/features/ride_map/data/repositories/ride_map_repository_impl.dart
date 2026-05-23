@@ -121,6 +121,12 @@ class RideMapRepositoryImpl implements RideMapRepository {
     }
 
     try {
+      final isSharingEnabled = await remoteDataSource
+          .getUserLocationSharingEnabled(rideId: rideId, userId: userId);
+      if (isSharingEnabled == false) {
+        return const Right(null);
+      }
+
       await remoteDataSource.createUserLocation(
         rideId: rideId,
         userId: userId,
@@ -133,6 +139,58 @@ class RideMapRepositoryImpl implements RideMapRepository {
     } catch (_) {
       return const Left(
         ServerFailure('Error inesperado al publicar tu ubicacion'),
+      );
+    }
+  }
+
+  @override
+  Future<Either<Failure, void>> stopUserLocationSharing({
+    required String rideId,
+    required int userId,
+  }) async {
+    if (!await networkChecker.hasInternet) {
+      return const Left(
+        NetworkFailure(
+          'No tienes internet. Esta accion requiere conexion para completarse.',
+        ),
+      );
+    }
+
+    try {
+      await remoteDataSource.disableUserLocationSharing(
+        rideId: rideId,
+        userId: userId,
+      );
+      return const Right(null);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (_) {
+      return const Left(
+        ServerFailure('Error inesperado al detener la ubicacion'),
+      );
+    }
+  }
+
+  @override
+  Future<Either<Failure, bool>> isUserLocationSharingEnabled({
+    required String rideId,
+    required int userId,
+  }) async {
+    if (!await networkChecker.hasInternet) {
+      return const Left(
+        NetworkFailure('No tienes internet. No pudimos validar tu ubicacion.'),
+      );
+    }
+
+    try {
+      final isSharingEnabled = await remoteDataSource
+          .getUserLocationSharingEnabled(rideId: rideId, userId: userId);
+      return Right(isSharingEnabled ?? true);
+    } on ServerException catch (e) {
+      return Left(ServerFailure(e.message));
+    } catch (_) {
+      return const Left(
+        ServerFailure('Error inesperado al validar tu ubicacion'),
       );
     }
   }
