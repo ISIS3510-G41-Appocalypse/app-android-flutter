@@ -35,6 +35,7 @@ class RideMapRepositoryImpl implements RideMapRepository {
         cache
             .getLocations(rideId: rideId)
             .map((model) => model.toEntity())
+            .where((location) => location.hasValidCoordinates)
             .toList(),
         originLatitude,
         originLongitude,
@@ -88,6 +89,7 @@ class RideMapRepositoryImpl implements RideMapRepository {
         cache
             .getLocations(rideId: rideId)
             .map((model) => model.toEntity())
+            .where((location) => location.hasValidCoordinates)
             .toList(),
         originLatitude,
         originLongitude,

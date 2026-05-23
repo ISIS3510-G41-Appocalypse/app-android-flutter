@@ -25,20 +25,38 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
     required this.rejectReservationUseCase,
   }) : super(DriverRidesState.initial());
 
-  Future<void> loadActiveRide({required int? driverId}) async {
+  Future<void> loadActiveRide({
+    required int? driverId,
+    bool showLoading = true,
+  }) async {
     _lastDriverId = driverId;
-    emit(
-      state.copyWith(
-        status: DriverRidesStatus.loading,
-        message: null,
-        isOffline: false,
-      ),
-    );
+    final hasVisibleRide =
+        state.status == DriverRidesStatus.success && state.ride != null;
+
+    if (showLoading || !hasVisibleRide) {
+      emit(
+        state.copyWith(
+          status: DriverRidesStatus.loading,
+          message: null,
+          isOffline: false,
+        ),
+      );
+    }
 
     final result = await getActiveDriverRide(driverId: driverId);
 
     result.fold(
       (failure) {
+        if (hasVisibleRide && !showLoading) {
+          emit(
+            state.copyWith(
+              message: failure.message,
+              isOffline: failure is NetworkFailure,
+            ),
+          );
+          return;
+        }
+
         emit(
           state.copyWith(
             status: DriverRidesStatus.error,
@@ -77,7 +95,7 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
   }
 
   Future<void> reloadActiveRide() async {
-    await loadActiveRide(driverId: _lastDriverId);
+    await loadActiveRide(driverId: _lastDriverId, showLoading: false);
   }
 
   Future<void> startRide() async {

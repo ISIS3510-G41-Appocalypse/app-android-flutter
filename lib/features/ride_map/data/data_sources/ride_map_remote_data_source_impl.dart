@@ -60,16 +60,35 @@ class RideMapRemoteDataSourceImpl implements RideMapRemoteDataSource {
     required double longitude,
   }) async {
     try {
-      await dio.post(
+      final hasExistingLocation = await _hasUserRideLocation(
+        rideId: rideId,
+        userId: userId,
+      );
+      final locationData = {
+        'user_id': userId,
+        'ride_id': int.tryParse(rideId) ?? rideId,
+        'latitude': latitude,
+        'longitude': longitude,
+        'timestamp': DateTime.now().toUtc().toIso8601String(),
+        'is_sharing_enabled': true,
+      };
+
+      if (!hasExistingLocation) {
+        await dio.post(
+          _locationsPath,
+          data: locationData,
+          options: Options(headers: {'Prefer': 'return=minimal'}),
+        );
+        return;
+      }
+
+      await dio.patch(
         _locationsPath,
-        data: {
-          'user_id': userId,
-          'ride_id': int.tryParse(rideId) ?? rideId,
-          'latitude': latitude,
-          'longitude': longitude,
-          'timestamp': DateTime.now().toUtc().toIso8601String(),
-          'is_sharing_enabled': true,
+        queryParameters: {
+          'ride_id': 'eq.$rideId',
+          'user_id': 'eq.$userId',
         },
+        data: locationData,
         options: Options(headers: {'Prefer': 'return=minimal'}),
       );
     } on DioException catch (e) {
@@ -77,5 +96,24 @@ class RideMapRemoteDataSourceImpl implements RideMapRemoteDataSource {
     } catch (_) {
       throw ServerException('Error inesperado al actualizar tu ubicacion');
     }
+  }
+
+  Future<bool> _hasUserRideLocation({
+    required String rideId,
+    required int userId,
+  }) async {
+    final response = await dio.get(
+      _locationsPath,
+      queryParameters: {
+        'select': 'id',
+        'ride_id': 'eq.$rideId',
+        'user_id': 'eq.$userId',
+        'order': 'timestamp.desc',
+        'limit': 1,
+      },
+    );
+
+    final data = response.data;
+    return data is List && data.isNotEmpty;
   }
 }

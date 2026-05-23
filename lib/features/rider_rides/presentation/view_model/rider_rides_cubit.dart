@@ -18,22 +18,41 @@ class RiderRidesCubit extends Cubit<RiderRidesState> {
     required this.cancelReservationUseCase,
   }) : super(RiderRidesState.initial());
 
-  Future<void> loadActiveRide({required int? riderId}) async {
+  Future<void> loadActiveRide({
+    required int? riderId,
+    bool showLoading = true,
+  }) async {
     _lastRiderId = riderId;
-    emit(
-      state.copyWith(
-        status: RiderRidesStatus.loading,
-        message: null,
-        isOffline: false,
-        isCancelling: false,
-        ratingPrompt: null,
-      ),
-    );
+    final hasVisibleRide =
+        state.status == RiderRidesStatus.success && state.ride != null;
+
+    if (showLoading || !hasVisibleRide) {
+      emit(
+        state.copyWith(
+          status: RiderRidesStatus.loading,
+          message: null,
+          isOffline: false,
+          isCancelling: false,
+          ratingPrompt: null,
+        ),
+      );
+    }
 
     final result = await getActiveRiderRide(riderId: riderId);
 
     result.fold(
       (failure) {
+        if (hasVisibleRide && !showLoading) {
+          emit(
+            state.copyWith(
+              message: failure.message,
+              isOffline: failure is NetworkFailure,
+              isCancelling: false,
+            ),
+          );
+          return;
+        }
+
         emit(
           state.copyWith(
             status: RiderRidesStatus.error,
@@ -82,11 +101,12 @@ class RiderRidesCubit extends Cubit<RiderRidesState> {
         riderId: _lastRiderId,
         rideId: currentRide.rideId,
         previousRideState: currentRide.state,
+        showLoading: false,
       );
       return;
     }
 
-    await loadActiveRide(riderId: _lastRiderId);
+    await loadActiveRide(riderId: _lastRiderId, showLoading: false);
   }
 
   Future<void> completeRatingPrompt() async {
@@ -142,20 +162,37 @@ class RiderRidesCubit extends Cubit<RiderRidesState> {
     required int? riderId,
     required String rideId,
     required String previousRideState,
+    bool showLoading = true,
   }) async {
-    emit(
-      state.copyWith(
-        status: RiderRidesStatus.loading,
-        message: null,
-        isOffline: false,
-        isCancelling: false,
-      ),
-    );
+    final hasVisibleRide =
+        state.status == RiderRidesStatus.success && state.ride != null;
+
+    if (showLoading || !hasVisibleRide) {
+      emit(
+        state.copyWith(
+          status: RiderRidesStatus.loading,
+          message: null,
+          isOffline: false,
+          isCancelling: false,
+        ),
+      );
+    }
 
     final result = await getRiderRideByRideId(riderId: riderId, rideId: rideId);
 
     result.fold(
       (failure) {
+        if (hasVisibleRide && !showLoading) {
+          emit(
+            state.copyWith(
+              message: failure.message,
+              isOffline: failure is NetworkFailure,
+              isCancelling: false,
+            ),
+          );
+          return;
+        }
+
         emit(
           state.copyWith(
             status: RiderRidesStatus.error,
