@@ -17,8 +17,8 @@ class HomePage extends StatelessWidget {
           builder: (context, constraints) {
             final contentWidth = constraints.maxWidth * 0.80;
             final height = constraints.maxHeight;
-            final spaceM  = height * 0.04;
-            final spaceL  = height * 0.06;
+            final spaceM = height * 0.04;
+            final spaceL = height * 0.06;
             final spaceXL = height * 0.08;
 
             return Center(
@@ -33,9 +33,20 @@ class HomePage extends StatelessWidget {
                       const HeroSection(),
                       SizedBox(height: spaceXL),
                       PrimaryActionButton(
-                        label: 'Iniciar sesión',
+                        label: 'Iniciar sesion',
+                        backgroundColor: AppColors.amber700,
+                        foregroundColor: AppColors.gray50,
                         onPressed: () {
                           Navigator.pushNamed(context, AppRoutes.login);
+                        },
+                      ),
+                      SizedBox(height: spaceM),
+                      PrimaryActionButton(
+                        label: 'No tienes cuenta? Registrate',
+                        backgroundColor: AppColors.slate400,
+                        foregroundColor: AppColors.gray50,
+                        onPressed: () {
+                          Navigator.pushNamed(context, AppRoutes.register);
                         },
                       ),
                       SizedBox(height: spaceM),

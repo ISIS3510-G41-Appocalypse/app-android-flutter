@@ -4,6 +4,7 @@ import '../core/network/dio_client.dart';
 import '../core/network/network_checker.dart';
 import '../core/performance/performance_time_tracker.dart';
 import '../core/storage/session_storage.dart';
+import '../core/storage/signup_form_local_storage.dart';
 import '../features/auth/injection/auth_injection.dart';
 import '../features/driver_rides/injection/driver_rides_injection.dart';
 import '../features/payments/injection/payments_injection.dart';
@@ -47,6 +48,9 @@ Future<void> setupLocator() async {
   await offlineStorage.initialize();
   sl.registerLazySingleton<RideFormOfflineStorage>(() => offlineStorage);
 
+  final signupFormLocalStorage = SignupFormLocalStorage();
+  await signupFormLocalStorage.initialize();
+  sl.registerLazySingleton<SignupFormLocalStorage>(() => signupFormLocalStorage);
   final ratingsDraftStorage = RatingsDraftStorage();
   await ratingsDraftStorage.initialize();
   sl.registerLazySingleton<RatingsDraftStorage>(() => ratingsDraftStorage);

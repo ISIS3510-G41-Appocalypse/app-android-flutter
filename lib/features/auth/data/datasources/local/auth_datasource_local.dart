@@ -4,6 +4,14 @@ abstract class AuthDataSourceLocal {
     required String refreshToken,
   });
 
+  Future<void> saveSignupDraft(Map<String, dynamic> formData);
+
+  Map<String, dynamic>? getSignupDraft();
+
+  Future<void> clearSignupDraft();
+
+  bool hasSignupDraft();
+
   Future<({String accessToken, String refreshToken})?> getSession();
 
   Future<void> clearSession();
