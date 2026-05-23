@@ -4,6 +4,7 @@ import 'package:dartz/dartz.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/errors/failures.dart';
+import '../../../../core/network/network_checker.dart';
 import '../../../../core/notifications/local_notification_service.dart';
 import '../../domain/entities/ride_payment.dart';
 import '../../domain/usecases/confirm_payment.dart';
@@ -14,18 +15,25 @@ import '../../domain/usecases/reject_payment.dart';
 import 'payments_state.dart';
 
 class PaymentsCubit extends Cubit<PaymentsState> {
+  static const Duration _offlineRetryInterval = Duration(seconds: 5);
+
   final GetDriverPayments getDriverPayments;
   final GetRiderPayments getRiderPayments;
   final MarkPaymentForConfirmation markPaymentForConfirmation;
   final ConfirmPayment confirmPaymentUseCase;
   final RejectPayment rejectPaymentUseCase;
   final LocalNotificationService localNotificationService;
+  final NetworkChecker networkChecker;
   int? _lastDriverId;
   int? _lastRiderId;
   final Map<int, String> _knownDriverPaymentStates = {};
   final Map<int, String> _knownRiderPaymentStates = {};
   bool _driverPaymentsSeenOnce = false;
   bool _riderPaymentsSeenOnce = false;
+  Timer? _offlineRetryTimer;
+  StreamSubscription<bool>? _networkSubscription;
+  bool _isOfflineRetryRunning = false;
+  bool _isConnectivityRefreshRunning = false;
 
   PaymentsCubit({
     required this.getDriverPayments,
@@ -34,7 +42,12 @@ class PaymentsCubit extends Cubit<PaymentsState> {
     required this.confirmPaymentUseCase,
     required this.rejectPaymentUseCase,
     required this.localNotificationService,
-  }) : super(PaymentsState.initial());
+    required this.networkChecker,
+  }) : super(PaymentsState.initial()) {
+    _networkSubscription = networkChecker.onInternetStatusChange.listen(
+      _handleInternetStatusChanged,
+    );
+  }
 
   Future<void> load({
     required int? driverId,
@@ -43,35 +56,56 @@ class PaymentsCubit extends Cubit<PaymentsState> {
   }) async {
     _lastDriverId = driverId;
     _lastRiderId = riderId;
+    final selectedRole = preferredRole ?? state.selectedRole;
+    final hasCurrentData = state.visiblePayments.isNotEmpty;
     emit(
       state.copyWith(
-        status: PaymentsStatus.loading,
-        selectedRole: preferredRole ?? state.selectedRole,
+        status: hasCurrentData ? state.status : PaymentsStatus.loading,
+        selectedRole: selectedRole,
         clearMessage: true,
         isOffline: false,
+        isRefreshing: hasCurrentData,
       ),
     );
 
     final driverResult = await getDriverPayments(driverId: driverId);
     final riderResult = await getRiderPayments(riderId: riderId);
 
-    Failure? failure;
+    Failure? driverFailure;
+    Failure? riderFailure;
     List<RidePayment> driverPayments = const [];
     List<RidePayment> riderPayments = const [];
+    var driverIsFromCache = false;
+    var riderIsFromCache = false;
 
-    driverResult.fold((value) => failure = value, (value) {
-      driverPayments = value;
+    driverResult.fold((value) => driverFailure = value, (value) {
+      driverPayments = value.payments;
+      driverIsFromCache = value.isFromCache;
     });
-    riderResult.fold((value) => failure ??= value, (value) {
-      riderPayments = value;
+    riderResult.fold((value) => riderFailure = value, (value) {
+      riderPayments = value.payments;
+      riderIsFromCache = value.isFromCache;
     });
 
+    final failure = selectedRole == PaymentsRole.driver
+        ? driverFailure
+        : riderFailure;
+    final visibleIsFromCache = selectedRole == PaymentsRole.driver
+        ? driverIsFromCache
+        : riderIsFromCache;
     if (failure != null) {
+      if (failure is NetworkFailure) {
+        _startOfflineRetry();
+      } else {
+        _stopOfflineRetry();
+      }
+
       emit(
         state.copyWith(
           status: PaymentsStatus.error,
-          message: failure!.message,
+          message: failure.message,
           isOffline: failure is NetworkFailure,
+          isRefreshing: false,
         ),
       );
       return;
@@ -82,14 +116,18 @@ class PaymentsCubit extends Cubit<PaymentsState> {
         if (payment.type != null && payment.type!.isNotEmpty)
           payment.id: payment.type!,
     };
-    final selectedRole = preferredRole ?? state.selectedRole;
     final visiblePayments = selectedRole == PaymentsRole.driver
         ? driverPayments
         : riderPayments;
-    _notifyIncomingPaymentChanges(
-      driverPayments: driverPayments,
-      riderPayments: riderPayments,
-    );
+    if (!visibleIsFromCache) {
+      _stopOfflineRetry();
+      _notifyIncomingPaymentChanges(
+        driverPayments: driverPayments,
+        riderPayments: riderPayments,
+      );
+    } else {
+      _startOfflineRetry();
+    }
 
     emit(
       state.copyWith(
@@ -100,8 +138,12 @@ class PaymentsCubit extends Cubit<PaymentsState> {
         driverPayments: driverPayments,
         riderPayments: riderPayments,
         selectedMethodByPaymentId: selectedMethods,
-        clearMessage: true,
-        isOffline: false,
+        message: visibleIsFromCache
+            ? 'Sin conexion. Mostrando la ultima informacion disponible.'
+            : null,
+        clearMessage: !visibleIsFromCache,
+        isOffline: visibleIsFromCache,
+        isRefreshing: false,
       ),
     );
   }
@@ -117,6 +159,7 @@ class PaymentsCubit extends Cubit<PaymentsState> {
             ? PaymentsStatus.empty
             : PaymentsStatus.success,
         clearMessage: true,
+        isRefreshing: false,
       ),
     );
   }
@@ -174,12 +217,22 @@ class PaymentsCubit extends Cubit<PaymentsState> {
       return;
     }
 
+    if (state.isOffline) {
+      emit(
+        state.copyWith(
+          message: 'Necesitas conexion para actualizar el estado del pago.',
+        ),
+      );
+      return;
+    }
+
     emit(
       state.copyWith(
         isUpdating: true,
         updatingPaymentId: payment.id,
         clearMessage: true,
         isOffline: false,
+        isRefreshing: false,
       ),
     );
 
@@ -192,6 +245,7 @@ class PaymentsCubit extends Cubit<PaymentsState> {
             clearUpdatingPaymentId: true,
             message: failure.message,
             isOffline: failure is NetworkFailure,
+            isRefreshing: false,
           ),
         );
       },
@@ -202,6 +256,7 @@ class PaymentsCubit extends Cubit<PaymentsState> {
             clearUpdatingPaymentId: true,
             message: successMessage,
             isOffline: false,
+            isRefreshing: false,
           ),
         );
         await load(
@@ -271,5 +326,93 @@ class PaymentsCubit extends Cubit<PaymentsState> {
       );
     _driverPaymentsSeenOnce = true;
     _riderPaymentsSeenOnce = true;
+  }
+
+  void _startOfflineRetry() {
+    if (_offlineRetryTimer != null) {
+      return;
+    }
+
+    _offlineRetryTimer = Timer.periodic(_offlineRetryInterval, (_) async {
+      if (_isOfflineRetryRunning || isClosed) {
+        return;
+      }
+
+      final hasInternet = await networkChecker.hasInternet;
+      if (!hasInternet) {
+        return;
+      }
+
+      _isOfflineRetryRunning = true;
+      try {
+        await load(
+          driverId: _lastDriverId,
+          riderId: _lastRiderId,
+          preferredRole: state.selectedRole,
+        );
+      } finally {
+        _isOfflineRetryRunning = false;
+      }
+    });
+  }
+
+  void _stopOfflineRetry() {
+    _offlineRetryTimer?.cancel();
+    _offlineRetryTimer = null;
+    _isOfflineRetryRunning = false;
+  }
+
+  Future<void> _handleInternetStatusChanged(bool hasInternet) async {
+    if (isClosed) {
+      return;
+    }
+
+    if (!hasInternet) {
+      if (state.visiblePayments.isNotEmpty) {
+        emit(
+          state.copyWith(
+            message:
+                'Sin conexion. Mostrando la ultima informacion disponible.',
+            isOffline: true,
+            isRefreshing: false,
+          ),
+        );
+        _startOfflineRetry();
+      }
+      return;
+    }
+
+    if (_isConnectivityRefreshRunning) {
+      return;
+    }
+
+    _stopOfflineRetry();
+    if (state.isOffline) {
+      emit(
+        state.copyWith(
+          clearMessage: true,
+          isOffline: false,
+          isRefreshing: state.visiblePayments.isNotEmpty,
+        ),
+      );
+    }
+
+    _isConnectivityRefreshRunning = true;
+    try {
+      await load(
+        driverId: _lastDriverId,
+        riderId: _lastRiderId,
+        preferredRole: state.selectedRole,
+      );
+    } finally {
+      _isConnectivityRefreshRunning = false;
+    }
+  }
+
+  @override
+  Future<void> close() {
+    _stopOfflineRetry();
+    _networkSubscription?.cancel();
+    return super.close();
   }
 }

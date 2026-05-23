@@ -5,6 +5,7 @@ import '../../../core/network/network_checker.dart';
 import '../../../core/notifications/local_notification_service.dart';
 import '../data/data_sources/payments_remote_data_source.dart';
 import '../data/data_sources/payments_remote_data_source_impl.dart';
+import '../data/local/payments_cache_storage.dart';
 import '../data/repositories/payments_repository_impl.dart';
 import '../domain/repositories/payments_repository.dart';
 import '../domain/usecases/confirm_payment.dart';
@@ -18,13 +19,18 @@ import '../presentation/view_model/payments_cubit.dart';
 
 final sl = GetIt.instance;
 
-void setupPaymentsInjection() {
+Future<void> setupPaymentsInjection() async {
+  final cacheStorage = PaymentsCacheStorage();
+  await cacheStorage.initialize();
+  sl.registerLazySingleton<PaymentsCacheStorage>(() => cacheStorage);
+
   sl.registerLazySingleton<PaymentsRemoteDataSource>(
     () => PaymentsRemoteDataSourceImpl(dio: sl<DioClient>().dio),
   );
   sl.registerLazySingleton<PaymentsRepository>(
     () => PaymentsRepositoryImpl(
       remoteDataSource: sl<PaymentsRemoteDataSource>(),
+      cacheStorage: sl<PaymentsCacheStorage>(),
       networkChecker: sl<NetworkChecker>(),
     ),
   );
@@ -47,6 +53,7 @@ void setupPaymentsInjection() {
       confirmPaymentUseCase: sl<ConfirmPayment>(),
       rejectPaymentUseCase: sl<RejectPayment>(),
       localNotificationService: sl<LocalNotificationService>(),
+      networkChecker: sl<NetworkChecker>(),
     ),
   );
 }

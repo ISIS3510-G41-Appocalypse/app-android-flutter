@@ -113,6 +113,13 @@ class _PaymentsView extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 28),
+                        if (state.isRefreshing) ...[
+                          const LinearProgressIndicator(
+                            color: AppColors.amber700,
+                            backgroundColor: AppColors.slate800,
+                          ),
+                          const SizedBox(height: 14),
+                        ],
                         _PaymentsContent(state: state),
                       ],
                     ),
@@ -181,6 +188,10 @@ class _PaymentsContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (state.isOffline) ...[
+          const _OfflinePaymentsBanner(),
+          const SizedBox(height: 14),
+        ],
         for (final group in groups) ...[
           _RidePaymentGroupCard(
             payments: group,
@@ -199,6 +210,44 @@ class _PaymentsContent extends StatelessWidget {
       grouped.putIfAbsent(payment.rideId, () => []).add(payment);
     }
     return grouped.values.toList();
+  }
+}
+
+class _OfflinePaymentsBanner extends StatelessWidget {
+  const _OfflinePaymentsBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.teal600,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.teal600),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.cloud_off_outlined,
+            color: AppColors.white,
+            size: 20,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Sin conexion. Mostrando la ultima informacion disponible. Necesitas conexion para cambiar estados de pago.',
+              style: AppTextStyles.primary.copyWith(
+                color: AppColors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -395,6 +444,7 @@ class _PaymentRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final isUpdating =
         state.isUpdating && state.updatingPaymentId == payment.id;
+    final canUpdate = !state.isOffline && !isUpdating;
     return Padding(
       padding: EdgeInsets.fromLTRB(14, 0, 14, isLast ? 14 : 10),
       child: Column(
@@ -463,7 +513,7 @@ class _PaymentRow extends StatelessWidget {
                   _PaymentMethodSelector(payment: payment, state: state),
                   const SizedBox(height: 10),
                   ElevatedButton(
-                    onPressed: isUpdating
+                    onPressed: !canUpdate
                         ? null
                         : () => context
                               .read<PaymentsCubit>()
@@ -479,7 +529,7 @@ class _PaymentRow extends StatelessWidget {
                     children: [
                       Expanded(
                         child: OutlinedButton(
-                          onPressed: isUpdating
+                          onPressed: !canUpdate
                               ? null
                               : () => context
                                     .read<PaymentsCubit>()
@@ -498,7 +548,7 @@ class _PaymentRow extends StatelessWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         child: ElevatedButton(
-                          onPressed: isUpdating
+                          onPressed: !canUpdate
                               ? null
                               : () => context
                                     .read<PaymentsCubit>()

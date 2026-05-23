@@ -12,6 +12,7 @@ class PaymentsState {
   final Map<int, String> selectedMethodByPaymentId;
   final String? message;
   final bool isOffline;
+  final bool isRefreshing;
   final bool isUpdating;
   final int? updatingPaymentId;
 
@@ -23,6 +24,7 @@ class PaymentsState {
     required this.selectedMethodByPaymentId,
     this.message,
     required this.isOffline,
+    required this.isRefreshing,
     required this.isUpdating,
     this.updatingPaymentId,
   });
@@ -36,6 +38,7 @@ class PaymentsState {
       selectedMethodByPaymentId: {},
       message: null,
       isOffline: false,
+      isRefreshing: false,
       isUpdating: false,
       updatingPaymentId: null,
     );
@@ -54,6 +57,7 @@ class PaymentsState {
     String? message,
     bool clearMessage = false,
     bool? isOffline,
+    bool? isRefreshing,
     bool? isUpdating,
     int? updatingPaymentId,
     bool clearUpdatingPaymentId = false,
@@ -67,6 +71,7 @@ class PaymentsState {
           selectedMethodByPaymentId ?? this.selectedMethodByPaymentId,
       message: clearMessage ? null : message ?? this.message,
       isOffline: isOffline ?? this.isOffline,
+      isRefreshing: isRefreshing ?? this.isRefreshing,
       isUpdating: isUpdating ?? this.isUpdating,
       updatingPaymentId: clearUpdatingPaymentId
           ? null

@@ -3,32 +3,43 @@ import 'package:dartz/dartz.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/network/network_checker.dart';
+import '../../domain/entities/payments_snapshot.dart';
 import '../../domain/entities/ride_payment.dart';
 import '../../domain/repositories/payments_repository.dart';
 import '../data_sources/payments_remote_data_source.dart';
 import '../../domain/entities/payment_method.dart';
+import '../local/payments_cache_storage.dart';
 import '../models/ride_payment_model.dart';
 
 class PaymentsRepositoryImpl implements PaymentsRepository {
   final PaymentsRemoteDataSource remoteDataSource;
+  final PaymentsCacheStorage cacheStorage;
   final NetworkChecker networkChecker;
 
   PaymentsRepositoryImpl({
     required this.remoteDataSource,
+    required this.cacheStorage,
     required this.networkChecker,
   });
 
   @override
-  Future<Either<Failure, List<RidePayment>>> getRiderPayments({
+  Future<Either<Failure, PaymentsSnapshot>> getRiderPayments({
     required int? riderId,
   }) async {
     if (riderId == null) {
-      return const Right([]);
+      return const Right(PaymentsSnapshot(payments: [], isFromCache: false));
     }
 
     if (!await networkChecker.hasInternet) {
-      return const Left(
-        NetworkFailure('No tienes internet. No pudimos cargar tus pagos.'),
+      final cachedPayments = cacheStorage.getRiderPayments(riderId: riderId);
+      if (cachedPayments.isEmpty) {
+        return const Left(
+          NetworkFailure('No tienes internet. No pudimos cargar tus pagos.'),
+        );
+      }
+
+      return Right(
+        PaymentsSnapshot(payments: cachedPayments, isFromCache: true),
       );
     }
 
@@ -36,7 +47,12 @@ class PaymentsRepositoryImpl implements PaymentsRepository {
       final rideRows = await remoteDataSource.getRiderRidesWithPayments(
         riderId: riderId,
       );
-      return Right(await _buildRiderPayments(riderId, rideRows));
+      final payments = await _buildRiderPayments(riderId, rideRows);
+      await cacheStorage.saveRiderPayments(
+        riderId: riderId,
+        payments: _toPaymentModels(payments),
+      );
+      return Right(PaymentsSnapshot(payments: payments, isFromCache: false));
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (_) {
@@ -45,16 +61,23 @@ class PaymentsRepositoryImpl implements PaymentsRepository {
   }
 
   @override
-  Future<Either<Failure, List<RidePayment>>> getDriverPayments({
+  Future<Either<Failure, PaymentsSnapshot>> getDriverPayments({
     required int? driverId,
   }) async {
     if (driverId == null) {
-      return const Right([]);
+      return const Right(PaymentsSnapshot(payments: [], isFromCache: false));
     }
 
     if (!await networkChecker.hasInternet) {
-      return const Left(
-        NetworkFailure('No tienes internet. No pudimos cargar tus pagos.'),
+      final cachedPayments = cacheStorage.getDriverPayments(driverId: driverId);
+      if (cachedPayments.isEmpty) {
+        return const Left(
+          NetworkFailure('No tienes internet. No pudimos cargar tus pagos.'),
+        );
+      }
+
+      return Right(
+        PaymentsSnapshot(payments: cachedPayments, isFromCache: true),
       );
     }
 
@@ -62,7 +85,12 @@ class PaymentsRepositoryImpl implements PaymentsRepository {
       final rideRows = await remoteDataSource.getDriverRidesWithPayments(
         driverId: driverId,
       );
-      return Right(await _buildDriverPayments(driverId, rideRows));
+      final payments = await _buildDriverPayments(driverId, rideRows);
+      await cacheStorage.saveDriverPayments(
+        driverId: driverId,
+        payments: _toPaymentModels(payments),
+      );
+      return Right(PaymentsSnapshot(payments: payments, isFromCache: false));
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
     } catch (_) {
@@ -317,5 +345,9 @@ class PaymentsRepositoryImpl implements PaymentsRepository {
     if (value is int) return value;
     if (value is double) return value.toInt();
     return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  List<RidePaymentModel> _toPaymentModels(List<RidePayment> payments) {
+    return payments.map(RidePaymentModel.fromEntity).toList();
   }
 }
