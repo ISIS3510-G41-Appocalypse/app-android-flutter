@@ -7,6 +7,7 @@ class DriverRide {
   final String date;
   final String state;
   final String departureTime;
+  final int price;
   final int availableSlots;
   final List<DriverRideReservation> pendingReservations;
   final List<DriverRideReservation> acceptedReservations;
@@ -18,6 +19,7 @@ class DriverRide {
     required this.date,
     required this.state,
     required this.departureTime,
+    required this.price,
     required this.availableSlots,
     required this.pendingReservations,
     required this.acceptedReservations,

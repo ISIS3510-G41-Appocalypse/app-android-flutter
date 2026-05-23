@@ -96,6 +96,9 @@ class _RiderRidesPageState extends State<RiderRidesPage> {
                     await context
                         .read<RiderRidesCubit>()
                         .completeRatingPrompt();
+                    if (context.mounted) {
+                      Navigator.pushNamed(context, AppRoutes.payments);
+                    }
                     return;
                   }
 

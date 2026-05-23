@@ -2,6 +2,7 @@ import 'package:get_it/get_it.dart';
 
 import '../../../core/network/dio_client.dart';
 import '../../../core/network/network_checker.dart';
+import '../../payments/domain/usecases/create_pending_payments_for_ride.dart';
 import '../data/data_sources/driver_rides_remote_data_source.dart';
 import '../data/data_sources/driver_rides_remote_data_source_impl.dart';
 import '../data/repositories/driver_rides_repository_impl.dart';
@@ -35,6 +36,7 @@ void setupDriverRidesInjection() {
       updateRideState: sl<UpdateRideState>(),
       acceptReservationUseCase: sl<AcceptReservation>(),
       rejectReservationUseCase: sl<RejectReservation>(),
+      createPendingPaymentsForRide: sl<CreatePendingPaymentsForRide>(),
     ),
   );
 }

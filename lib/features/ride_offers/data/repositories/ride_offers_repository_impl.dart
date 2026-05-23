@@ -37,10 +37,7 @@ class RideOffersRepositoryImpl implements RideOffersRepository {
       final rows = await remoteDataSource.getRideOffersRows();
 
       final offers = await Isolate.run(() {
-        return _processRideOffersInBackground(
-          rows: rows,
-          filters: filters,
-        );
+        return _processRideOffersInBackground(rows: rows, filters: filters);
       });
 
       return Right(offers);

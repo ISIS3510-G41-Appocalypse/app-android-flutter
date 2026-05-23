@@ -198,12 +198,10 @@ class _RideOffersPageState extends State<RideOffersPage> {
                                   RiderRidesState
                                 >(
                                   builder: (context, riderRideState) {
-                                    final driverRidesCubit = context.read<
-                                      DriverRidesCubit
-                                    >();
-                                    final riderRidesCubit = context.read<
-                                      RiderRidesCubit
-                                    >();
+                                    final driverRidesCubit = context
+                                        .read<DriverRidesCubit>();
+                                    final riderRidesCubit = context
+                                        .read<RiderRidesCubit>();
                                     final hasActiveDriverRide =
                                         driverRideState.status ==
                                         DriverRidesStatus.success;
@@ -225,7 +223,10 @@ class _RideOffersPageState extends State<RideOffersPage> {
                                           !state.isReserving,
                                       reserveDisabledReason:
                                           reserveDisabledReason,
-                                      currentDriverId: userState.user?.driver?.id
+                                      currentDriverId: userState
+                                          .user
+                                          ?.driver
+                                          ?.id
                                           .toString(),
                                       reservingRideId: state.reservingRideId,
                                       onReserve: (index) {
@@ -234,7 +235,9 @@ class _RideOffersPageState extends State<RideOffersPage> {
                                         cubit.reserveRide(
                                           offer: state.offers[index],
                                           riderId: riderId,
-                                          currentDriverId: userState.user?.driver
+                                          currentDriverId: userState
+                                              .user
+                                              ?.driver
                                               ?.id
                                               .toString(),
                                           hasActiveDriverRide:
@@ -243,8 +246,10 @@ class _RideOffersPageState extends State<RideOffersPage> {
                                       },
                                       onRetry: () async {
                                         await cubit.loadRideOffers();
-                                        await driverRidesCubit.reloadActiveRide();
-                                        await riderRidesCubit.reloadActiveRide();
+                                        await driverRidesCubit
+                                            .reloadActiveRide();
+                                        await riderRidesCubit
+                                            .reloadActiveRide();
                                       },
                                     );
                                   },

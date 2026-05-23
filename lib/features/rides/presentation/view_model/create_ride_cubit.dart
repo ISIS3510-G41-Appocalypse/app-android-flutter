@@ -23,12 +23,12 @@ class CreateRideCubit extends Cubit<CreateRideState> {
     required this.syncRepository,
     required this.performanceTimeTracker,
     required int driverId,
-  })  : repository = RidesRepositoryImpl(
-          client: client,
-          performanceTimeTracker: performanceTimeTracker,
-        ),
-        _driverId = driverId,
-        super(const CreateRideState());
+  }) : repository = RidesRepositoryImpl(
+         client: client,
+         performanceTimeTracker: performanceTimeTracker,
+       ),
+       _driverId = driverId,
+       super(const CreateRideState());
 
   String? validateRequired(String? value, String fieldName) {
     if (value == null || value.trim().isEmpty) return '$fieldName es requerido';
@@ -46,12 +46,7 @@ class CreateRideCubit extends Cubit<CreateRideState> {
   }
 
   Future<void> loadInitialData() async {
-    emit(
-      state.copyWith(
-        status: CreateRideStatus.loading,
-        clearMessage: true,
-      ),
-    );
+    emit(state.copyWith(status: CreateRideStatus.loading, clearMessage: true));
 
     try {
       final results = await Future.wait([
@@ -103,20 +98,12 @@ class CreateRideCubit extends Cubit<CreateRideState> {
 
   void selectVehicle(Vehicle vehicle) {
     emit(
-      state.copyWith(
-        selectedVehicle: vehicle,
-        status: CreateRideStatus.ready,
-      ),
+      state.copyWith(selectedVehicle: vehicle, status: CreateRideStatus.ready),
     );
   }
 
   void selectZone(Zone zone) {
-    emit(
-      state.copyWith(
-        selectedZone: zone,
-        status: CreateRideStatus.ready,
-      ),
-    );
+    emit(state.copyWith(selectedZone: zone, status: CreateRideStatus.ready));
   }
 
   Future<void> createRide({
@@ -252,7 +239,8 @@ class CreateRideCubit extends Cubit<CreateRideState> {
     required String type,
     required String price,
   }) async {
-    final hasUsefulData = source.trim().isNotEmpty ||
+    final hasUsefulData =
+        source.trim().isNotEmpty ||
         destination.trim().isNotEmpty ||
         date.trim().isNotEmpty ||
         departureTime.trim().isNotEmpty ||
@@ -261,7 +249,6 @@ class CreateRideCubit extends Cubit<CreateRideState> {
         zoneId != null;
 
     if (!hasUsefulData) {
-      await syncRepository.clearRideDraft();
       return;
     }
 
@@ -334,10 +321,7 @@ class CreateRideCubit extends Cubit<CreateRideState> {
     return null;
   }
 
-  void _applySyncResult(
-    RideSyncResult result, {
-    RideFormDraft? fallbackDraft,
-  }) {
+  void _applySyncResult(RideSyncResult result, {RideFormDraft? fallbackDraft}) {
     switch (result.status) {
       case RideSyncStatus.success:
         emit(

@@ -96,10 +96,7 @@ class RideOffersListSection extends StatelessWidget {
                 padding: EdgeInsets.only(
                   bottom: index == state.offers.length - 1 ? 0 : 24,
                 ),
-                child: _buildOfferCard(
-                  context,
-                  index,
-                ),
+                child: _buildOfferCard(context, index),
               ),
             ),
           ],
@@ -122,12 +119,7 @@ class RideOffersListSection extends StatelessWidget {
       isReserveEnabled: isReserveEnabled && !isOwnRide,
       isReserving: reservingRideId == offer.id,
       reserveDisabledReason: cardDisabledReason,
-      onReserve: () => unawaited(
-        _onReserveTapped(
-          context,
-          index: index,
-        ),
-      ),
+      onReserve: () => unawaited(_onReserveTapped(context, index: index)),
     );
   }
 
@@ -140,10 +132,11 @@ class RideOffersListSection extends StatelessWidget {
     final offer = state.offers[index];
     final cubit = context.read<RideOffersCubit>();
 
-    final recommendationFailure = await cubit.validateRecommendationAvailability(
-      riderId: riderId,
-      driverId: offer.driverId,
-    );
+    final recommendationFailure = await cubit
+        .validateRecommendationAvailability(
+          riderId: riderId,
+          driverId: offer.driverId,
+        );
 
     if (recommendationFailure is NetworkFailure) {
       if (!context.mounted) {
@@ -170,9 +163,8 @@ class RideOffersListSection extends StatelessWidget {
 
     final shouldReserve = await showDialog<bool>(
       context: context,
-      builder: (_) => ReserveRideConfirmationDialog(
-        recommendation: recommendation,
-      ),
+      builder: (_) =>
+          ReserveRideConfirmationDialog(recommendation: recommendation),
     );
 
     if (shouldReserve != true) {
