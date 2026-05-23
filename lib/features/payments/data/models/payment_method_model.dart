@@ -17,6 +17,24 @@ class PaymentMethodModel extends PaymentMethod {
     );
   }
 
+  factory PaymentMethodModel.fromEntity(PaymentMethod method) {
+    return PaymentMethodModel(
+      id: method.id,
+      driverId: method.driverId,
+      type: method.type,
+      numberAccount: method.numberAccount,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'driver_id': driverId,
+      'type': type,
+      'number_account': numberAccount,
+    };
+  }
+
   static int _toInt(dynamic value) {
     if (value is int) return value;
     if (value is double) return value.toInt();

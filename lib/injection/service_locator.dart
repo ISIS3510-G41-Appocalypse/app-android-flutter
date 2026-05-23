@@ -65,7 +65,7 @@ Future<void> setupLocator() async {
 
   setupAuthInjection();
   await setupRideMapInjection();
-  setupPaymentsInjection();
+  await setupPaymentsInjection();
   setupDriverRidesInjection();
   setupRatingsInjection();
   setupRideRecommendationInjection();

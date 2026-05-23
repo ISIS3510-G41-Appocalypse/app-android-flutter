@@ -1,14 +1,14 @@
 import 'package:dartz/dartz.dart';
 
 import '../../../../core/errors/failures.dart';
-import '../entities/ride_payment.dart';
+import '../entities/payments_snapshot.dart';
 
 abstract class PaymentsRepository {
-  Future<Either<Failure, List<RidePayment>>> getRiderPayments({
+  Future<Either<Failure, PaymentsSnapshot>> getRiderPayments({
     required int? riderId,
   });
 
-  Future<Either<Failure, List<RidePayment>>> getDriverPayments({
+  Future<Either<Failure, PaymentsSnapshot>> getDriverPayments({
     required int? driverId,
   });
 
