@@ -38,6 +38,7 @@ class _CreateRideFormState extends State<CreateRideForm>
   bool _restoredDraftApplied = false;
   bool _isApplyingDraft = false;
   bool _canPersistDraft = false;
+  bool _restoreDraftScheduled = false;
   Timer? _draftSaveTimer;
 
   @override
@@ -50,6 +51,20 @@ class _CreateRideFormState extends State<CreateRideForm>
     _dateCtrl.addListener(_persistDraft);
     _timeCtrl.addListener(_persistDraft);
     _priceCtrl.addListener(_persistDraft);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _restoredDraftApplied) return;
+      final draft = context.read<CreateRideCubit>().restoreDraft();
+      if (draft == null) return;
+      _applyDraft(draft);
+      _canPersistDraft = true;
+      context.read<CreateRideCubit>().consumeRestoredDraft();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Se restauro una oferta de viaje pendiente.'),
+          backgroundColor: AppColors.teal600,
+        ),
+      );
+    });
   }
 
   @override
@@ -178,6 +193,39 @@ class _CreateRideFormState extends State<CreateRideForm>
     _isApplyingDraft = false;
   }
 
+  void _applyRestoredDraftFromState(CreateRideState state) {
+    if (_restoredDraftApplied || state.restoredDraft == null) {
+      return;
+    }
+
+    _restoreDraftScheduled = false;
+    _applyDraft(state.restoredDraft!);
+    _canPersistDraft = true;
+    context.read<CreateRideCubit>().consumeRestoredDraft();
+    if (state.shouldAnnounceRestoredDraft) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Se restauro una oferta de viaje pendiente.'),
+          backgroundColor: AppColors.teal600,
+        ),
+      );
+    }
+  }
+
+  void _scheduleRestoredDraftApply(CreateRideState state) {
+    if (_restoredDraftApplied ||
+        _restoreDraftScheduled ||
+        state.restoredDraft == null) {
+      return;
+    }
+
+    _restoreDraftScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _applyRestoredDraftFromState(context.read<CreateRideCubit>().state);
+    });
+  }
+
   void _persistDraft() {
     if (_isApplyingDraft || !_canPersistDraft) {
       return;
@@ -192,6 +240,7 @@ class _CreateRideFormState extends State<CreateRideForm>
   Future<void> _saveDraft() async {
     if (!mounted || !_canPersistDraft) return;
     final vm = context.read<CreateRideCubit>();
+    if (!vm.state.isReadyLike) return;
     await vm.saveDraft(
       vehicleId: vm.state.selectedVehicle?.id,
       zoneId: vm.state.selectedZone?.id,
@@ -604,17 +653,7 @@ class _CreateRideFormState extends State<CreateRideForm>
     return BlocConsumer<CreateRideCubit, CreateRideState>(
       listener: (context, state) {
         if (!_restoredDraftApplied && state.restoredDraft != null) {
-          _applyDraft(state.restoredDraft!);
-          _canPersistDraft = true;
-          context.read<CreateRideCubit>().consumeRestoredDraft();
-          if (state.shouldAnnounceRestoredDraft) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Se restauro una oferta de viaje pendiente.'),
-                backgroundColor: AppColors.teal600,
-              ),
-            );
-          }
+          _applyRestoredDraftFromState(state);
           return;
         }
 
@@ -655,6 +694,8 @@ class _CreateRideFormState extends State<CreateRideForm>
         }
       },
       builder: (context, state) {
+        _scheduleRestoredDraftApply(state);
+
         if (state.isLoading) {
           return const Center(
             child: CircularProgressIndicator(color: AppColors.amber700),

@@ -95,7 +95,7 @@ class _PaymentsView extends StatelessWidget {
                           'Mis pagos',
                           textAlign: TextAlign.center,
                           style: AppTextStyles.primary.copyWith(
-                            color: Colors.white,
+                            color: AppColors.white,
                             fontSize: 28,
                             fontWeight: FontWeight.w800,
                           ),
@@ -219,8 +219,16 @@ class _RidePaymentGroupCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        border: Border.all(color: AppColors.slate200),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowSelected,
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -251,7 +259,7 @@ class _RidePaymentGroupCard extends StatelessWidget {
             child: Text(
               role == PaymentsRole.driver ? 'Pasajeros' : 'Pagos pendientes',
               style: AppTextStyles.primary.copyWith(
-                color: Colors.white,
+                color: AppColors.slate900,
                 fontSize: 15,
                 fontWeight: FontWeight.w800,
               ),
@@ -283,12 +291,8 @@ class _RideRouteTable extends StatelessWidget {
       child: Table(
         columnWidths: const {0: FlexColumnWidth(), 1: FlexColumnWidth()},
         border: TableBorder(
-          horizontalInside: BorderSide(
-            color: Colors.white.withValues(alpha: 0.10),
-          ),
-          verticalInside: BorderSide(
-            color: Colors.white.withValues(alpha: 0.10),
-          ),
+          horizontalInside: BorderSide(color: AppColors.slate200),
+          verticalInside: BorderSide(color: AppColors.slate200),
         ),
         children: [
           TableRow(
@@ -327,7 +331,7 @@ class _RouteCell extends StatelessWidget {
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
         style: AppTextStyles.primary.copyWith(
-          color: isHeader ? AppColors.slate300 : Colors.white,
+          color: isHeader ? AppColors.slate400 : AppColors.slate900,
           fontSize: isHeader ? 11 : 15,
           fontWeight: isHeader ? FontWeight.w800 : FontWeight.w700,
         ),
@@ -348,13 +352,13 @@ class _MetaPill extends StatelessWidget {
       height: 36,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: Colors.transparent,
+        color: AppColors.gray50,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        border: Border.all(color: AppColors.slate200),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: AppColors.slate300),
+          Icon(icon, size: 16, color: AppColors.slate400),
           const SizedBox(width: 6),
           Expanded(
             child: Text(
@@ -362,7 +366,7 @@ class _MetaPill extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: AppTextStyles.primary.copyWith(
-                color: Colors.white,
+                color: AppColors.slate900,
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
               ),
@@ -400,8 +404,9 @@ class _PaymentRow extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
+              color: AppColors.gray50,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+              border: Border.all(color: AppColors.slate200),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -420,7 +425,7 @@ class _PaymentRow extends StatelessWidget {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: AppTextStyles.primary.copyWith(
-                              color: Colors.white,
+                              color: AppColors.slate900,
                               fontSize: 15,
                               fontWeight: FontWeight.w800,
                             ),
@@ -446,7 +451,7 @@ class _PaymentRow extends StatelessWidget {
                     Text(
                       '\$ ${payment.amount}',
                       style: AppTextStyles.primary.copyWith(
-                        color: const Color(0xFFF97316),
+                        color: AppColors.amber700,
                         fontSize: 19,
                         fontWeight: FontWeight.w900,
                       ),
@@ -480,8 +485,8 @@ class _PaymentRow extends StatelessWidget {
                                     .read<PaymentsCubit>()
                                     .rejectPayment(payment),
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            side: const BorderSide(color: Colors.white70),
+                            foregroundColor: AppColors.slate900,
+                            side: const BorderSide(color: AppColors.slate300),
                             padding: const EdgeInsets.symmetric(vertical: 13),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
@@ -526,14 +531,14 @@ class _StatusBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
       decoration: BoxDecoration(
         color: muted
-            ? Colors.white.withValues(alpha: 0.08)
-            : const Color(0xFFF97316).withValues(alpha: 0.18),
+            ? AppColors.slate100
+            : AppColors.amber700.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         label,
         style: AppTextStyles.primary.copyWith(
-          color: muted ? AppColors.slate200 : const Color(0xFFFFB37A),
+          color: muted ? AppColors.slate400 : AppColors.amber700,
           fontSize: 11,
           fontWeight: FontWeight.w800,
         ),
@@ -553,9 +558,9 @@ String _stateLabel(String state) {
 
 ButtonStyle _primaryButtonStyle() {
   return ElevatedButton.styleFrom(
-    backgroundColor: const Color(0xFFF97316),
-    disabledBackgroundColor: const Color(0xFFF97316).withValues(alpha: 0.55),
-    foregroundColor: Colors.white,
+    backgroundColor: AppColors.amber700,
+    disabledBackgroundColor: AppColors.amber700.withValues(alpha: 0.55),
+    foregroundColor: AppColors.white,
     padding: const EdgeInsets.symmetric(vertical: 13),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
   );
@@ -574,7 +579,7 @@ class _PaymentMethodSelector extends StatelessWidget {
       return Text(
         'El conductor no tiene metodos de pago registrados.',
         style: AppTextStyles.primary.copyWith(
-          color: Colors.white,
+          color: AppColors.slate900,
           fontSize: 13,
           fontWeight: FontWeight.w600,
         ),
@@ -596,18 +601,22 @@ class _PaymentMethodSelector extends StatelessWidget {
 
     return DropdownButtonFormField<String>(
       initialValue: selectedType,
-      dropdownColor: AppColors.slate800,
+      dropdownColor: AppColors.white,
       decoration: InputDecoration(
         filled: true,
-        fillColor: Colors.white.withValues(alpha: 0.10),
+        fillColor: AppColors.white,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.18)),
+          borderSide: const BorderSide(color: AppColors.slate200),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.amber700, width: 1.4),
         ),
       ),
       style: AppTextStyles.primary.copyWith(
-        color: Colors.white,
+        color: AppColors.slate900,
         fontWeight: FontWeight.w700,
       ),
       items: [
@@ -647,7 +656,7 @@ class _StateCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(18),
       ),
       child: DefaultTextStyle(
