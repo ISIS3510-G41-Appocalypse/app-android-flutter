@@ -37,6 +37,7 @@ class _CreateRideFormState extends State<CreateRideForm>
   final String _universityName = 'Universidad de los Andes';
   bool _restoredDraftApplied = false;
   bool _isApplyingDraft = false;
+  bool _canPersistDraft = false;
   Timer? _draftSaveTimer;
 
   @override
@@ -55,7 +56,9 @@ class _CreateRideFormState extends State<CreateRideForm>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _draftSaveTimer?.cancel();
-    unawaited(_saveDraft());
+    if (_canPersistDraft) {
+      unawaited(_saveDraft());
+    }
     _sourceCtrl.dispose();
     _destinationCtrl.dispose();
     _dateCtrl.dispose();
@@ -176,7 +179,7 @@ class _CreateRideFormState extends State<CreateRideForm>
   }
 
   void _persistDraft() {
-    if (_isApplyingDraft) {
+    if (_isApplyingDraft || !_canPersistDraft) {
       return;
     }
 
@@ -187,7 +190,7 @@ class _CreateRideFormState extends State<CreateRideForm>
   }
 
   Future<void> _saveDraft() async {
-    if (!mounted) return;
+    if (!mounted || !_canPersistDraft) return;
     final vm = context.read<CreateRideCubit>();
     await vm.saveDraft(
       vehicleId: vm.state.selectedVehicle?.id,
@@ -602,6 +605,7 @@ class _CreateRideFormState extends State<CreateRideForm>
       listener: (context, state) {
         if (!_restoredDraftApplied && state.restoredDraft != null) {
           _applyDraft(state.restoredDraft!);
+          _canPersistDraft = true;
           context.read<CreateRideCubit>().consumeRestoredDraft();
           if (state.shouldAnnounceRestoredDraft) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -612,6 +616,10 @@ class _CreateRideFormState extends State<CreateRideForm>
             );
           }
           return;
+        }
+
+        if (!_canPersistDraft && state.isReadyLike) {
+          _canPersistDraft = true;
         }
 
         if (state.navigateToDriverRides) {
