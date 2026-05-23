@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/errors/failures.dart';
+import '../../../payments/domain/usecases/create_pending_payments_for_ride.dart';
 import '../../../ratings/domain/entities/rating_passenger.dart';
 import '../../domain/entities/driver_ride.dart';
 import '../../domain/usecases/accept_reservation.dart';
@@ -16,6 +17,7 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
   final UpdateRideState updateRideState;
   final AcceptReservation acceptReservationUseCase;
   final RejectReservation rejectReservationUseCase;
+  final CreatePendingPaymentsForRide createPendingPaymentsForRide;
   int? _lastDriverId;
 
   DriverRidesCubit({
@@ -23,6 +25,7 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
     required this.updateRideState,
     required this.acceptReservationUseCase,
     required this.rejectReservationUseCase,
+    required this.createPendingPaymentsForRide,
   }) : super(DriverRidesState.initial());
 
   Future<void> loadActiveRide({
@@ -152,7 +155,24 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
           ),
         );
       },
-      (_) {
+      (_) async {
+        if (driverId != null) {
+          await createPendingPaymentsForRide(
+            rideId: currentRide.id,
+            driverId: driverId,
+            amount: currentRide.price,
+            passengers: currentRide.acceptedReservations
+                .where((reservation) => reservation.riderId > 0)
+                .map(
+                  (reservation) => (
+                    reservationId: reservation.reservationId,
+                    riderId: reservation.riderId,
+                  ),
+                )
+                .toList(),
+          );
+        }
+
         final passengers = currentRide.acceptedReservations
             .where((reservation) => reservation.riderId > 0)
             .map(

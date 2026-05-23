@@ -6,6 +6,7 @@ import '../core/performance/performance_time_tracker.dart';
 import '../core/storage/session_storage.dart';
 import '../features/auth/injection/auth_injection.dart';
 import '../features/driver_rides/injection/driver_rides_injection.dart';
+import '../features/payments/injection/payments_injection.dart';
 import '../features/ride_offers/injection/ride_offers_injection.dart';
 import '../features/ride_map/injection/ride_map_injection.dart';
 import '../features/ride_recommendation/injection/ride_recommendation_injection.dart';
@@ -60,6 +61,7 @@ Future<void> setupLocator() async {
 
   setupAuthInjection();
   await setupRideMapInjection();
+  setupPaymentsInjection();
   setupDriverRidesInjection();
   setupRatingsInjection();
   setupRideRecommendationInjection();

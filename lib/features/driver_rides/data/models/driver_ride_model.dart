@@ -8,6 +8,7 @@ class DriverRideModel {
   final String date;
   final String state;
   final String departureTime;
+  final int price;
   final int availableSlots;
   final List<DriverRideReservation> pendingReservations;
   final List<DriverRideReservation> acceptedReservations;
@@ -19,6 +20,7 @@ class DriverRideModel {
     required this.date,
     required this.state,
     required this.departureTime,
+    required this.price,
     required this.availableSlots,
     required this.pendingReservations,
     required this.acceptedReservations,
@@ -37,6 +39,7 @@ class DriverRideModel {
       date: json['date'] as String? ?? '',
       state: json['state'] as String? ?? '',
       departureTime: json['departure_time'] as String? ?? '',
+      price: _toInt(json['price']),
       availableSlots: availableSlots,
       pendingReservations: pendingReservations,
       acceptedReservations: acceptedReservations,
@@ -51,9 +54,16 @@ class DriverRideModel {
       date: date,
       state: state,
       departureTime: departureTime,
+      price: price,
       availableSlots: availableSlots,
       pendingReservations: pendingReservations,
       acceptedReservations: acceptedReservations,
     );
+  }
+
+  static int _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 }

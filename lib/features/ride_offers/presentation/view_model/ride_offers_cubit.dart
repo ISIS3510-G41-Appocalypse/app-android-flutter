@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/performance/performance_features.dart';
 import '../../../../core/performance/performance_time_tracker.dart';
+import '../../../payments/domain/usecases/has_blocking_payments.dart';
 import '../../../ride_recommendation/domain/entities/ride_recommendation.dart';
 import '../../../ride_recommendation/domain/usecases/get_ride_recommendation.dart';
 import '../../../rider_rides/domain/usecases/create_reservation.dart';
@@ -19,6 +20,7 @@ class RideOffersCubit extends Cubit<RideOffersState> {
   final GetZones getZones;
   final CreateReservation createReservation;
   final GetRideRecommendation getRideRecommendation;
+  final HasBlockingPayments hasBlockingPayments;
   final PerformanceTimeTracker performanceTimeTracker;
   String? _preferredZoneId;
   String? _excludedRideId;
@@ -28,6 +30,7 @@ class RideOffersCubit extends Cubit<RideOffersState> {
     required this.getZones,
     required this.createReservation,
     required this.getRideRecommendation,
+    required this.hasBlockingPayments,
     required this.performanceTimeTracker,
   }) : super(RideOffersState.initial(initialDate: _today()));
 
@@ -306,6 +309,41 @@ class RideOffersCubit extends Cubit<RideOffersState> {
       emit(
         state.copyWith(
           message: 'No puedes reservar tu propio viaje.',
+          isOffline: false,
+          reservationCreated: false,
+        ),
+      );
+      return;
+    }
+
+    final blockingPaymentsResult = await hasBlockingPayments(riderId: riderId);
+    bool hasOpenPayments = false;
+    Failure? paymentValidationFailure;
+    blockingPaymentsResult.fold(
+      (failure) {
+        paymentValidationFailure = failure;
+      },
+      (value) {
+        hasOpenPayments = value;
+      },
+    );
+
+    if (paymentValidationFailure != null) {
+      emit(
+        state.copyWith(
+          message: paymentValidationFailure!.message,
+          isOffline: paymentValidationFailure is NetworkFailure,
+          reservationCreated: false,
+        ),
+      );
+      return;
+    }
+
+    if (hasOpenPayments) {
+      emit(
+        state.copyWith(
+          message:
+              'No puedes reservar un nuevo viaje porque tienes pagos pendientes.',
           isOffline: false,
           reservationCreated: false,
         ),
