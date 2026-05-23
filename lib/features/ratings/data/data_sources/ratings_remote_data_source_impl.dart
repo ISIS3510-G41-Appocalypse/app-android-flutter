@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/errors/error_handler.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../models/rate_driver_model.dart';
@@ -7,9 +8,6 @@ import '../models/rate_rider_model.dart';
 import 'ratings_remote_data_source.dart';
 
 class RatingsRemoteDataSourceImpl implements RatingsRemoteDataSource {
-  static const String _ratesDriverPath = '/rest/v1/rates_driver';
-  static const String _ratesRiderPath = '/rest/v1/rates_rider';
-
   final Dio dio;
 
   RatingsRemoteDataSourceImpl({required this.dio});
@@ -18,7 +16,7 @@ class RatingsRemoteDataSourceImpl implements RatingsRemoteDataSource {
   Future<void> submitDriverRating(RateDriverModel rating) async {
     try {
       await dio.post(
-        _ratesDriverPath,
+        ApiConstants.ratesDriver,
         data: rating.toJson(),
         options: Options(headers: {'Prefer': 'return=minimal'}),
       );
@@ -37,7 +35,7 @@ class RatingsRemoteDataSourceImpl implements RatingsRemoteDataSource {
 
     try {
       await dio.post(
-        _ratesRiderPath,
+        ApiConstants.ratesRider,
         data: ratings.map((rating) => rating.toJson()).toList(),
         options: Options(headers: {'Prefer': 'return=minimal'}),
       );

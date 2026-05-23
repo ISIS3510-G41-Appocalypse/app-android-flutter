@@ -1,12 +1,11 @@
 import 'package:dio/dio.dart';
 
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/errors/error_handler.dart';
 import '../../../../core/errors/exceptions.dart';
 import 'ride_map_remote_data_source.dart';
 
 class RideMapRemoteDataSourceImpl implements RideMapRemoteDataSource {
-  static const String _locationsPath = '/rest/v1/user_shared_locations';
-
   final Dio dio;
 
   RideMapRemoteDataSourceImpl({required this.dio});
@@ -22,7 +21,7 @@ class RideMapRemoteDataSourceImpl implements RideMapRemoteDataSource {
 
     try {
       final response = await dio.get(
-        _locationsPath,
+        ApiConstants.userSharedLocations,
         queryParameters: {
           'select':
               'id,user_id,ride_id,latitude,longitude,timestamp,is_sharing_enabled',
@@ -75,7 +74,7 @@ class RideMapRemoteDataSourceImpl implements RideMapRemoteDataSource {
 
       if (!hasExistingLocation) {
         await dio.post(
-          _locationsPath,
+          ApiConstants.userSharedLocations,
           data: locationData,
           options: Options(headers: {'Prefer': 'return=minimal'}),
         );
@@ -83,11 +82,8 @@ class RideMapRemoteDataSourceImpl implements RideMapRemoteDataSource {
       }
 
       await dio.patch(
-        _locationsPath,
-        queryParameters: {
-          'ride_id': 'eq.$rideId',
-          'user_id': 'eq.$userId',
-        },
+        ApiConstants.userSharedLocations,
+        queryParameters: {'ride_id': 'eq.$rideId', 'user_id': 'eq.$userId'},
         data: locationData,
         options: Options(headers: {'Prefer': 'return=minimal'}),
       );
@@ -103,7 +99,7 @@ class RideMapRemoteDataSourceImpl implements RideMapRemoteDataSource {
     required int userId,
   }) async {
     final response = await dio.get(
-      _locationsPath,
+      ApiConstants.userSharedLocations,
       queryParameters: {
         'select': 'id',
         'ride_id': 'eq.$rideId',

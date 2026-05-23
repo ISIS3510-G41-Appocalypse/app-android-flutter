@@ -1,16 +1,11 @@
 import 'package:dio/dio.dart';
 
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/errors/error_handler.dart';
 import '../../../../core/errors/exceptions.dart';
 import 'driver_rides_remote_data_source.dart';
 
 class DriverRidesRemoteDataSourceImpl implements DriverRidesRemoteDataSource {
-  static const String _ridesPath = '/rest/v1/rides';
-  static const String _vehiclesPath = '/rest/v1/vehicles';
-  static const String _reservationsPath = '/rest/v1/reservations';
-  static const String _ridersPath = '/rest/v1/riders';
-  static const String _usersPath = '/rest/v1/users';
-
   final Dio dio;
 
   DriverRidesRemoteDataSourceImpl({required this.dio});
@@ -21,7 +16,7 @@ class DriverRidesRemoteDataSourceImpl implements DriverRidesRemoteDataSource {
   }) async {
     try {
       final response = await dio.get(
-        _ridesPath,
+        ApiConstants.rides,
         queryParameters: {
           'select':
               'id,source,destination,state,departure_time,vehicle_id,date,price',
@@ -56,7 +51,7 @@ class DriverRidesRemoteDataSourceImpl implements DriverRidesRemoteDataSource {
   Future<Map<String, dynamic>?> getRideRow({required String rideId}) async {
     try {
       final response = await dio.get(
-        _ridesPath,
+        ApiConstants.rides,
         queryParameters: {
           'select':
               'id,source,destination,state,departure_time,vehicle_id,date,price',
@@ -89,7 +84,7 @@ class DriverRidesRemoteDataSourceImpl implements DriverRidesRemoteDataSource {
   Future<Map<String, dynamic>> getVehicleRow({required int vehicleId}) async {
     try {
       final response = await dio.get(
-        _vehiclesPath,
+        ApiConstants.vehicles,
         queryParameters: {
           'select': 'id,number_slots',
           'id': 'eq.$vehicleId',
@@ -119,7 +114,7 @@ class DriverRidesRemoteDataSourceImpl implements DriverRidesRemoteDataSource {
   }) async {
     try {
       final response = await dio.get(
-        _reservationsPath,
+        ApiConstants.reservations,
         queryParameters: {
           'select': 'id,ride_id,rider_id,state',
           'ride_id': 'eq.$rideId',
@@ -154,7 +149,7 @@ class DriverRidesRemoteDataSourceImpl implements DriverRidesRemoteDataSource {
 
     try {
       final response = await dio.get(
-        _ridersPath,
+        ApiConstants.riders,
         queryParameters: {
           'select': 'id,user_id,rating,cancellation_odds',
           'id': 'in.(${riderIds.join(',')})',
@@ -187,7 +182,7 @@ class DriverRidesRemoteDataSourceImpl implements DriverRidesRemoteDataSource {
 
     try {
       final response = await dio.get(
-        _usersPath,
+        ApiConstants.users,
         queryParameters: {
           'select': 'id,first_name,last_name',
           'id': 'in.(${userIds.join(',')})',
@@ -217,7 +212,7 @@ class DriverRidesRemoteDataSourceImpl implements DriverRidesRemoteDataSource {
   }) async {
     try {
       final response = await dio.patch(
-        _ridesPath,
+        ApiConstants.rides,
         data: {'state': state},
         options: Options(headers: {'Prefer': 'return=representation'}),
         queryParameters: {'select': 'id,state', 'id': 'eq.$rideId'},
@@ -253,7 +248,7 @@ class DriverRidesRemoteDataSourceImpl implements DriverRidesRemoteDataSource {
   }) async {
     try {
       final response = await dio.patch(
-        _reservationsPath,
+        ApiConstants.reservations,
         data: {'state': state},
         options: Options(headers: {'Prefer': 'return=representation'}),
         queryParameters: {'select': 'id,state', 'id': 'eq.$reservationId'},
@@ -294,7 +289,7 @@ class DriverRidesRemoteDataSourceImpl implements DriverRidesRemoteDataSource {
 
     try {
       await dio.patch(
-        _reservationsPath,
+        ApiConstants.reservations,
         data: {'state': nextState},
         options: Options(headers: {'Prefer': 'return=minimal'}),
         queryParameters: {

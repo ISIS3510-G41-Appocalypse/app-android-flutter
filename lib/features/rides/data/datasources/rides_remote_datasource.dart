@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 import 'package:dio_cache_plus/dio_cache_plus.dart';
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/performance/performance_features.dart';
 import '../../../../core/performance/performance_time_tracker.dart';
@@ -20,7 +21,7 @@ class RidesRemoteDatasource {
 
   Future<List<VehicleModel>> getVehiclesByDriver(int driverId) async {
     final response = await dioClient.dio.get(
-      '/rest/v1/vehicles',
+      ApiConstants.vehicles,
       queryParameters: {'driver_id': 'eq.$driverId'},
       options: Options().setCaching(enableCache: true),
     );
@@ -34,7 +35,7 @@ class RidesRemoteDatasource {
 
     try {
       final response = await dioClient.dio.post(
-        '/rest/v1/rides',
+        ApiConstants.rides,
         data: ride.toJson(),
         options: Options(headers: {'Prefer': 'return=representation'}),
       );
@@ -66,7 +67,7 @@ class RidesRemoteDatasource {
 
   Future<int> getDriverIdByUserId(int userId) async {
     final response = await dioClient.dio.get(
-      '/rest/v1/drivers',
+      ApiConstants.drivers,
       queryParameters: {'user_id': 'eq.$userId'},
     );
     final data = response.data as List;
@@ -76,7 +77,7 @@ class RidesRemoteDatasource {
 
   Future<List<ZoneModel>> getZones() async {
     final response = await dioClient.dio.get(
-      '/rest/v1/zones',
+      ApiConstants.zones,
       options: Options().setCaching(enableCache: true),
     );
     return (response.data as List)

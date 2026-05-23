@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
 
+import '../../../../../core/constants/api_constants.dart';
 import '../../../../../core/errors/error_handler.dart';
 import '../../../../../core/errors/exceptions.dart';
 import '../../../../../core/performance/performance_features.dart';
@@ -26,14 +27,9 @@ class AuthDataSourceRemoteSupabase implements AuthDataSourceRemote {
 
     try {
       final response = await dio.post(
-        '/auth/v1/token',
-        queryParameters: {
-          'grant_type': 'password',
-        },
-        data: {
-          'email': email,
-          'password': password,
-        },
+        ApiConstants.authToken,
+        queryParameters: {'grant_type': 'password'},
+        data: {'email': email, 'password': password},
       );
       stopwatch.stop();
 
@@ -45,9 +41,7 @@ class AuthDataSourceRemoteSupabase implements AuthDataSourceRemote {
         ),
       );
 
-      return AuthModel.fromJson(
-        response.data as Map<String, dynamic>,
-      );
+      return AuthModel.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       stopwatch.stop();
 
@@ -73,11 +67,9 @@ class AuthDataSourceRemoteSupabase implements AuthDataSourceRemote {
   @override
   Future<AuthModel> verifySession() async {
     try {
-      final response = await dio.get('/auth/v1/user');
+      final response = await dio.get(ApiConstants.authUser);
 
-      return AuthModel.fromJson(
-        response.data as Map<String, dynamic>,
-      );
+      return AuthModel.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       if (e.response?.statusCode == 403 &&
           e.response?.data['msg'].contains('token is expired')) {
