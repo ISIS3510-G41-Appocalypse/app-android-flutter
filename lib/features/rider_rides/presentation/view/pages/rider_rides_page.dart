@@ -4,10 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 
+import '../../../../../app/routes.dart';
 import '../../../../../core/layout/header.dart' as header_layout;
 import '../../../../../core/layout/navigation_bar.dart' as navigation_layout;
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../auth/presentation/view/widgets/auth_session_listener.dart';
+import '../../../../ratings/presentation/view/pages/ratings_page_args.dart';
 import '../../../../user/presentation/view_model/user_cubit.dart';
 import '../../../../user/presentation/view_model/user_state.dart';
 import '../../view_model/rider_rides_cubit.dart';
@@ -62,16 +64,51 @@ class _RiderRidesPageState extends State<RiderRidesPage> {
                 _cubit.loadActiveRide(riderId: userState.user?.rider?.id);
               },
               child: BlocConsumer<RiderRidesCubit, RiderRidesState>(
-                listenWhen: (previous, current) =>
-                    previous.isCancelling &&
-                    !current.isCancelling &&
-                    current.message != null,
-                listener: (context, state) {
-                  final messenger = ScaffoldMessenger.of(context);
-                  messenger.clearSnackBars();
-                  messenger.showSnackBar(
-                    SnackBar(content: Text(state.message!)),
-                  );
+                listenWhen: (previous, current) {
+                  final cancellationFinished =
+                      previous.isCancelling &&
+                      !current.isCancelling &&
+                      current.message != null;
+                  final hasRatingPrompt =
+                      previous.ratingPrompt != current.ratingPrompt &&
+                      current.ratingPrompt != null;
+
+                  return cancellationFinished || hasRatingPrompt;
+                },
+                listener: (context, state) async {
+                  final prompt = state.ratingPrompt;
+                  if (prompt != null) {
+                    await Navigator.pushNamed(
+                      context,
+                      AppRoutes.ratings,
+                      arguments: RatingsPageArgs.riderRatesDriver(
+                        rideId: prompt.rideId,
+                        driverId: prompt.driverId,
+                        riderId: prompt.riderId,
+                        driverName: prompt.driverName,
+                      ),
+                    );
+
+                    if (!context.mounted) {
+                      return;
+                    }
+
+                    await context
+                        .read<RiderRidesCubit>()
+                        .completeRatingPrompt();
+                    if (context.mounted) {
+                      Navigator.pushNamed(context, AppRoutes.payments);
+                    }
+                    return;
+                  }
+
+                  if (state.message != null) {
+                    final messenger = ScaffoldMessenger.of(context);
+                    messenger.clearSnackBars();
+                    messenger.showSnackBar(
+                      SnackBar(content: Text(state.message!)),
+                    );
+                  }
                 },
                 builder: (context, state) {
                   return ScrollConfiguration(

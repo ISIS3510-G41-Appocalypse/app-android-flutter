@@ -1,6 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/errors/failures.dart';
+import '../../../payments/domain/usecases/create_pending_payments_for_ride.dart';
+import '../../../ratings/domain/entities/rating_passenger.dart';
 import '../../domain/entities/driver_ride.dart';
 import '../../domain/usecases/accept_reservation.dart';
 import '../../domain/usecases/get_active_driver_ride.dart';
@@ -15,6 +17,7 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
   final UpdateRideState updateRideState;
   final AcceptReservation acceptReservationUseCase;
   final RejectReservation rejectReservationUseCase;
+  final CreatePendingPaymentsForRide createPendingPaymentsForRide;
   int? _lastDriverId;
 
   DriverRidesCubit({
@@ -22,22 +25,41 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
     required this.updateRideState,
     required this.acceptReservationUseCase,
     required this.rejectReservationUseCase,
+    required this.createPendingPaymentsForRide,
   }) : super(DriverRidesState.initial());
 
-  Future<void> loadActiveRide({required int? driverId}) async {
+  Future<void> loadActiveRide({
+    required int? driverId,
+    bool showLoading = true,
+  }) async {
     _lastDriverId = driverId;
-    emit(
-      state.copyWith(
-        status: DriverRidesStatus.loading,
-        message: null,
-        isOffline: false,
-      ),
-    );
+    final hasVisibleRide =
+        state.status == DriverRidesStatus.success && state.ride != null;
+
+    if (showLoading || !hasVisibleRide) {
+      emit(
+        state.copyWith(
+          status: DriverRidesStatus.loading,
+          message: null,
+          isOffline: false,
+        ),
+      );
+    }
 
     final result = await getActiveDriverRide(driverId: driverId);
 
     result.fold(
       (failure) {
+        if (hasVisibleRide && !showLoading) {
+          emit(
+            state.copyWith(
+              message: failure.message,
+              isOffline: failure is NetworkFailure,
+            ),
+          );
+          return;
+        }
+
         emit(
           state.copyWith(
             status: DriverRidesStatus.error,
@@ -76,7 +98,7 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
   }
 
   Future<void> reloadActiveRide() async {
-    await loadActiveRide(driverId: _lastDriverId);
+    await loadActiveRide(driverId: _lastDriverId, showLoading: false);
   }
 
   Future<void> startRide() async {
@@ -100,7 +122,96 @@ class DriverRidesCubit extends Cubit<DriverRidesState> {
   }
 
   Future<void> finishRide() async {
-    await _changeRideState(nextState: 'FINALIZADO', actionLabel: 'finish');
+    final currentRide = state.ride;
+    final driverId = _lastDriverId;
+
+    if (currentRide == null || state.isUpdating) {
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        isUpdating: true,
+        updatingAction: 'finish',
+        message: null,
+        ratingPrompt: null,
+      ),
+    );
+
+    final result = await updateRideState(
+      rideId: currentRide.id,
+      state: 'FINALIZADO',
+    );
+
+    result.fold(
+      (failure) {
+        emit(
+          state.copyWith(
+            isUpdating: false,
+            updatingAction: null,
+            updatingReservationId: null,
+            message: failure.message,
+            isOffline: failure is NetworkFailure,
+          ),
+        );
+      },
+      (_) async {
+        if (driverId != null) {
+          await createPendingPaymentsForRide(
+            rideId: currentRide.id,
+            driverId: driverId,
+            amount: currentRide.price,
+            passengers: currentRide.acceptedReservations
+                .where((reservation) => reservation.riderId > 0)
+                .map(
+                  (reservation) => (
+                    reservationId: reservation.reservationId,
+                    riderId: reservation.riderId,
+                  ),
+                )
+                .toList(),
+          );
+        }
+
+        final passengers = currentRide.acceptedReservations
+            .where((reservation) => reservation.riderId > 0)
+            .map(
+              (reservation) => RatingPassenger(
+                riderId: reservation.riderId,
+                name: reservation.riderName.isEmpty
+                    ? 'Pasajero'
+                    : reservation.riderName,
+              ),
+            )
+            .toList();
+
+        emit(
+          state.copyWith(
+            isUpdating: false,
+            updatingAction: null,
+            updatingReservationId: null,
+            message: null,
+            isOffline: false,
+            ratingPrompt: driverId != null && passengers.isNotEmpty
+                ? DriverRatingPrompt(
+                    rideId: currentRide.id,
+                    driverId: driverId,
+                    passengers: passengers,
+                  )
+                : null,
+          ),
+        );
+
+        if (driverId == null || passengers.isEmpty) {
+          reloadActiveRide();
+        }
+      },
+    );
+  }
+
+  Future<void> completeRatingPrompt() async {
+    emit(state.copyWith(ratingPrompt: null));
+    await reloadActiveRide();
   }
 
   Future<void> acceptReservation(String reservationId) async {

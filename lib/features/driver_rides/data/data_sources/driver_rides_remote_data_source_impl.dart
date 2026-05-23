@@ -24,7 +24,7 @@ class DriverRidesRemoteDataSourceImpl implements DriverRidesRemoteDataSource {
         _ridesPath,
         queryParameters: {
           'select':
-              'id,source,destination,state,departure_time,vehicle_id,date',
+              'id,source,destination,state,departure_time,vehicle_id,date,price',
           'driver_id': 'eq.$driverId',
           'state': 'in.(OFERTADO,EN_CURSO)',
           'order': 'date.desc,departure_time.desc',
@@ -59,7 +59,7 @@ class DriverRidesRemoteDataSourceImpl implements DriverRidesRemoteDataSource {
         _ridesPath,
         queryParameters: {
           'select':
-              'id,source,destination,state,departure_time,vehicle_id,date',
+              'id,source,destination,state,departure_time,vehicle_id,date,price',
           'id': 'eq.$rideId',
           'limit': 1,
         },

@@ -8,6 +8,7 @@ import '../data/data_sources/ride_offers_remote_datasource_impl.dart';
 import '../data/repositories/ride_offers_repository_impl.dart';
 import '../domain/usecases/get_ride_offers.dart';
 import '../domain/usecases/get_zones.dart';
+import '../../payments/domain/usecases/has_blocking_payments.dart';
 import '../../ride_recommendation/domain/usecases/get_ride_recommendation.dart';
 import '../../rider_rides/domain/usecases/create_reservation.dart';
 import '../presentation/view_model/ride_offers_cubit.dart';
@@ -32,6 +33,7 @@ void setupRideOffersInjection() {
       getZones: sl<GetZones>(),
       createReservation: sl<CreateReservation>(),
       getRideRecommendation: sl<GetRideRecommendation>(),
+      hasBlockingPayments: sl<HasBlockingPayments>(),
       performanceTimeTracker: sl<PerformanceTimeTracker>(),
     ),
   );

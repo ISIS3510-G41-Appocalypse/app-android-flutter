@@ -6,7 +6,7 @@ import '../../features/user/domain/entities/user_role.dart';
 import '../../features/user/presentation/view_model/user_cubit.dart';
 import '../theme/app_colors.dart';
 
-enum NavigationBarItem { home, rides, profile }
+enum NavigationBarItem { home, rides, payments, profile }
 
 class NavigationBar extends StatelessWidget {
   const NavigationBar({
@@ -26,6 +26,7 @@ class NavigationBar extends StatelessWidget {
     final customHandler = switch (item) {
       NavigationBarItem.home => onHomeTap,
       NavigationBarItem.rides => onRidesTap,
+      NavigationBarItem.payments => null,
       NavigationBarItem.profile => onProfileTap,
     };
 
@@ -49,6 +50,13 @@ class NavigationBar extends StatelessWidget {
             : AppRoutes.driverRides;
 
         Navigator.pushNamedAndRemoveUntil(context, route, (route) => false);
+        break;
+      case NavigationBarItem.payments:
+        Navigator.pushNamedAndRemoveUntil(
+          context,
+          AppRoutes.payments,
+          (route) => false,
+        );
         break;
       case NavigationBarItem.profile:
         Navigator.pushNamed(context, AppRoutes.profile);
@@ -80,6 +88,12 @@ class NavigationBar extends StatelessWidget {
               label: 'Viajes',
               selected: selectedItem == NavigationBarItem.rides,
               onTap: () => _handleTap(context, NavigationBarItem.rides),
+            ),
+            _BottomItem(
+              icon: Icons.attach_money_rounded,
+              label: 'Pagos',
+              selected: selectedItem == NavigationBarItem.payments,
+              onTap: () => _handleTap(context, NavigationBarItem.payments),
             ),
             _BottomItem(
               icon: Icons.person_outline_rounded,
