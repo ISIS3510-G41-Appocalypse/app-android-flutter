@@ -47,6 +47,7 @@ class CreateRideCubit extends Cubit<CreateRideState> {
 
   Future<void> loadInitialData() async {
     emit(state.copyWith(status: CreateRideStatus.loading, clearMessage: true));
+    final pendingDraft = restoreDraft();
 
     try {
       final results = await Future.wait([
@@ -56,7 +57,6 @@ class CreateRideCubit extends Cubit<CreateRideState> {
 
       final vehicles = results[0] as List<Vehicle>;
       final zones = results[1] as List<Zone>;
-      final pendingDraft = _restorePendingDraft();
 
       if (vehicles.isEmpty) {
         emit(
@@ -67,6 +67,8 @@ class CreateRideCubit extends Cubit<CreateRideState> {
             zones: const [],
             clearSelectedVehicle: true,
             clearSelectedZone: true,
+            restoredDraft: pendingDraft,
+            shouldAnnounceRestoredDraft: pendingDraft != null,
           ),
         );
         return;
@@ -91,6 +93,8 @@ class CreateRideCubit extends Cubit<CreateRideState> {
         state.copyWith(
           status: CreateRideStatus.error,
           message: 'Error al cargar datos: ${e.toString()}',
+          restoredDraft: pendingDraft,
+          shouldAnnounceRestoredDraft: pendingDraft != null,
         ),
       );
     }
@@ -266,13 +270,13 @@ class CreateRideCubit extends Cubit<CreateRideState> {
     });
   }
 
-  RideFormDraft? _restorePendingDraft() {
+  RideFormDraft? restoreDraft() {
     final pendingForm = syncRepository.getRestorableRideForm();
     if (pendingForm == null) return null;
 
     return RideFormDraft(
-      vehicleId: pendingForm['vehicle_id'] as int?,
-      zoneId: pendingForm['zone_id'] as int?,
+      vehicleId: _toIntOrNull(pendingForm['vehicle_id']),
+      zoneId: _toIntOrNull(pendingForm['zone_id']),
       source: pendingForm['source'] as String? ?? '',
       destination: pendingForm['destination'] as String? ?? '',
       date: pendingForm['date'] as String? ?? '',
@@ -303,6 +307,13 @@ class CreateRideCubit extends Cubit<CreateRideState> {
     }
 
     return value.toString();
+  }
+
+  int? _toIntOrNull(Object? value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString());
   }
 
   Vehicle? _findVehicleById(List<Vehicle> vehicles, int? vehicleId) {
