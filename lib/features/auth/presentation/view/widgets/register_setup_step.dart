@@ -97,6 +97,42 @@ class RegisterSetupStep extends StatelessWidget {
           ),
           const SizedBox(height: 18),
           if (wantsDriverRole) ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Configura tus vehiculos',
+                style: AppTextStyles.secondary.copyWith(
+                  color: AppColors.slate900,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: RichText(
+                text: TextSpan(
+                  style: AppTextStyles.primary.copyWith(
+                    color: AppColors.slate400,
+                    fontSize: 12,
+                  ),
+                  children: [
+                    const TextSpan(
+                      text:
+                          'Agrega la informacion de los vehiculos que va a ofrecer en wheels. ',
+                    ),
+                    TextSpan(
+                      text: 'Tiene un limite de $maxVehicles carros.',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
             ...List.generate(vehicles.length, (index) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 12),
@@ -108,37 +144,27 @@ class RegisterSetupStep extends StatelessWidget {
                 ),
               );
             }),
-            OutlinedButton.icon(
+            ElevatedButton.icon(
               onPressed: hasReachedVehicleLimit ? null : onAddVehicle,
-              style: OutlinedButton.styleFrom(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.teal600,
+                disabledBackgroundColor: AppColors.teal600,
+                foregroundColor: AppColors.white,
                 minimumSize: const Size.fromHeight(50),
-                side: const BorderSide(color: AppColors.slate300),
+                elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
                 ),
               ),
-              icon: const Icon(Icons.add, color: AppColors.slate800),
+              icon: const Icon(Icons.add, color: AppColors.white),
               label: Text(
-                'Agregar otro vehiculo',
+                'Agregar vehiculo',
                 style: AppTextStyles.primary.copyWith(
-                  color: AppColors.slate800,
+                  color: AppColors.white,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
-            if (hasReachedVehicleLimit) ...[
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Solo puedes registrar hasta 3 vehiculos por usuario.',
-                  style: AppTextStyles.secondary.copyWith(
-                    color: AppColors.errorRed,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
-            ],
             const SizedBox(height: 18),
           ],
           if (wantsDriverRole)
@@ -154,7 +180,7 @@ class RegisterSetupStep extends StatelessWidget {
             onPressed: onSubmit,
           ),
           const SizedBox(height: 12),
-          SecondaryActionButton(label: 'Atras', onPressed: onBack),
+          SecondaryActionButton(label: 'Anterior', onPressed: onBack),
         ],
       ),
     );

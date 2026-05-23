@@ -68,7 +68,7 @@ class RegisterVehicleCard extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  '${index + 1}. Configura tu vehiculo',
+                  'Vehiculo ${index + 1}',
                   style: AppTextStyles.secondary.copyWith(
                     color: AppColors.slate900,
                     fontWeight: FontWeight.w700,
@@ -83,14 +83,7 @@ class RegisterVehicleCard extends StatelessWidget {
                 ),
             ],
           ),
-          Text(
-            'Agrega la informacion del vehiculo que vas a ofrecer en wheels.',
-            style: AppTextStyles.primary.copyWith(
-              color: AppColors.slate400,
-              fontSize: 12,
-            ),
-          ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           RegisterTextField(
             label: 'Marca del vehiculo',
             hintText: 'Mazda',
