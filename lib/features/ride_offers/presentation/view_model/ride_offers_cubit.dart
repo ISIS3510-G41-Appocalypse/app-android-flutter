@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../core/performance/performance_features.dart';
 import '../../../../core/performance/performance_time_tracker.dart';
+import '../../../payments/domain/usecases/has_blocking_payments.dart';
 import '../../../ride_recommendation/domain/entities/ride_recommendation.dart';
 import '../../../ride_recommendation/domain/usecases/get_ride_recommendation.dart';
 import '../../../rider_rides/domain/usecases/create_reservation.dart';
@@ -19,6 +20,7 @@ class RideOffersCubit extends Cubit<RideOffersState> {
   final GetZones getZones;
   final CreateReservation createReservation;
   final GetRideRecommendation getRideRecommendation;
+  final HasBlockingPayments hasBlockingPayments;
   final PerformanceTimeTracker performanceTimeTracker;
   String? _preferredZoneId;
   String? _excludedRideId;
@@ -28,8 +30,9 @@ class RideOffersCubit extends Cubit<RideOffersState> {
     required this.getZones,
     required this.createReservation,
     required this.getRideRecommendation,
+    required this.hasBlockingPayments,
     required this.performanceTimeTracker,
-  }) : super(RideOffersState.initial());
+  }) : super(RideOffersState.initial(initialDate: _today()));
 
   Future<RideRecommendation?> loadRideRecommendation({
     required int? riderId,
@@ -92,6 +95,29 @@ class RideOffersCubit extends Cubit<RideOffersState> {
     }
 
     await _loadZones();
+    await loadRideOffers();
+  }
+
+  Future<void> syncDefaultFilters({String? preferredZoneId}) async {
+    _preferredZoneId = preferredZoneId;
+
+    final shouldUpdateZone =
+        preferredZoneId != null && state.filters.zoneId == null;
+    final shouldUpdateDate = state.filters.date == null;
+
+    if (!shouldUpdateZone && !shouldUpdateDate) {
+      return;
+    }
+
+    emit(
+      state.copyWith(
+        filters: state.filters.copyWith(
+          zoneId: shouldUpdateZone ? preferredZoneId : state.filters.zoneId,
+          date: shouldUpdateDate ? _today() : state.filters.date,
+        ),
+      ),
+    );
+
     await loadRideOffers();
   }
 
@@ -227,6 +253,7 @@ class RideOffersCubit extends Cubit<RideOffersState> {
       state.copyWith(
         filters: RideOfferFilters(
           zoneId: _preferredZoneId,
+          date: _today(),
           excludedRideId: _excludedRideId,
         ),
       ),
@@ -256,9 +283,71 @@ class RideOffersCubit extends Cubit<RideOffersState> {
   Future<void> reserveRide({
     required RideOfferViewData offer,
     required int? riderId,
+    required String? currentDriverId,
+    required bool hasActiveDriverRide,
     Stopwatch? createReservationFrontEndStopwatch,
   }) async {
     if (state.isReserving) {
+      return;
+    }
+
+    if (hasActiveDriverRide) {
+      emit(
+        state.copyWith(
+          message:
+              'Debes cancelar o finalizar tu viaje activo como conductor antes de reservar otro viaje.',
+          isOffline: false,
+          reservationCreated: false,
+        ),
+      );
+      return;
+    }
+
+    if (currentDriverId != null &&
+        currentDriverId.isNotEmpty &&
+        offer.driverId.toString() == currentDriverId) {
+      emit(
+        state.copyWith(
+          message: 'No puedes reservar tu propio viaje.',
+          isOffline: false,
+          reservationCreated: false,
+        ),
+      );
+      return;
+    }
+
+    final blockingPaymentsResult = await hasBlockingPayments(riderId: riderId);
+    bool hasOpenPayments = false;
+    Failure? paymentValidationFailure;
+    blockingPaymentsResult.fold(
+      (failure) {
+        paymentValidationFailure = failure;
+      },
+      (value) {
+        hasOpenPayments = value;
+      },
+    );
+
+    if (paymentValidationFailure != null) {
+      emit(
+        state.copyWith(
+          message: paymentValidationFailure!.message,
+          isOffline: paymentValidationFailure is NetworkFailure,
+          reservationCreated: false,
+        ),
+      );
+      return;
+    }
+
+    if (hasOpenPayments) {
+      emit(
+        state.copyWith(
+          message:
+              'No puedes reservar un nuevo viaje porque tienes pagos pendientes.',
+          isOffline: false,
+          reservationCreated: false,
+        ),
+      );
       return;
     }
 
@@ -328,5 +417,10 @@ class RideOffersCubit extends Cubit<RideOffersState> {
         );
       },
     );
+  }
+
+  static DateTime _today() {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day);
   }
 }

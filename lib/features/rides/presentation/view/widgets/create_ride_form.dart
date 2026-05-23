@@ -6,6 +6,8 @@ import 'dart:async';
 import '../../../../../app/routes.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
+import '../../../../rider_rides/presentation/view_model/rider_rides_cubit.dart';
+import '../../../../rider_rides/presentation/view_model/rider_rides_state.dart';
 import '../../../domain/entities/vehicle.dart';
 import '../../../domain/entities/zone.dart';
 import '../../view_model/create_ride_cubit.dart';
@@ -18,9 +20,11 @@ class CreateRideForm extends StatefulWidget {
   State<CreateRideForm> createState() => _CreateRideFormState();
 }
 
-class _CreateRideFormState extends State<CreateRideForm> {
-  static const int _locationMaxLength = 40;
+class _CreateRideFormState extends State<CreateRideForm>
+    with WidgetsBindingObserver {
+  static const int _locationMaxLength = 30;
   static const int _priceMaxDigits = 5;
+  static const Duration _draftSaveDebounce = Duration(milliseconds: 350);
 
   final _formKey = GlobalKey<FormState>();
   final _sourceCtrl = TextEditingController();
@@ -32,26 +36,60 @@ class _CreateRideFormState extends State<CreateRideForm> {
   String _selectedType = 'TO_UNIVERSITY';
   final String _universityName = 'Universidad de los Andes';
   bool _restoredDraftApplied = false;
+  bool _isApplyingDraft = false;
+  bool _canPersistDraft = false;
+  bool _restoreDraftScheduled = false;
+  Timer? _draftSaveTimer;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    _applyUniversityRouteDefaults();
     _sourceCtrl.addListener(_persistDraft);
     _destinationCtrl.addListener(_persistDraft);
     _dateCtrl.addListener(_persistDraft);
     _timeCtrl.addListener(_persistDraft);
     _priceCtrl.addListener(_persistDraft);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _restoredDraftApplied) return;
+      final draft = context.read<CreateRideCubit>().restoreDraft();
+      if (draft == null) return;
+      _applyDraft(draft);
+      _canPersistDraft = true;
+      context.read<CreateRideCubit>().consumeRestoredDraft();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Se restauro una oferta de viaje pendiente.'),
+          backgroundColor: AppColors.teal600,
+        ),
+      );
+    });
   }
 
   @override
   void dispose() {
-    unawaited(_saveDraft());
+    WidgetsBinding.instance.removeObserver(this);
+    _draftSaveTimer?.cancel();
+    if (_canPersistDraft) {
+      unawaited(_saveDraft());
+    }
     _sourceCtrl.dispose();
     _destinationCtrl.dispose();
     _dateCtrl.dispose();
     _timeCtrl.dispose();
     _priceCtrl.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      _draftSaveTimer?.cancel();
+      unawaited(_saveDraft());
+    }
   }
 
   Future<void> _pickDate() async {
@@ -66,7 +104,8 @@ class _CreateRideFormState extends State<CreateRideForm> {
     if (picked != null) {
       _dateCtrl.text =
           '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
-      if (_timeCtrl.text.isNotEmpty && _isPastTimeForSelectedDate(_timeCtrl.text)) {
+      if (_timeCtrl.text.isNotEmpty &&
+          _isPastTimeForSelectedDate(_timeCtrl.text)) {
         _timeCtrl.clear();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -94,8 +133,9 @@ class _CreateRideFormState extends State<CreateRideForm> {
     }
 
     final now = DateTime.now();
-    final initialTime =
-        _selectedDateIsToday() ? TimeOfDay.fromDateTime(now) : TimeOfDay.now();
+    final initialTime = _selectedDateIsToday()
+        ? TimeOfDay.fromDateTime(now)
+        : TimeOfDay.now();
     final picked = await showTimePicker(
       context: context,
       initialTime: initialTime,
@@ -117,26 +157,30 @@ class _CreateRideFormState extends State<CreateRideForm> {
         }
         return;
       }
-      _timeCtrl.text =
-          pickedText;
+      _timeCtrl.text = pickedText;
     }
   }
 
   void _onTypeChanged(String newType) {
     setState(() {
       _selectedType = newType;
-      if (newType == 'TO_UNIVERSITY') {
-        _destinationCtrl.text = _universityName;
-        _sourceCtrl.clear();
-      } else if (newType == 'FROM_UNIVERSITY') {
-        _sourceCtrl.text = _universityName;
-        _destinationCtrl.clear();
-      }
+      _applyUniversityRouteDefaults();
     });
     unawaited(_saveDraft());
   }
 
+  void _applyUniversityRouteDefaults() {
+    if (_selectedType == 'TO_UNIVERSITY') {
+      _destinationCtrl.text = _universityName;
+      _sourceCtrl.clear();
+    } else if (_selectedType == 'FROM_UNIVERSITY') {
+      _sourceCtrl.text = _universityName;
+      _destinationCtrl.clear();
+    }
+  }
+
   void _applyDraft(RideFormDraft draft) {
+    _isApplyingDraft = true;
     setState(() {
       _selectedType = draft.type;
       _sourceCtrl.text = draft.source;
@@ -146,15 +190,57 @@ class _CreateRideFormState extends State<CreateRideForm> {
       _priceCtrl.text = draft.price;
       _restoredDraftApplied = true;
     });
+    _isApplyingDraft = false;
+  }
+
+  void _applyRestoredDraftFromState(CreateRideState state) {
+    if (_restoredDraftApplied || state.restoredDraft == null) {
+      return;
+    }
+
+    _restoreDraftScheduled = false;
+    _applyDraft(state.restoredDraft!);
+    _canPersistDraft = true;
+    context.read<CreateRideCubit>().consumeRestoredDraft();
+    if (state.shouldAnnounceRestoredDraft) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Se restauro una oferta de viaje pendiente.'),
+          backgroundColor: AppColors.teal600,
+        ),
+      );
+    }
+  }
+
+  void _scheduleRestoredDraftApply(CreateRideState state) {
+    if (_restoredDraftApplied ||
+        _restoreDraftScheduled ||
+        state.restoredDraft == null) {
+      return;
+    }
+
+    _restoreDraftScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _applyRestoredDraftFromState(context.read<CreateRideCubit>().state);
+    });
   }
 
   void _persistDraft() {
-    unawaited(_saveDraft());
+    if (_isApplyingDraft || !_canPersistDraft) {
+      return;
+    }
+
+    _draftSaveTimer?.cancel();
+    _draftSaveTimer = Timer(_draftSaveDebounce, () {
+      unawaited(_saveDraft());
+    });
   }
 
   Future<void> _saveDraft() async {
-    if (!mounted) return;
+    if (!mounted || !_canPersistDraft) return;
     final vm = context.read<CreateRideCubit>();
+    if (!vm.state.isReadyLike) return;
     await vm.saveDraft(
       vehicleId: vm.state.selectedVehicle?.id,
       zoneId: vm.state.selectedZone?.id,
@@ -202,8 +288,10 @@ class _CreateRideFormState extends State<CreateRideForm> {
   }
 
   String? _validateLocation(String? value, String fieldName) {
-    final requiredMessage =
-        context.read<CreateRideCubit>().validateRequired(value, fieldName);
+    final requiredMessage = context.read<CreateRideCubit>().validateRequired(
+      value,
+      fieldName,
+    );
     if (requiredMessage != null) return requiredMessage;
 
     if (value!.trim().length > _locationMaxLength) {
@@ -214,8 +302,10 @@ class _CreateRideFormState extends State<CreateRideForm> {
   }
 
   String? _validateDate(String? value) {
-    final requiredMessage =
-        context.read<CreateRideCubit>().validateRequired(value, 'La fecha');
+    final requiredMessage = context.read<CreateRideCubit>().validateRequired(
+      value,
+      'La fecha',
+    );
     if (requiredMessage != null) return requiredMessage;
 
     final selected = DateTime.tryParse(value!.trim());
@@ -232,8 +322,10 @@ class _CreateRideFormState extends State<CreateRideForm> {
   }
 
   String? _validateTime(String? value) {
-    final requiredMessage =
-        context.read<CreateRideCubit>().validateRequired(value, 'La hora');
+    final requiredMessage = context.read<CreateRideCubit>().validateRequired(
+      value,
+      'La hora',
+    );
     if (requiredMessage != null) return requiredMessage;
 
     if (_isPastTimeForSelectedDate(value!.trim())) {
@@ -254,9 +346,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
           surface: Colors.white,
           onSurface: AppColors.slate900,
         ),
-        dialogTheme: const DialogThemeData(
-          backgroundColor: Colors.white,
-        ),
+        dialogTheme: const DialogThemeData(backgroundColor: Colors.white),
         timePickerTheme: TimePickerThemeData(
           backgroundColor: Colors.white,
           hourMinuteColor: AppColors.slate100,
@@ -353,9 +443,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
       decoration: BoxDecoration(
         color: AppColors.teal600.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.teal600.withValues(alpha: 0.25),
-        ),
+        border: Border.all(color: AppColors.teal600.withValues(alpha: 0.25)),
       ),
       child: Row(
         children: [
@@ -394,8 +482,9 @@ class _CreateRideFormState extends State<CreateRideForm> {
               child: ElevatedButton(
                 onPressed: () => _onTypeChanged('TO_UNIVERSITY'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      isToUniversity ? AppColors.amber700 : AppColors.gray50,
+                  backgroundColor: isToUniversity
+                      ? AppColors.amber700
+                      : AppColors.gray50,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -410,8 +499,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
                 child: Text(
                   'Hacia Universidad',
                   style: AppTextStyles.primary.copyWith(
-                    color:
-                        isToUniversity ? Colors.white : AppColors.slate900,
+                    color: isToUniversity ? Colors.white : AppColors.slate900,
                     fontWeight: isToUniversity
                         ? FontWeight.w600
                         : FontWeight.w500,
@@ -424,8 +512,9 @@ class _CreateRideFormState extends State<CreateRideForm> {
               child: ElevatedButton(
                 onPressed: () => _onTypeChanged('FROM_UNIVERSITY'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                      isFromUniversity ? AppColors.teal600 : AppColors.gray50,
+                  backgroundColor: isFromUniversity
+                      ? AppColors.teal600
+                      : AppColors.gray50,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -440,8 +529,7 @@ class _CreateRideFormState extends State<CreateRideForm> {
                 child: Text(
                   'Desde Universidad',
                   style: AppTextStyles.primary.copyWith(
-                    color:
-                        isFromUniversity ? Colors.white : AppColors.slate900,
+                    color: isFromUniversity ? Colors.white : AppColors.slate900,
                     fontWeight: isFromUniversity
                         ? FontWeight.w600
                         : FontWeight.w500,
@@ -499,6 +587,31 @@ class _CreateRideFormState extends State<CreateRideForm> {
 
   Future<void> _submit(Vehicle? selectedVehicle, Zone? selectedZone) async {
     final vm = context.read<CreateRideCubit>();
+    final riderRideState = context.read<RiderRidesCubit>().state;
+
+    if (riderRideState.status == RiderRidesStatus.loading) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Espera un momento mientras verificamos si tienes una reserva activa.',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (riderRideState.status == RiderRidesStatus.success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Debes cancelar o finalizar tu reserva activa antes de publicar un viaje.',
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     if (vm.validateVehicleSelected(selectedVehicle) != null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -539,21 +652,13 @@ class _CreateRideFormState extends State<CreateRideForm> {
   Widget build(BuildContext context) {
     return BlocConsumer<CreateRideCubit, CreateRideState>(
       listener: (context, state) {
-        if (state.restoredDraft != null) {
-          _applyDraft(state.restoredDraft!);
+        if (!_restoredDraftApplied && state.restoredDraft != null) {
+          _applyRestoredDraftFromState(state);
+          return;
         }
 
-        if (!_restoredDraftApplied &&
-            state.restoredDraft != null &&
-            state.shouldAnnounceRestoredDraft) {
-          context.read<CreateRideCubit>().consumeRestoredDraft();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Se restauro una oferta de viaje pendiente.'),
-              backgroundColor: AppColors.teal600,
-            ),
-          );
-          return;
+        if (!_canPersistDraft && state.isReadyLike) {
+          _canPersistDraft = true;
         }
 
         if (state.navigateToDriverRides) {
@@ -589,13 +694,16 @@ class _CreateRideFormState extends State<CreateRideForm> {
         }
       },
       builder: (context, state) {
+        _scheduleRestoredDraftApply(state);
+
         if (state.isLoading) {
           return const Center(
             child: CircularProgressIndicator(color: AppColors.amber700),
           );
         }
 
-        if (state.status == CreateRideStatus.error && !state.hasLoadedFormData) {
+        if (state.status == CreateRideStatus.error &&
+            !state.hasLoadedFormData) {
           return Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -788,47 +896,68 @@ class _CreateRideFormState extends State<CreateRideForm> {
               SizedBox(
                 width: double.infinity,
                 height: 56,
-                child: ElevatedButton.icon(
-                  onPressed: (state.isSubmitting || state.isSyncing)
-                      ? null
-                      : () => _submit(
-                            state.selectedVehicle,
-                            state.selectedZone,
-                          ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.amber700,
-                    disabledBackgroundColor:
-                        AppColors.amber700.withValues(alpha: 0.6),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                  ),
-                  icon: (state.isSubmitting || state.isSyncing)
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Icon(
-                          Icons.send_rounded,
-                          color: Colors.white,
-                          size: 20,
+                child: BlocBuilder<RiderRidesCubit, RiderRidesState>(
+                  builder: (context, riderRideState) {
+                    final publishBlockedByReservation =
+                        riderRideState.status == RiderRidesStatus.success;
+                    final isCheckingReservation =
+                        riderRideState.status == RiderRidesStatus.loading;
+
+                    return ElevatedButton.icon(
+                      onPressed:
+                          (state.isSubmitting ||
+                              state.isSyncing ||
+                              publishBlockedByReservation ||
+                              isCheckingReservation)
+                          ? null
+                          : () => _submit(
+                              state.selectedVehicle,
+                              state.selectedZone,
+                            ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.amber700,
+                        disabledBackgroundColor: AppColors.amber700.withValues(
+                          alpha: 0.6,
                         ),
-                  label: Text(
-                    state.isSyncing
-                        ? 'Sincronizando...'
-                        : state.isSubmitting
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      icon:
+                          (state.isSubmitting ||
+                              state.isSyncing ||
+                              isCheckingReservation)
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.send_rounded,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                      label: Text(
+                        isCheckingReservation
+                            ? 'Verificando...'
+                            : state.isSyncing
+                            ? 'Sincronizando...'
+                            : state.isSubmitting
                             ? 'Publicando...'
+                            : publishBlockedByReservation
+                            ? 'Reserva activa detectada'
                             : 'Publicar viaje',
-                    style: AppTextStyles.primary.copyWith(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+                        style: AppTextStyles.primary.copyWith(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ],
@@ -846,14 +975,14 @@ class _FieldLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Text(
-        text,
-        style: AppTextStyles.primary.copyWith(
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.5,
-          color: AppColors.slate400,
-        ),
-      );
+    text,
+    style: AppTextStyles.primary.copyWith(
+      fontSize: 10,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 1.5,
+      color: AppColors.slate400,
+    ),
+  );
 }
 
 class _StyledField extends StatelessWidget {
@@ -923,10 +1052,7 @@ class _StyledField extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(
-            color: AppColors.amber700,
-            width: 1.5,
-          ),
+          borderSide: const BorderSide(color: AppColors.amber700, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

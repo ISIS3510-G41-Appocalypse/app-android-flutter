@@ -6,7 +6,7 @@ class ErrorHandler {
   const ErrorHandler._();
 
   static String getErrorMessage(DioException e) {
-    if (_isNetworkError(e)) {
+    if (isNetworkError(e)) {
       return 'No tienes internet en este momento. Cuando vuelva la conexion podras crear o consultar tu viaje nuevamente.';
     }
 
@@ -24,7 +24,7 @@ class ErrorHandler {
     return e.message ?? 'Ocurrio un error inesperado.';
   }
 
-  static bool _isNetworkError(DioException e) {
+  static bool isNetworkError(DioException e) {
     if (e.type == DioExceptionType.connectionError ||
         e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout ||

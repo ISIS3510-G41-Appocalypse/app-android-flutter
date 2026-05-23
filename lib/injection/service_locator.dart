@@ -1,12 +1,19 @@
 import 'package:get_it/get_it.dart';
+import '../core/notifications/local_notification_service.dart';
 import '../core/network/dio_client.dart';
 import '../core/network/network_checker.dart';
 import '../core/performance/performance_time_tracker.dart';
+import '../core/realtime/supabase_realtime_service.dart';
 import '../core/storage/session_storage.dart';
+import '../core/storage/signup_form_local_storage.dart';
 import '../features/auth/injection/auth_injection.dart';
 import '../features/driver_rides/injection/driver_rides_injection.dart';
+import '../features/payments/injection/payments_injection.dart';
 import '../features/ride_offers/injection/ride_offers_injection.dart';
+import '../features/ride_map/injection/ride_map_injection.dart';
 import '../features/ride_recommendation/injection/ride_recommendation_injection.dart';
+import '../features/ratings/injection/ratings_injection.dart';
+import '../features/ratings/data/local/ratings_draft_storage.dart';
 import '../features/rider_rides/injection/rider_rides_injection.dart';
 import '../features/user/injection/user_injection.dart';
 import '../core/storage/ride_form_offline_storage.dart';
@@ -16,8 +23,17 @@ import '../features/rides/domain/repositories/rides_offline_sync_repository.dart
 final sl = GetIt.instance;
 
 Future<void> setupLocator() async {
+  final localNotificationService = LocalNotificationService();
+  await localNotificationService.initialize();
+  sl.registerLazySingleton<LocalNotificationService>(
+    () => localNotificationService,
+  );
+
   sl.registerLazySingleton<SessionStorage>(() => SessionStorage());
   sl.registerLazySingleton<NetworkChecker>(() => NetworkChecker());
+  sl.registerLazySingleton<SupabaseRealtimeService>(
+    () => SupabaseRealtimeService(sessionStorage: sl<SessionStorage>()),
+  );
   sl.registerLazySingleton<DioClient>(() => DioClient(sessionStorage: sl()));
   sl.registerLazySingleton<PerformanceTimeTracker>(
     () => PerformanceTimeTracker(
@@ -32,12 +48,17 @@ Future<void> setupLocator() async {
     ),
   );
 
-  // Offline storage for rides form
   final offlineStorage = RideFormOfflineStorage();
   await offlineStorage.initialize();
   sl.registerLazySingleton<RideFormOfflineStorage>(() => offlineStorage);
 
-  // Offline sync repository
+  final signupFormLocalStorage = SignupFormLocalStorage();
+  await signupFormLocalStorage.initialize();
+  sl.registerLazySingleton<SignupFormLocalStorage>(() => signupFormLocalStorage);
+  final ratingsDraftStorage = RatingsDraftStorage();
+  await ratingsDraftStorage.initialize();
+  sl.registerLazySingleton<RatingsDraftStorage>(() => ratingsDraftStorage);
+
   sl.registerLazySingleton<RidesOfflineSyncRepository>(
     () => RidesOfflineSyncRepository(
       networkChecker: sl<NetworkChecker>(),
@@ -47,7 +68,10 @@ Future<void> setupLocator() async {
   );
 
   setupAuthInjection();
+  await setupRideMapInjection();
+  await setupPaymentsInjection();
   setupDriverRidesInjection();
+  setupRatingsInjection();
   setupRideRecommendationInjection();
   setupRiderRidesInjection();
   setupRideOffersInjection();

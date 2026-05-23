@@ -8,10 +8,19 @@ abstract class RiderRidesRepository {
     required int? riderId,
   });
 
+  Future<Either<Failure, RiderRide?>> getRiderRideByRideId({
+    required int? riderId,
+    required String rideId,
+  });
+
   Future<Either<Failure, void>> createReservation({
     required String rideId,
     required int? riderId,
     required String meetingPoint,
     required String destinationPoint,
+  });
+
+  Future<Either<Failure, void>> cancelReservation({
+    required String reservationId,
   });
 }

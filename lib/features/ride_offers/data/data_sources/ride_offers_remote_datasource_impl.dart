@@ -1,14 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:dio_cache_plus/dio_cache_plus.dart';
 
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/errors/error_handler.dart';
 import '../../../../core/errors/exceptions.dart';
 import 'ride_offers_remote_datasource.dart';
 
 class RideOffersRemoteDataSourceImpl implements RideOffersRemoteDataSource {
-  static const String _rideOffersViewPath = '/rest/v1/ride_offers_view';
-  static const String _zonesPath = '/rest/v1/zones';
-
   final Dio dio;
 
   RideOffersRemoteDataSourceImpl({required this.dio});
@@ -16,10 +14,10 @@ class RideOffersRemoteDataSourceImpl implements RideOffersRemoteDataSource {
   @override
   Future<List<Map<String, dynamic>>> getRideOffersRows() {
     return _getTableRows(
-      path: _rideOffersViewPath,
+      path: ApiConstants.rideOffersView,
       queryParameters: const {
         'select':
-            'id,driver_id,driver_name,driver_rating,cancellation_odds,trips_count,price,source,destination,date,departure_time,slots,car_model,zone_name,type,state,zone_id',
+            'id,driver_name,driver_rating,cancellation_odds,trips_count,price,source,destination,date,departure_time,slots,car_model,zone_name,type,state,zone_id,driver_id',
         'order': 'driver_rating.desc',
       },
     );
@@ -28,7 +26,7 @@ class RideOffersRemoteDataSourceImpl implements RideOffersRemoteDataSource {
   @override
   Future<List<Map<String, dynamic>>> getZonesRows() {
     return _getTableRows(
-      path: _zonesPath,
+      path: ApiConstants.zones,
       queryParameters: const {'select': 'id,name'},
       options: Options().setCachingWithDuration(
         enableCache: true,

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import '../constants/api_constants.dart';
 import '../storage/session_storage.dart';
 
 class SessionInterceptor extends Interceptor {
@@ -67,7 +68,7 @@ class SessionInterceptor extends Interceptor {
       return false;
     }
 
-    if (requestOptions.path == '/auth/v1/token') {
+    if (requestOptions.path == ApiConstants.authToken) {
       return false;
     }
 
@@ -108,13 +109,9 @@ class SessionInterceptor extends Interceptor {
 
     try {
       final response = await refreshClient.post(
-        '/auth/v1/token',
-        queryParameters: {
-          'grant_type': 'refresh_token',
-        },
-        data: {
-          'refresh_token': refreshToken,
-        },
+        ApiConstants.authToken,
+        queryParameters: {'grant_type': 'refresh_token'},
+        data: {'refresh_token': refreshToken},
       );
 
       final data = response.data as Map<String, dynamic>;

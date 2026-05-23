@@ -18,9 +18,7 @@ class ReserveRideConfirmationDialog extends StatelessWidget {
     return AlertDialog(
       backgroundColor: Colors.white,
       surfaceTintColor: Colors.white,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(24),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 12),
       contentPadding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
       actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -51,9 +49,7 @@ class ReserveRideConfirmationDialog extends StatelessWidget {
           ),
           if (recommendation != null) ...[
             const SizedBox(height: 16),
-            RideRecommendationMessage(
-              recommendation: recommendation!,
-            ),
+            RideRecommendationMessage(recommendation: recommendation!),
           ],
         ],
       ),

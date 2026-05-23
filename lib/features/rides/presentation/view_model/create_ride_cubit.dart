@@ -23,12 +23,12 @@ class CreateRideCubit extends Cubit<CreateRideState> {
     required this.syncRepository,
     required this.performanceTimeTracker,
     required int driverId,
-  })  : repository = RidesRepositoryImpl(
-          client: client,
-          performanceTimeTracker: performanceTimeTracker,
-        ),
-        _driverId = driverId,
-        super(const CreateRideState());
+  }) : repository = RidesRepositoryImpl(
+         client: client,
+         performanceTimeTracker: performanceTimeTracker,
+       ),
+       _driverId = driverId,
+       super(const CreateRideState());
 
   String? validateRequired(String? value, String fieldName) {
     if (value == null || value.trim().isEmpty) return '$fieldName es requerido';
@@ -46,12 +46,8 @@ class CreateRideCubit extends Cubit<CreateRideState> {
   }
 
   Future<void> loadInitialData() async {
-    emit(
-      state.copyWith(
-        status: CreateRideStatus.loading,
-        clearMessage: true,
-      ),
-    );
+    emit(state.copyWith(status: CreateRideStatus.loading, clearMessage: true));
+    final pendingDraft = restoreDraft();
 
     try {
       final results = await Future.wait([
@@ -61,7 +57,6 @@ class CreateRideCubit extends Cubit<CreateRideState> {
 
       final vehicles = results[0] as List<Vehicle>;
       final zones = results[1] as List<Zone>;
-      final pendingDraft = _restorePendingDraft();
 
       if (vehicles.isEmpty) {
         emit(
@@ -72,6 +67,8 @@ class CreateRideCubit extends Cubit<CreateRideState> {
             zones: const [],
             clearSelectedVehicle: true,
             clearSelectedZone: true,
+            restoredDraft: pendingDraft,
+            shouldAnnounceRestoredDraft: pendingDraft != null,
           ),
         );
         return;
@@ -96,6 +93,8 @@ class CreateRideCubit extends Cubit<CreateRideState> {
         state.copyWith(
           status: CreateRideStatus.error,
           message: 'Error al cargar datos: ${e.toString()}',
+          restoredDraft: pendingDraft,
+          shouldAnnounceRestoredDraft: pendingDraft != null,
         ),
       );
     }
@@ -103,20 +102,12 @@ class CreateRideCubit extends Cubit<CreateRideState> {
 
   void selectVehicle(Vehicle vehicle) {
     emit(
-      state.copyWith(
-        selectedVehicle: vehicle,
-        status: CreateRideStatus.ready,
-      ),
+      state.copyWith(selectedVehicle: vehicle, status: CreateRideStatus.ready),
     );
   }
 
   void selectZone(Zone zone) {
-    emit(
-      state.copyWith(
-        selectedZone: zone,
-        status: CreateRideStatus.ready,
-      ),
-    );
+    emit(state.copyWith(selectedZone: zone, status: CreateRideStatus.ready));
   }
 
   Future<void> createRide({
@@ -252,7 +243,8 @@ class CreateRideCubit extends Cubit<CreateRideState> {
     required String type,
     required String price,
   }) async {
-    final hasUsefulData = source.trim().isNotEmpty ||
+    final hasUsefulData =
+        source.trim().isNotEmpty ||
         destination.trim().isNotEmpty ||
         date.trim().isNotEmpty ||
         departureTime.trim().isNotEmpty ||
@@ -261,7 +253,6 @@ class CreateRideCubit extends Cubit<CreateRideState> {
         zoneId != null;
 
     if (!hasUsefulData) {
-      await syncRepository.clearRideDraft();
       return;
     }
 
@@ -279,13 +270,13 @@ class CreateRideCubit extends Cubit<CreateRideState> {
     });
   }
 
-  RideFormDraft? _restorePendingDraft() {
+  RideFormDraft? restoreDraft() {
     final pendingForm = syncRepository.getRestorableRideForm();
     if (pendingForm == null) return null;
 
     return RideFormDraft(
-      vehicleId: pendingForm['vehicle_id'] as int?,
-      zoneId: pendingForm['zone_id'] as int?,
+      vehicleId: _toIntOrNull(pendingForm['vehicle_id']),
+      zoneId: _toIntOrNull(pendingForm['zone_id']),
       source: pendingForm['source'] as String? ?? '',
       destination: pendingForm['destination'] as String? ?? '',
       date: pendingForm['date'] as String? ?? '',
@@ -318,6 +309,13 @@ class CreateRideCubit extends Cubit<CreateRideState> {
     return value.toString();
   }
 
+  int? _toIntOrNull(Object? value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString());
+  }
+
   Vehicle? _findVehicleById(List<Vehicle> vehicles, int? vehicleId) {
     if (vehicleId == null) return null;
     for (final vehicle in vehicles) {
@@ -334,10 +332,7 @@ class CreateRideCubit extends Cubit<CreateRideState> {
     return null;
   }
 
-  void _applySyncResult(
-    RideSyncResult result, {
-    RideFormDraft? fallbackDraft,
-  }) {
+  void _applySyncResult(RideSyncResult result, {RideFormDraft? fallbackDraft}) {
     switch (result.status) {
       case RideSyncStatus.success:
         emit(

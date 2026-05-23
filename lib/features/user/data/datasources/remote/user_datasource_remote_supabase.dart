@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import '../../../../../core/constants/api_constants.dart';
 import '../../../../../core/errors/error_handler.dart';
 import '../../../../../core/errors/exceptions.dart';
 import '../../../../auth/domain/entities/auth.dart';
@@ -10,21 +11,14 @@ import 'user_datasource_remote.dart';
 class UserDataSourceRemoteSupabase implements UserDataSourceRemote {
   final Dio dio;
 
-  UserDataSourceRemoteSupabase({
-    required this.dio,
-  });
+  UserDataSourceRemoteSupabase({required this.dio});
 
   @override
-  Future<UserModel> loadUser({
-    required Auth auth,
-  }) async {
+  Future<UserModel> loadUser({required Auth auth}) async {
     try {
       final userResponse = await dio.get(
-        '/rest/v1/users',
-        queryParameters: {
-          'auth_id': 'eq.${auth.authId}',
-          'select': '*',
-        },
+        ApiConstants.users,
+        queryParameters: {'auth_id': 'eq.${auth.authId}', 'select': '*'},
       );
 
       final userData = userResponse.data as List<dynamic>;
@@ -36,11 +30,11 @@ class UserDataSourceRemoteSupabase implements UserDataSourceRemote {
       final userId = userJson['id'] as int;
 
       final rider = await _loadProfile(
-        endpoint: '/rest/v1/riders',
+        endpoint: ApiConstants.riders,
         userId: userId,
       );
       final driver = await _loadProfile(
-        endpoint: '/rest/v1/drivers',
+        endpoint: ApiConstants.drivers,
         userId: userId,
       );
 
@@ -65,9 +59,7 @@ class UserDataSourceRemoteSupabase implements UserDataSourceRemote {
   }) async {
     final response = await dio.get(
       endpoint,
-      queryParameters: {
-        'user_id': 'eq.$userId',
-      },
+      queryParameters: {'user_id': 'eq.$userId'},
     );
 
     final data = response.data as List<dynamic>;
@@ -75,9 +67,7 @@ class UserDataSourceRemoteSupabase implements UserDataSourceRemote {
       return null;
     }
 
-    return ProfileModel.fromJson(
-      data.first as Map<String, dynamic>,
-    );
+    return ProfileModel.fromJson(data.first as Map<String, dynamic>);
   }
 
   @override
@@ -86,11 +76,11 @@ class UserDataSourceRemoteSupabase implements UserDataSourceRemote {
   }) async {
     try {
       final rider = await _loadProfile(
-        endpoint: '/rest/v1/riders',
+        endpoint: ApiConstants.riders,
         userId: userId,
       );
       final driver = await _loadProfile(
-        endpoint: '/rest/v1/drivers',
+        endpoint: ApiConstants.drivers,
         userId: userId,
       );
 

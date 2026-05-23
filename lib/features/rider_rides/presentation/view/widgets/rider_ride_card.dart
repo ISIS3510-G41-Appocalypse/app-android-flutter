@@ -5,9 +5,16 @@ import '../../../../../core/theme/app_text_styles.dart';
 import '../models/rider_ride_view_data.dart';
 
 class RiderRideCard extends StatelessWidget {
-  const RiderRideCard({super.key, required this.ride});
+  const RiderRideCard({
+    super.key,
+    required this.ride,
+    required this.isCancelling,
+    required this.onCancel,
+  });
 
   final RiderRideViewData ride;
+  final bool isCancelling;
+  final VoidCallback onCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -63,6 +70,37 @@ class RiderRideCard extends StatelessWidget {
           if (ride.carModel.isNotEmpty) ...[
             const SizedBox(height: 10),
             _InfoBullet(label: 'Vehiculo: ${ride.carModel}'),
+          ],
+          if (ride.canCancel) ...[
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: isCancelling ? null : onCancel,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFB91C1C),
+                  side: const BorderSide(color: Color(0xFFFCA5A5)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: isCancelling
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2.4),
+                      )
+                    : Text(
+                        'Cancelar reserva',
+                        style: AppTextStyles.primary.copyWith(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFFB91C1C),
+                        ),
+                      ),
+              ),
+            ),
           ],
         ],
       ),

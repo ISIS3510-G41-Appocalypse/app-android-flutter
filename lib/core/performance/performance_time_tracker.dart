@@ -1,18 +1,15 @@
 import 'package:dio/dio.dart';
 
+import '../constants/api_constants.dart';
 import '../network/network_checker.dart';
 
 class PerformanceTimeTracker {
-  static const String _performanceTimesPath = '/rest/v1/performance_times';
   static const String _defaultPlatform = 'FLUTTER';
 
   final Dio dio;
   final NetworkChecker networkChecker;
 
-  PerformanceTimeTracker({
-    required this.dio,
-    required this.networkChecker,
-  });
+  PerformanceTimeTracker({required this.dio, required this.networkChecker});
 
   Future<void> track({
     required String feature,
@@ -26,7 +23,7 @@ class PerformanceTimeTracker {
       }
 
       await dio.post(
-        _performanceTimesPath,
+        ApiConstants.performanceTimes,
         data: {
           'feature': feature,
           'duration': duration,
