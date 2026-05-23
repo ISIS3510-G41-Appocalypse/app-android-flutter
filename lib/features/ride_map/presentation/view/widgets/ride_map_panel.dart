@@ -14,6 +14,7 @@ import '../../../../../core/theme/app_text_styles.dart';
 import '../../../../driver_rides/domain/entities/driver_ride.dart';
 import '../../../../rider_rides/domain/entities/rider_ride.dart';
 import '../../../../user/domain/entities/user.dart';
+import '../../../domain/entities/ride_map_location.dart';
 import '../../view_model/ride_map_cubit.dart';
 import '../../view_model/ride_map_state.dart';
 
@@ -28,6 +29,8 @@ class RideMapPanel extends StatefulWidget {
 }
 
 class _RideMapPanelState extends State<RideMapPanel> {
+  static const double _pickupDistanceMeters = 20;
+
   late final RideMapCubit _cubit;
 
   @override
@@ -78,12 +81,22 @@ class _RideMapPanelState extends State<RideMapPanel> {
     return ids.join('|');
   }
 
+  Future<void> _markPassengerPickedUp(int userId) {
+    return _cubit.markPassengerPickedUp(rideId: widget.ride.id, userId: userId);
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
       value: _cubit,
       child: BlocBuilder<RideMapCubit, RideMapState>(
         builder: (context, state) {
+          final pickupCandidates = state.locations.where((location) {
+            final distanceMeters = location.distanceMeters;
+            return distanceMeters != null &&
+                distanceMeters <= _pickupDistanceMeters;
+          }).toList();
+
           return Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -139,21 +152,96 @@ class _RideMapPanelState extends State<RideMapPanel> {
                   height: 320,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
-                    child: _RideMapCanvas(
-                      state: state,
-                      currentLabel: 'Conductor',
-                      currentMeta: 'Tu ubicacion',
-                      currentInitial: 'C',
-                      currentColor: AppColors.blue900,
-                      remoteColor: AppColors.amber700,
-                    ),
+                    child:
+                        state.status == RideMapStatus.empty &&
+                            state.locations.isEmpty
+                        ? _MapFallback(
+                            message:
+                                state.message ??
+                                'No hay pasajeros activos en el mapa.',
+                          )
+                        : _RideMapCanvas(
+                            state: state,
+                            currentLabel: 'Conductor',
+                            currentMeta: 'Tu ubicacion',
+                            currentInitial: 'C',
+                            currentColor: AppColors.blue900,
+                            remoteColor: AppColors.amber700,
+                          ),
                   ),
                 ),
+                if (pickupCandidates.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _PickupActionsCard(
+                    locations: pickupCandidates,
+                    onPickedUp: _markPassengerPickedUp,
+                  ),
+                ],
               ],
             ),
           );
         },
       ),
+    );
+  }
+}
+
+class _PickupActionsCard extends StatelessWidget {
+  const _PickupActionsCard({required this.locations, required this.onPickedUp});
+
+  final List<RideMapLocation> locations;
+  final Future<void> Function(int userId) onPickedUp;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: locations.map((location) {
+        final distanceMeters = location.distanceMeters?.toStringAsFixed(0);
+        final distanceLabel = distanceMeters == null
+            ? 'Cerca'
+            : '$distanceMeters m';
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${location.participantName} esta a $distanceLabel',
+                  style: AppTextStyles.primary.copyWith(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF475569),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              ElevatedButton(
+                onPressed: () => onPickedUp(location.userId),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.teal600,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  'Recogido',
+                  style: AppTextStyles.primary.copyWith(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 }
@@ -681,6 +769,10 @@ class _RiderRideMapPanelState extends State<RiderRideMapPanel> {
       value: _cubit,
       child: BlocBuilder<RideMapCubit, RideMapState>(
         builder: (context, state) {
+          final isMapStopped =
+              state.status == RideMapStatus.empty &&
+              state.message == 'Ya fuiste recogido. El mapa se detuvo.';
+
           return Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -706,7 +798,8 @@ class _RiderRideMapPanelState extends State<RiderRideMapPanel> {
                     ),
                     IconButton(
                       tooltip: 'Actualizar ubicaciones',
-                      onPressed: state.status == RideMapStatus.loading
+                      onPressed:
+                          state.status == RideMapStatus.loading || isMapStopped
                           ? null
                           : _load,
                       icon: const Icon(Icons.refresh_rounded),
@@ -715,14 +808,16 @@ class _RiderRideMapPanelState extends State<RiderRideMapPanel> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                const _MapNotice(
-                  text:
-                      'Viaje iniciado. Tu ubicacion se comparte con el conductor.',
-                  color: Color(0xFF047857),
-                  background: Color(0xFFECFDF5),
-                  border: Color(0xFFA7F3D0),
-                ),
-                if (state.isOffline || state.message != null) ...[
+                if (!isMapStopped)
+                  const _MapNotice(
+                    text:
+                        'Viaje iniciado. Tu ubicacion se comparte con el conductor.',
+                    color: Color(0xFF047857),
+                    background: Color(0xFFECFDF5),
+                    border: Color(0xFFA7F3D0),
+                  ),
+                if (state.isOffline ||
+                    (state.message != null && !isMapStopped)) ...[
                   const SizedBox(height: 12),
                   if (state.isOffline)
                     const _MapNotice(
@@ -745,14 +840,16 @@ class _RiderRideMapPanelState extends State<RiderRideMapPanel> {
                   height: 320,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(16),
-                    child: _RideMapCanvas(
-                      state: state,
-                      currentLabel: 'Tu',
-                      currentMeta: 'Tu ubicacion',
-                      currentInitial: 'T',
-                      currentColor: AppColors.amber700,
-                      remoteColor: AppColors.blue900,
-                    ),
+                    child: isMapStopped
+                        ? _MapFallback(message: state.message!)
+                        : _RideMapCanvas(
+                            state: state,
+                            currentLabel: 'Tu',
+                            currentMeta: 'Tu ubicacion',
+                            currentInitial: 'T',
+                            currentColor: AppColors.amber700,
+                            remoteColor: AppColors.blue900,
+                          ),
                   ),
                 ),
               ],

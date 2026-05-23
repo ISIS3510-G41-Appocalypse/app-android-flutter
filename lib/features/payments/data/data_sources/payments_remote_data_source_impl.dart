@@ -1,12 +1,11 @@
 import 'package:dio/dio.dart';
 
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/errors/error_handler.dart';
 import '../../../../core/errors/exceptions.dart';
 import 'payments_remote_data_source.dart';
 
 class PaymentsRemoteDataSourceImpl implements PaymentsRemoteDataSource {
-  static const String _paymentsPath = '/rest/v1/payments';
-
   final Dio dio;
 
   PaymentsRemoteDataSourceImpl({required this.dio});
@@ -57,7 +56,7 @@ class PaymentsRemoteDataSourceImpl implements PaymentsRemoteDataSource {
       return Future.value(const []);
     }
 
-    return _getRows(_paymentsPath, {
+    return _getRows(ApiConstants.payments, {
       'select': 'id,reservation_id',
       'reservation_id': 'in.(${reservationIds.join(',')})',
     });
@@ -74,7 +73,7 @@ class PaymentsRemoteDataSourceImpl implements PaymentsRemoteDataSource {
   }) async {
     try {
       await dio.post(
-        _paymentsPath,
+        ApiConstants.payments,
         data: {
           'reservation_id': int.tryParse(reservationId) ?? reservationId,
           'amount': amount,
@@ -106,7 +105,7 @@ class PaymentsRemoteDataSourceImpl implements PaymentsRemoteDataSource {
 
     try {
       await dio.patch(
-        _paymentsPath,
+        ApiConstants.payments,
         data: data,
         options: Options(headers: {'Prefer': 'return=minimal'}),
         queryParameters: {'id': 'eq.$paymentId'},
@@ -145,7 +144,10 @@ class PaymentsRemoteDataSourceImpl implements PaymentsRemoteDataSource {
     Map<String, dynamic> body,
   ) async {
     try {
-      final response = await dio.post('/rest/v1/rpc/$functionName', data: body);
+      final response = await dio.post(
+        ApiConstants.rpc(functionName),
+        data: body,
+      );
       final data = response.data;
 
       if (data is List) {

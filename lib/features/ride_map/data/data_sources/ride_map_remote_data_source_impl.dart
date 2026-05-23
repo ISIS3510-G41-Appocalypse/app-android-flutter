@@ -1,12 +1,11 @@
 import 'package:dio/dio.dart';
 
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/errors/error_handler.dart';
 import '../../../../core/errors/exceptions.dart';
 import 'ride_map_remote_data_source.dart';
 
 class RideMapRemoteDataSourceImpl implements RideMapRemoteDataSource {
-  static const String _locationsPath = '/rest/v1/user_shared_locations';
-
   final Dio dio;
 
   RideMapRemoteDataSourceImpl({required this.dio});
@@ -22,7 +21,7 @@ class RideMapRemoteDataSourceImpl implements RideMapRemoteDataSource {
 
     try {
       final response = await dio.get(
-        _locationsPath,
+        ApiConstants.userSharedLocations,
         queryParameters: {
           'select':
               'id,user_id,ride_id,latitude,longitude,timestamp,is_sharing_enabled',
@@ -75,7 +74,7 @@ class RideMapRemoteDataSourceImpl implements RideMapRemoteDataSource {
 
       if (!hasExistingLocation) {
         await dio.post(
-          _locationsPath,
+          ApiConstants.userSharedLocations,
           data: locationData,
           options: Options(headers: {'Prefer': 'return=minimal'}),
         );
@@ -83,11 +82,8 @@ class RideMapRemoteDataSourceImpl implements RideMapRemoteDataSource {
       }
 
       await dio.patch(
-        _locationsPath,
-        queryParameters: {
-          'ride_id': 'eq.$rideId',
-          'user_id': 'eq.$userId',
-        },
+        ApiConstants.userSharedLocations,
+        queryParameters: {'ride_id': 'eq.$rideId', 'user_id': 'eq.$userId'},
         data: locationData,
         options: Options(headers: {'Prefer': 'return=minimal'}),
       );
@@ -98,12 +94,70 @@ class RideMapRemoteDataSourceImpl implements RideMapRemoteDataSource {
     }
   }
 
+  @override
+  Future<void> disableUserLocationSharing({
+    required String rideId,
+    required int userId,
+  }) async {
+    try {
+      await dio.patch(
+        ApiConstants.userSharedLocations,
+        queryParameters: {'ride_id': 'eq.$rideId', 'user_id': 'eq.$userId'},
+        data: {'is_sharing_enabled': false},
+        options: Options(headers: {'Prefer': 'return=minimal'}),
+      );
+    } on DioException catch (e) {
+      throw ServerException(ErrorHandler.getErrorMessage(e));
+    } catch (_) {
+      throw ServerException('Error inesperado al detener la ubicacion');
+    }
+  }
+
+  @override
+  Future<bool?> getUserLocationSharingEnabled({
+    required String rideId,
+    required int userId,
+  }) async {
+    try {
+      final response = await dio.get(
+        ApiConstants.userSharedLocations,
+        queryParameters: {
+          'select': 'is_sharing_enabled',
+          'ride_id': 'eq.$rideId',
+          'user_id': 'eq.$userId',
+          'order': 'timestamp.desc',
+          'limit': 1,
+        },
+      );
+
+      final data = response.data;
+      if (data is List) {
+        if (data.isEmpty) {
+          return null;
+        }
+
+        final row = data.first as Map<String, dynamic>;
+        return row['is_sharing_enabled'] == true;
+      }
+
+      throw ServerException(
+        'Formato de respuesta invalido para user_shared_locations',
+      );
+    } on DioException catch (e) {
+      throw ServerException(ErrorHandler.getErrorMessage(e));
+    } on ServerException {
+      rethrow;
+    } catch (_) {
+      throw ServerException('Error inesperado al consultar tu ubicacion');
+    }
+  }
+
   Future<bool> _hasUserRideLocation({
     required String rideId,
     required int userId,
   }) async {
     final response = await dio.get(
-      _locationsPath,
+      ApiConstants.userSharedLocations,
       queryParameters: {
         'select': 'id',
         'ride_id': 'eq.$rideId',

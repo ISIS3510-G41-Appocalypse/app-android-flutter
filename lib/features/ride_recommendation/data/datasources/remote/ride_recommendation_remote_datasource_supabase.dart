@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import '../../../../../core/constants/api_constants.dart';
 import '../../../../../core/errors/error_handler.dart';
 import '../../../../../core/errors/exceptions.dart';
 import '../../models/ride_recommendation_model.dart';
@@ -7,13 +8,9 @@ import 'ride_recommendation_remote_datasource.dart';
 
 class RideRecommendationRemoteDataSourceSupabase
     implements RideRecommendationRemoteDataSource {
-  static const String _path = '/rest/v1/rider_driver_recommendation';
-
   final Dio dio;
 
-  RideRecommendationRemoteDataSourceSupabase({
-    required this.dio,
-  });
+  RideRecommendationRemoteDataSourceSupabase({required this.dio});
 
   @override
   Future<RideRecommendationModel?> getRecommendation({
@@ -22,7 +19,7 @@ class RideRecommendationRemoteDataSourceSupabase
   }) async {
     try {
       final response = await dio.get(
-        _path,
+        ApiConstants.riderDriverRecommendation,
         queryParameters: {
           'select': 'rider_id,driver_id,rating',
           'rider_id': 'eq.$riderId',

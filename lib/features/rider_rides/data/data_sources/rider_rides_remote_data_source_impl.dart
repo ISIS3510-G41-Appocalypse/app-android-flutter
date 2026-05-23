@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:dio/dio.dart';
 
+import '../../../../core/constants/api_constants.dart';
 import '../../../../core/errors/error_handler.dart';
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/performance/performance_features.dart';
@@ -9,11 +10,6 @@ import '../../../../core/performance/performance_time_tracker.dart';
 import 'rider_rides_remote_data_source.dart';
 
 class RiderRidesRemoteDataSourceImpl implements RiderRidesRemoteDataSource {
-  static const String _reservationsPath = '/rest/v1/reservations';
-  static const String _rideOffersViewPath = '/rest/v1/ride_offers_view';
-  static const String _ridesPath = '/rest/v1/rides';
-  static const String _driversPath = '/rest/v1/drivers';
-
   final Dio dio;
   final PerformanceTimeTracker performanceTimeTracker;
 
@@ -28,7 +24,7 @@ class RiderRidesRemoteDataSourceImpl implements RiderRidesRemoteDataSource {
   }) async {
     try {
       final response = await dio.get(
-        _reservationsPath,
+        ApiConstants.reservations,
         queryParameters: {
           'select': 'id,ride_id,rider_id,meeting_point,state,destination_point',
           'rider_id': 'eq.$riderId',
@@ -65,7 +61,7 @@ class RiderRidesRemoteDataSourceImpl implements RiderRidesRemoteDataSource {
   }) async {
     try {
       final response = await dio.get(
-        _reservationsPath,
+        ApiConstants.reservations,
         queryParameters: {
           'select': 'id,ride_id,rider_id,meeting_point,state,destination_point',
           'rider_id': 'eq.$riderId',
@@ -101,7 +97,7 @@ class RiderRidesRemoteDataSourceImpl implements RiderRidesRemoteDataSource {
   }) async {
     try {
       final response = await dio.get(
-        _rideOffersViewPath,
+        ApiConstants.rideOffersView,
         queryParameters: {
           'select':
               'id,driver_name,price,source,destination,date,departure_time,car_model',
@@ -136,7 +132,7 @@ class RiderRidesRemoteDataSourceImpl implements RiderRidesRemoteDataSource {
   Future<Map<String, dynamic>?> getRideRow({required String rideId}) async {
     try {
       final response = await dio.get(
-        _ridesPath,
+        ApiConstants.rides,
         queryParameters: {
           'select': 'id,driver_id,state',
           'id': 'eq.$rideId',
@@ -168,7 +164,7 @@ class RiderRidesRemoteDataSourceImpl implements RiderRidesRemoteDataSource {
   Future<Map<String, dynamic>?> getDriverRow({required int driverId}) async {
     try {
       final response = await dio.get(
-        _driversPath,
+        ApiConstants.drivers,
         queryParameters: {
           'select': 'id,user_id',
           'id': 'eq.$driverId',
@@ -203,7 +199,7 @@ class RiderRidesRemoteDataSourceImpl implements RiderRidesRemoteDataSource {
   }) async {
     try {
       final response = await dio.patch(
-        _reservationsPath,
+        ApiConstants.reservations,
         data: {'state': state},
         options: Options(headers: {'Prefer': 'return=representation'}),
         queryParameters: {'select': 'id,state', 'id': 'eq.$reservationId'},
@@ -243,7 +239,7 @@ class RiderRidesRemoteDataSourceImpl implements RiderRidesRemoteDataSource {
 
     try {
       await dio.post(
-        _reservationsPath,
+        ApiConstants.reservations,
         data: {
           'ride_id': int.tryParse(rideId) ?? rideId,
           'rider_id': riderId,
