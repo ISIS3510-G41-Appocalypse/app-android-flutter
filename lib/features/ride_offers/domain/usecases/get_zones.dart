@@ -13,3 +13,4 @@ class GetZones {
     return repository.getZones();
   }
 }
+
