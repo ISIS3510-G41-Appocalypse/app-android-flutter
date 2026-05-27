@@ -9,6 +9,7 @@ import '../../../payments/domain/usecases/has_blocking_payments.dart';
 import '../../../ride_recommendation/domain/entities/ride_recommendation.dart';
 import '../../../ride_recommendation/domain/usecases/get_ride_recommendation.dart';
 import '../../../rider_rides/domain/usecases/create_reservation.dart';
+import '../../data/local/ride_offer_filters_storage.dart';
 import '../../domain/entities/ride_offer_filters.dart';
 import '../../domain/usecases/get_ride_offers.dart';
 import '../../domain/usecases/get_zones.dart';
@@ -22,6 +23,7 @@ class RideOffersCubit extends Cubit<RideOffersState> {
   final GetRideRecommendation getRideRecommendation;
   final HasBlockingPayments hasBlockingPayments;
   final PerformanceTimeTracker performanceTimeTracker;
+  final RideOfferFiltersStorage filtersStorage;
   String? _preferredZoneId;
   String? _excludedRideId;
 
@@ -32,6 +34,7 @@ class RideOffersCubit extends Cubit<RideOffersState> {
     required this.getRideRecommendation,
     required this.hasBlockingPayments,
     required this.performanceTimeTracker,
+    required this.filtersStorage,
   }) : super(RideOffersState.initial(initialDate: _today()));
 
   Future<RideRecommendation?> loadRideRecommendation({
@@ -82,8 +85,18 @@ class RideOffersCubit extends Cubit<RideOffersState> {
   }) async {
     _preferredZoneId = preferredZoneId;
     _excludedRideId = excludedRideId;
+    final storedFilters = filtersStorage.getFilters();
 
-    if (preferredZoneId != null || excludedRideId != null) {
+    if (storedFilters != null) {
+      emit(
+        state.copyWith(
+          filters: storedFilters.copyWith(
+            zoneId: preferredZoneId ?? storedFilters.zoneId,
+            excludedRideId: excludedRideId,
+          ),
+        ),
+      );
+    } else if (preferredZoneId != null || excludedRideId != null) {
       emit(
         state.copyWith(
           filters: state.filters.copyWith(
@@ -245,20 +258,20 @@ class RideOffersCubit extends Cubit<RideOffersState> {
   }
 
   Future<void> applyFilters() async {
+    await filtersStorage.saveFilters(state.filters);
     await loadRideOffers();
   }
 
   Future<void> clearFilters() async {
-    emit(
-      state.copyWith(
-        filters: RideOfferFilters(
-          zoneId: _preferredZoneId,
-          date: _today(),
-          excludedRideId: _excludedRideId,
-        ),
-      ),
+    final defaultFilters = RideOfferFilters(
+      zoneId: _preferredZoneId,
+      date: _today(),
+      excludedRideId: _excludedRideId,
     );
 
+    emit(state.copyWith(filters: defaultFilters));
+
+    await filtersStorage.saveFilters(defaultFilters);
     await loadRideOffers();
   }
 
