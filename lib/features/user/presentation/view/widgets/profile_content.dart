@@ -51,8 +51,8 @@ class ProfileContent extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(
                         state.hasMultipleRoles
-                            ? 'Selecciona el rol con el que deseas usar la aplicacion.'
-                            : 'Consulta la informacion asociada a tu cuenta.',
+                            ? 'Selecciona el rol con el que deseas usar la aplicación.'
+                            : 'Consulta la información asociada a tu cuenta.',
                         textAlign: TextAlign.center,
                         style: AppTextStyles.primary.copyWith(
                           fontSize: 14,

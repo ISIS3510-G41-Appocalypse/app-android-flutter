@@ -53,9 +53,9 @@ class ProfileRoleStatsCard extends StatelessWidget {
           const SizedBox(height: 16),
           if (errorMessage != null)
             OfflineStateCard(
-              title: 'Sin conexion',
+              title: 'Sin conexión',
               message:
-                  'No pudimos actualizar tu desempeno en este momento. Puedes seguir usando la ultima informacion disponible e intentarlo de nuevo cuando vuelva la conexion.',
+                  'No pudimos actualizar tu desempeño en este momento. Puedes seguir usando la última información disponible e intentarlo de nuevo cuando vuelva la conexión.',
               onRetry: onRetry,
             )
           else
@@ -68,7 +68,7 @@ class ProfileRoleStatsCard extends StatelessWidget {
                       child: ProfileMetricItem(
                         icon: Icons.star_rounded,
                         iconColor: AppColors.gold500,
-                        label: 'Calificacion',
+                        label: 'Calificación',
                         value: rating?.toStringAsFixed(1) ?? '--',
                       ),
                     ),
@@ -77,7 +77,7 @@ class ProfileRoleStatsCard extends StatelessWidget {
                       child: ProfileMetricItem(
                         icon: Icons.event_busy_rounded,
                         iconColor: AppColors.rose600,
-                        label: 'Cancelacion',
+                        label: 'Cancelación',
                         value: cancellationOdds == null
                             ? '--'
                             : '${(cancellationOdds! * 100).toStringAsFixed(0)}%',
@@ -94,7 +94,7 @@ class ProfileRoleStatsCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: Text(
-                      'Esta informacion puede no estar actualizada. Apenas tengas internet, si hubo cambios, se actualizara.',
+                      'Esta información puede no estar actualizada. Apenas tengas internet, si hubo cambios, se actualizara.',
                       textAlign: TextAlign.center,
                       style: AppTextStyles.primary.copyWith(
                         color: AppColors.slate900,
