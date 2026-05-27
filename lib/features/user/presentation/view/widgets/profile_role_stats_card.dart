@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../../core/widgets/offline_state_card.dart';
 import '../../../../../core/theme/app_colors.dart';
 import '../../../../../core/theme/app_text_styles.dart';
 import 'profile_metric_item.dart';
@@ -8,11 +9,15 @@ class ProfileRoleStatsCard extends StatelessWidget {
   final double? cancellationOdds;
   final double? rating;
   final String? errorMessage;
+  final bool isShowingCachedData;
+  final VoidCallback onRetry;
 
   const ProfileRoleStatsCard({
     required this.cancellationOdds,
     required this.rating,
     required this.errorMessage,
+    required this.isShowingCachedData,
+    required this.onRetry,
     super.key,
   });
 
@@ -47,36 +52,58 @@ class ProfileRoleStatsCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           if (errorMessage != null)
-            Text(
-              errorMessage!,
-              style: AppTextStyles.secondary.copyWith(
-                color: AppColors.errorRed,
-                fontWeight: FontWeight.w600,
-              ),
-              textAlign: TextAlign.center,
+            OfflineStateCard(
+              title: 'Sin conexion',
+              message:
+                  'No pudimos actualizar tu desempeno en este momento. Puedes seguir usando la ultima informacion disponible e intentarlo de nuevo cuando vuelva la conexion.',
+              onRetry: onRetry,
             )
           else
-            Row(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(
-                  child: ProfileMetricItem(
-                    icon: Icons.star_rounded,
-                    iconColor: AppColors.gold500,
-                    label: 'Calificacion',
-                    value: rating?.toStringAsFixed(1) ?? '--',
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ProfileMetricItem(
+                        icon: Icons.star_rounded,
+                        iconColor: AppColors.gold500,
+                        label: 'Calificacion',
+                        value: rating?.toStringAsFixed(1) ?? '--',
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ProfileMetricItem(
+                        icon: Icons.event_busy_rounded,
+                        iconColor: AppColors.rose600,
+                        label: 'Cancelacion',
+                        value: cancellationOdds == null
+                            ? '--'
+                            : '${(cancellationOdds! * 100).toStringAsFixed(0)}%',
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ProfileMetricItem(
-                    icon: Icons.event_busy_rounded,
-                    iconColor: AppColors.rose600,
-                    label: 'Cancelacion',
-                    value: cancellationOdds == null
-                        ? '--'
-                        : '${(cancellationOdds! * 100).toStringAsFixed(0)}%',
+                if (isShowingCachedData) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.slate200,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Text(
+                      'Esta informacion puede no estar actualizada. Apenas tengas internet, si hubo cambios, se actualizara.',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.primary.copyWith(
+                        color: AppColors.slate900,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
         ],

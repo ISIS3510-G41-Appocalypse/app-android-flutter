@@ -17,6 +17,7 @@ class UserState extends Equatable {
   final List<UserRole> availableRoles;
   final UserRole? activeRole;
   final String? errorMessage;
+  final bool? isShowingCachedData;
 
   const UserState({
     this.status = UserStatus.initial,
@@ -24,6 +25,7 @@ class UserState extends Equatable {
     this.availableRoles = const [],
     this.activeRole,
     this.errorMessage,
+    this.isShowingCachedData = false,
   });
 
   UserState copyWith({
@@ -32,6 +34,7 @@ class UserState extends Equatable {
     List<UserRole>? availableRoles,
     UserRole? activeRole,
     String? errorMessage,
+    bool? isShowingCachedData,
     bool clearError = false,
   }) {
     return UserState(
@@ -40,8 +43,11 @@ class UserState extends Equatable {
       availableRoles: availableRoles ?? this.availableRoles,
       activeRole: activeRole ?? this.activeRole,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      isShowingCachedData: isShowingCachedData ?? this.isShowingCachedData ?? false,
     );
   }
+
+  bool get hasCachedDataWarning => isShowingCachedData ?? false;
 
   Profile? get activeProfile {
     switch (activeRole) {
@@ -63,5 +69,6 @@ class UserState extends Equatable {
         availableRoles,
         activeRole,
         errorMessage,
+        hasCachedDataWarning,
       ];
 }

@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../auth/domain/entities/auth.dart';
+import '../../../../core/errors/failures.dart';
 import '../../domain/entities/user_role.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/usecases/get_cached_user.dart';
@@ -37,6 +38,7 @@ class UserCubit extends Cubit<UserState> {
           availableRoles: cachedRoles,
           activeRole: cachedNextRole,
           status: UserStatus.loaded,
+          isShowingCachedData: true,
           clearError: true,
         ),
       );
@@ -53,10 +55,22 @@ class UserCubit extends Cubit<UserState> {
 
     await result.fold(
       (failure) async {
+        if (cachedUser != null && failure is NetworkFailure) {
+          emit(
+            state.copyWith(
+              status: UserStatus.loaded,
+              isShowingCachedData: true,
+              clearError: true,
+            ),
+          );
+          return;
+        }
+
         emit(
           state.copyWith(
             status: UserStatus.error,
             errorMessage: failure.message,
+            isShowingCachedData: false,
           ),
         );
       },
@@ -72,6 +86,7 @@ class UserCubit extends Cubit<UserState> {
             availableRoles: availableRoles,
             activeRole: nextRole,
             status: UserStatus.loaded,
+            isShowingCachedData: false,
             clearError: true,
           ),
         );
@@ -85,12 +100,13 @@ class UserCubit extends Cubit<UserState> {
     }
 
     emit(
-      state.copyWith(
-        activeRole: role,
-        status: UserStatus.loaded,
-        clearError: true,
-      ),
-    );
+        state.copyWith(
+          activeRole: role,
+          status: UserStatus.loaded,
+          isShowingCachedData: state.isShowingCachedData,
+          clearError: true,
+        ),
+      );
   }
 
   Future<void> loadProfiles() async {
@@ -112,10 +128,22 @@ class UserCubit extends Cubit<UserState> {
 
     await result.fold(
       (failure) async {
+        if (failure is NetworkFailure && state.user?.activeProfileFor(state.activeRole) != null) {
+          emit(
+            state.copyWith(
+              status: UserStatus.loaded,
+              isShowingCachedData: true,
+              clearError: true,
+            ),
+          );
+          return;
+        }
+
         emit(
           state.copyWith(
             status: UserStatus.error,
             errorMessage: failure.message,
+            isShowingCachedData: false,
           ),
         );
       },
@@ -124,6 +152,7 @@ class UserCubit extends Cubit<UserState> {
           state.copyWith(
             user: updatedUser,
             status: UserStatus.loaded,
+            isShowingCachedData: false,
             clearError: true,
           ),
         );
