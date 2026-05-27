@@ -1,7 +1,11 @@
+import 'dart:async';
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:get_it/get_it.dart';
 import '../../../../../app/routes.dart';
+import '../../../../../core/network/network_checker.dart';
 import '../../../../../core/layout/header.dart' as header_layout;
 import '../../../../../core/layout/navigation_bar.dart' as navigation_layout;
 import '../../../../../core/theme/app_colors.dart';
@@ -31,6 +35,8 @@ class _RideOffersPageState extends State<RideOffersPage> {
   late final RideOffersCubit _cubit;
   late final DriverRidesCubit _driverRidesCubit;
   late final RiderRidesCubit _riderRidesCubit;
+  bool _hasInternet = true;
+  StreamSubscription<bool>? _networkSubscription;
 
   @override
   void initState() {
@@ -46,14 +52,32 @@ class _RideOffersPageState extends State<RideOffersPage> {
       ..loadActiveRide(driverId: user?.driver?.id);
     _riderRidesCubit = _sl<RiderRidesCubit>()
       ..loadActiveRide(riderId: user?.rider?.id);
+    unawaited(_loadInitialConnectivity());
+    _networkSubscription = _sl<NetworkChecker>().onInternetStatusChange.listen((
+      hasInternet,
+    ) {
+      if (!mounted) return;
+      setState(() {
+        _hasInternet = hasInternet;
+      });
+    });
   }
 
   @override
   void dispose() {
+    _networkSubscription?.cancel();
     _cubit.close();
     _driverRidesCubit.close();
     _riderRidesCubit.close();
     super.dispose();
+  }
+
+  Future<void> _loadInitialConnectivity() async {
+    final hasInternet = await _sl<NetworkChecker>().hasInternet;
+    if (!mounted) return;
+    setState(() {
+      _hasInternet = hasInternet;
+    });
   }
 
   @override
@@ -151,6 +175,9 @@ class _RideOffersPageState extends State<RideOffersPage> {
                                         if (isCheckingAvailability) {
                                           helperText =
                                               'Verificando si ya tienes un viaje o una reserva activa...';
+                                        } else if (!_hasInternet) {
+                                          helperText =
+                                              'Necesitas conexion a internet para publicar un viaje.';
                                         } else if (hasActiveDriverRide) {
                                           helperText =
                                               'Ya tienes un viaje activo como conductor. Debes cancelarlo o finalizarlo antes de publicar otro.';
@@ -162,6 +189,7 @@ class _RideOffersPageState extends State<RideOffersPage> {
                                         return RideOffersHeaderSection(
                                           showPublishAction: isDriverMode,
                                           isPublishEnabled:
+                                              _hasInternet &&
                                               !hasActiveDriverRide &&
                                               !hasActiveRiderReservation &&
                                               !isCheckingAvailability,

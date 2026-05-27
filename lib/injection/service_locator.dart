@@ -80,5 +80,5 @@ Future<void> setupLocator() async {
   setupRideRecommendationInjection();
   setupRiderRidesInjection();
   setupRideOffersInjection();
-  setupUserInjection();
+  await setupUserInjection();
 }

@@ -55,9 +55,7 @@ class _PaymentsView extends StatelessWidget {
   Widget build(BuildContext context) {
     return AuthSessionListener(
       child: BlocListener<UserCubit, UserState>(
-        listenWhen: (previous, current) =>
-            previous.activeRole != current.activeRole ||
-            previous.user != current.user,
+        listenWhen: (previous, current) => previous.user != current.user,
         listener: (context, userState) {
           context.read<PaymentsCubit>().load(
             driverId: userState.user?.driver?.id,

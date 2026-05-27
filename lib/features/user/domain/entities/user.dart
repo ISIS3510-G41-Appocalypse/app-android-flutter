@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 import 'profile.dart';
+import 'user_role.dart';
 
 class User extends Equatable {
   final int id;
@@ -22,6 +23,17 @@ class User extends Equatable {
     this.rider,
     this.driver,
   });
+
+  Profile? activeProfileFor(UserRole? role) {
+    switch (role) {
+      case UserRole.rider:
+        return rider;
+      case UserRole.driver:
+        return driver;
+      case null:
+        return null;
+    }
+  }
 
   @override
   List<Object?> get props => [

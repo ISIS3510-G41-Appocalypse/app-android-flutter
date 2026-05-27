@@ -6,16 +6,27 @@ import '../../../../core/network/network_checker.dart';
 import '../../../auth/domain/entities/auth.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/user_repository.dart';
+import '../datasources/local/user_datasource_local.dart';
+import '../models/user_model.dart';
 import '../datasources/remote/user_datasource_remote.dart';
 
 class UserRepositoryImpl implements UserRepository {
   final UserDataSourceRemote dataSourceRemote;
   final NetworkChecker networkChecker;
+  final UserDataSourceLocal dataSourceLocal;
 
   UserRepositoryImpl({
     required this.dataSourceRemote,
     required this.networkChecker,
+    required this.dataSourceLocal,
   });
+
+  @override
+  User? getCachedUser({
+    required Auth auth,
+  }) {
+    return dataSourceLocal.getUser(authId: auth.authId);
+  }
 
   @override
   Future<Either<Failure, User>> loadUser({
@@ -23,6 +34,7 @@ class UserRepositoryImpl implements UserRepository {
   }) async {
     try {
       final user = await dataSourceRemote.loadUser(auth: auth);
+      await dataSourceLocal.saveUser(user: UserModel.fromEntity(user));
       return Right(user);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));
@@ -57,6 +69,7 @@ class UserRepositoryImpl implements UserRepository {
         driver: profiles.driver,
       );
 
+      await dataSourceLocal.saveUser(user: UserModel.fromEntity(updatedUser));
       return Right(updatedUser);
     } on ServerException catch (e) {
       return Left(ServerFailure(e.message));

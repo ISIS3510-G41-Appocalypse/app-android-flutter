@@ -88,7 +88,6 @@ class ProfileContent extends StatelessWidget {
                               activeRole: state.activeRole,
                               onChanged: (role) {
                                 context.read<UserCubit>().changeRole(role);
-                                context.read<UserCubit>().loadProfiles();
                               },
                             ),
                           ],
@@ -117,6 +116,10 @@ class ProfileContent extends StatelessWidget {
                           rating: activeProfile?.rating,
                           errorMessage:
                               state.status == UserStatus.error ? state.errorMessage : null,
+                          isShowingCachedData: state.hasCachedDataWarning,
+                          onRetry: () {
+                            context.read<UserCubit>().loadProfiles();
+                          },
                         ),
                       const SizedBox(height: 24),
                       ProfileLogoutButton(
