@@ -3,15 +3,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../auth/domain/entities/auth.dart';
 import '../../domain/entities/user_role.dart';
 import '../../domain/entities/user.dart';
+import '../../domain/usecases/get_cached_user.dart';
 import '../../domain/usecases/load_user.dart';
 import '../../domain/usecases/load_profiles.dart';
 import 'user_state.dart';
 
 class UserCubit extends Cubit<UserState> {
+  final GetCachedUser getCachedUserUseCase;
   final LoadUser loadUserUseCase;
   final LoadProfiles loadProfilesUseCase;
 
   UserCubit({
+    required this.getCachedUserUseCase,
     required this.loadUserUseCase,
     required this.loadProfilesUseCase,
   }) : super(const UserState());
@@ -21,12 +24,30 @@ class UserCubit extends Cubit<UserState> {
   }
 
   Future<void> loadUser(Auth auth) async {
-    emit(
-      state.copyWith(
-        status: UserStatus.loading,
-        clearError: true,
-      ),
-    );
+    final cachedUser = getCachedUserUseCase(auth: auth);
+    if (cachedUser != null) {
+      final cachedRoles = _resolveAvailableRoles(cachedUser);
+      final cachedNextRole = cachedRoles.contains(state.activeRole)
+          ? state.activeRole
+          : _resolveDefaultRole(cachedRoles);
+
+      emit(
+        state.copyWith(
+          user: cachedUser,
+          availableRoles: cachedRoles,
+          activeRole: cachedNextRole,
+          status: UserStatus.loaded,
+          clearError: true,
+        ),
+      );
+    } else {
+      emit(
+        state.copyWith(
+          status: UserStatus.loading,
+          clearError: true,
+        ),
+      );
+    }
 
     final result = await loadUserUseCase(auth: auth);
 
@@ -78,12 +99,14 @@ class UserCubit extends Cubit<UserState> {
       return;
     }
 
-    emit(
-      state.copyWith(
-        status: UserStatus.loading,
-        clearError: true,
-      ),
-    );
+    if (state.status != UserStatus.loaded) {
+      emit(
+        state.copyWith(
+          status: UserStatus.loading,
+          clearError: true,
+        ),
+      );
+    }
 
     final result = await loadProfilesUseCase(currentUser: user);
 
