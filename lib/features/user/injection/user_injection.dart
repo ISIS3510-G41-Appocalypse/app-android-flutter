@@ -2,6 +2,7 @@ import 'package:get_it/get_it.dart';
 
 import '../../../core/network/dio_client.dart';
 import '../../../core/network/network_checker.dart';
+import '../../../core/storage/user_role_preferences.dart';
 import '../data/datasources/local/user_datasource_local.dart';
 import '../data/datasources/local/user_datasource_local_storage.dart';
 import '../data/datasources/remote/user_datasource_remote.dart';
@@ -39,6 +40,7 @@ Future<void> setupUserInjection() async {
       getCachedUserUseCase: sl<GetCachedUser>(),
       loadUserUseCase: sl<LoadUser>(),
       loadProfilesUseCase: sl<LoadProfiles>(),
+      userRolePreferences: sl<UserRolePreferences>(),
     ),
   );
 }

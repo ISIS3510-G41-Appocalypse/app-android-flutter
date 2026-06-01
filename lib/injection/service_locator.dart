@@ -1,4 +1,5 @@
 import 'package:get_it/get_it.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../core/notifications/local_notification_service.dart';
 import '../core/network/dio_client.dart';
 import '../core/network/network_checker.dart';
@@ -6,6 +7,7 @@ import '../core/performance/performance_time_tracker.dart';
 import '../core/realtime/supabase_realtime_service.dart';
 import '../core/storage/session_storage.dart';
 import '../core/storage/signup_form_local_storage.dart';
+import '../core/storage/user_role_preferences.dart';
 import '../features/auth/injection/auth_injection.dart';
 import '../features/driver_rides/injection/driver_rides_injection.dart';
 import '../features/payments/injection/payments_injection.dart';
@@ -63,6 +65,12 @@ Future<void> setupLocator() async {
   final rideOfferFiltersStorage = RideOfferFiltersStorage();
   await rideOfferFiltersStorage.initialize();
   sl.registerLazySingleton<RideOfferFiltersStorage>(() => rideOfferFiltersStorage);
+
+  final sharedPreferences = await SharedPreferences.getInstance();
+  sl.registerLazySingleton<SharedPreferences>(() => sharedPreferences);
+  sl.registerLazySingleton<UserRolePreferences>(
+    () => UserRolePreferences(sl<SharedPreferences>()),
+  );
 
   sl.registerLazySingleton<RidesOfflineSyncRepository>(
     () => RidesOfflineSyncRepository(

@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../auth/domain/entities/auth.dart';
+import '../../../../core/storage/user_role_preferences.dart';
 import '../../../../core/errors/failures.dart';
 import '../../domain/entities/user_role.dart';
 import '../../domain/entities/user.dart';
@@ -13,11 +14,13 @@ class UserCubit extends Cubit<UserState> {
   final GetCachedUser getCachedUserUseCase;
   final LoadUser loadUserUseCase;
   final LoadProfiles loadProfilesUseCase;
+  final UserRolePreferences userRolePreferences;
 
   UserCubit({
     required this.getCachedUserUseCase,
     required this.loadUserUseCase,
     required this.loadProfilesUseCase,
+    required this.userRolePreferences,
   }) : super(const UserState());
 
   void clear() {
@@ -28,9 +31,10 @@ class UserCubit extends Cubit<UserState> {
     final cachedUser = getCachedUserUseCase(auth: auth);
     if (cachedUser != null) {
       final cachedRoles = _resolveAvailableRoles(cachedUser);
-      final cachedNextRole = cachedRoles.contains(state.activeRole)
-          ? state.activeRole
-          : _resolveDefaultRole(cachedRoles);
+      final cachedNextRole = _resolveNextRole(
+        userId: cachedUser.id,
+        availableRoles: cachedRoles,
+      );
 
       emit(
         state.copyWith(
@@ -76,9 +80,10 @@ class UserCubit extends Cubit<UserState> {
       },
       (user) async {
         final availableRoles = _resolveAvailableRoles(user);
-        final nextRole = availableRoles.contains(state.activeRole)
-            ? state.activeRole
-            : _resolveDefaultRole(availableRoles);
+        final nextRole = _resolveNextRole(
+          userId: user.id,
+          availableRoles: availableRoles,
+        );
 
         emit(
           state.copyWith(
@@ -90,6 +95,13 @@ class UserCubit extends Cubit<UserState> {
             clearError: true,
           ),
         );
+
+        if (nextRole != null) {
+          await userRolePreferences.saveLastSelectedRole(
+            userId: user.id,
+            role: nextRole,
+          );
+        }
       },
     );
   }
@@ -100,13 +112,21 @@ class UserCubit extends Cubit<UserState> {
     }
 
     emit(
-        state.copyWith(
-          activeRole: role,
-          status: UserStatus.loaded,
-          isShowingCachedData: state.isShowingCachedData,
-          clearError: true,
-        ),
+      state.copyWith(
+        activeRole: role,
+        status: UserStatus.loaded,
+        isShowingCachedData: state.isShowingCachedData,
+        clearError: true,
+      ),
+    );
+
+    final userId = state.user?.id;
+    if (userId != null) {
+      await userRolePreferences.saveLastSelectedRole(
+        userId: userId,
+        role: role,
       );
+    }
   }
 
   Future<void> loadProfiles() async {
@@ -181,5 +201,23 @@ class UserCubit extends Cubit<UserState> {
       return UserRole.rider;
     }
     return roles.first;
+  }
+
+  UserRole? _resolveNextRole({
+    required int userId,
+    required List<UserRole> availableRoles,
+  }) {
+    final preferredRole = userRolePreferences.getLastSelectedRole(
+      userId: userId,
+    );
+    if (preferredRole != null && availableRoles.contains(preferredRole)) {
+      return preferredRole;
+    }
+
+    if (availableRoles.contains(state.activeRole)) {
+      return state.activeRole;
+    }
+
+    return _resolveDefaultRole(availableRoles);
   }
 }
