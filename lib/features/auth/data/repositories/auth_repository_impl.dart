@@ -165,6 +165,12 @@ class AuthRepositoryImpl implements AuthRepository {
         return const Left(ServerFailure('No hay token guardado'));
       }
 
+      if (!await networkChecker.hasInternet) {
+        return const Left(
+          NetworkFailure('No tienes internet. Inicia sesion nuevamente cuando vuelva la conexion.'),
+        );
+      }
+
       AuthModel auth;
       try {
         auth = await dataSourceRemote.verifySession();
