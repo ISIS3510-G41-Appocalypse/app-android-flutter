@@ -1,3 +1,5 @@
+import 'dart:isolate';
+
 import 'package:dartz/dartz.dart';
 
 import '../../../../core/errors/exceptions.dart';
@@ -253,101 +255,181 @@ class PaymentsRepositoryImpl implements PaymentsRepository {
     int driverId,
     List<Map<String, dynamic>> rideRows,
   ) async {
-    final payments = <RidePayment>[];
-
-    for (final rideRow in rideRows) {
-      final paymentRows = await remoteDataSource.getDriverPaymentsForRide(
-        driverId: driverId,
-        rideId: rideRow['id'].toString(),
-      );
-
-      for (final paymentRow in paymentRows) {
-        payments.add(
-          RidePaymentModel.fromRpc(
-            paymentRow: paymentRow,
-            rideRow: rideRow,
-            driverId: driverId,
-            riderId: _toInt(paymentRow['rider_id']),
-            driverName: 'Conductor',
-            riderName: _nameFromRow(paymentRow, fallback: 'Pasajero'),
-            availableMethods: const [],
-          ),
+    final ridePayments = await Future.wait(
+      rideRows.map((rideRow) async {
+        final paymentRows = await remoteDataSource.getDriverPaymentsForRide(
+          driverId: driverId,
+          rideId: rideRow['id'].toString(),
         );
-      }
-    }
 
-    return payments;
+        return (
+          rideRow: rideRow,
+          paymentRows: paymentRows,
+        );
+      }),
+    );
+
+    return Isolate.run(() {
+      return _buildDriverPaymentsInBackground(
+        driverId: driverId,
+        ridePayments: ridePayments
+            .map(
+              (entry) => (
+                rideRow: Map<String, dynamic>.from(entry.rideRow),
+                paymentRows: entry.paymentRows
+                    .map((row) => Map<String, dynamic>.from(row))
+                    .toList(),
+              ),
+            )
+            .toList(),
+      );
+    });
   }
 
   Future<List<RidePayment>> _buildRiderPayments(
     int riderId,
     List<Map<String, dynamic>> rideRows,
   ) async {
-    final payments = <RidePayment>[];
-
-    for (final rideRow in rideRows) {
-      final paymentRows = await remoteDataSource.getRiderPaymentsForRide(
-        riderId: riderId,
-        rideId: rideRow['id'].toString(),
-      );
-
-      for (final paymentRow in paymentRows) {
-        final methods = _paymentMethodsFromRpc(paymentRow);
-        payments.add(
-          RidePaymentModel.fromRpc(
-            paymentRow: paymentRow,
-            rideRow: rideRow,
-            driverId: _toInt(paymentRow['driver_id']),
-            riderId: riderId,
-            driverName: _nameFromRow(paymentRow, fallback: 'Conductor'),
-            riderName: 'Pasajero',
-            availableMethods: methods,
-          ),
+    final ridePayments = await Future.wait(
+      rideRows.map((rideRow) async {
+        final paymentRows = await remoteDataSource.getRiderPaymentsForRide(
+          riderId: riderId,
+          rideId: rideRow['id'].toString(),
         );
-      }
-    }
 
-    return payments;
-  }
+        return (
+          rideRow: rideRow,
+          paymentRows: paymentRows,
+        );
+      }),
+    );
 
-  String _nameFromRow(Map<String, dynamic> row, {required String fallback}) {
-    final firstName = row['first_name']?.toString().trim() ?? '';
-    final lastName = row['last_name']?.toString().trim() ?? '';
-    final fullName = '$firstName $lastName'.trim();
-    return fullName.isEmpty ? fallback : fullName;
-  }
-
-  List<PaymentMethod> _paymentMethodsFromRpc(Map<String, dynamic> row) {
-    final rawMethods = row['payment_methods'];
-    if (rawMethods is! List) {
-      return const [];
-    }
-
-    return rawMethods
-        .map((rawMethod) {
-          if (rawMethod is! Map) {
-            return const PaymentMethod(id: 0, driverId: 0, type: '');
-          }
-
-          final method = Map<String, dynamic>.from(rawMethod);
-          return PaymentMethod(
-            id: _toInt(method['id']),
-            driverId: _toInt(row['driver_id']),
-            type: method['method_name']?.toString() ?? '',
-            numberAccount: method['number_account']?.toString(),
-          );
-        })
-        .where((method) => method.type.isNotEmpty)
-        .toList();
-  }
-
-  int _toInt(dynamic value) {
-    if (value is int) return value;
-    if (value is double) return value.toInt();
-    return int.tryParse(value?.toString() ?? '') ?? 0;
+    return Isolate.run(() {
+      return _buildRiderPaymentsInBackground(
+        riderId: riderId,
+        ridePayments: ridePayments
+            .map(
+              (entry) => (
+                rideRow: Map<String, dynamic>.from(entry.rideRow),
+                paymentRows: entry.paymentRows
+                    .map((row) => Map<String, dynamic>.from(row))
+                    .toList(),
+              ),
+            )
+            .toList(),
+      );
+    });
   }
 
   List<RidePaymentModel> _toPaymentModels(List<RidePayment> payments) {
     return payments.map(RidePaymentModel.fromEntity).toList();
   }
+}
+
+List<RidePayment> _buildDriverPaymentsInBackground({
+  required int driverId,
+  required List<
+    ({
+      Map<String, dynamic> rideRow,
+      List<Map<String, dynamic>> paymentRows,
+    })
+  > ridePayments,
+}) {
+  final payments = <RidePayment>[];
+
+  for (final ridePayment in ridePayments) {
+    for (final paymentRow in ridePayment.paymentRows) {
+      payments.add(
+        RidePaymentModel.fromRpc(
+          paymentRow: paymentRow,
+          rideRow: ridePayment.rideRow,
+          driverId: driverId,
+          riderId: _toIntInBackground(paymentRow['rider_id']),
+          driverName: 'Conductor',
+          riderName: _nameFromRowInBackground(
+            paymentRow,
+            fallback: 'Pasajero',
+          ),
+          availableMethods: const [],
+        ),
+      );
+    }
+  }
+
+  return payments;
+}
+
+List<RidePayment> _buildRiderPaymentsInBackground({
+  required int riderId,
+  required List<
+    ({
+      Map<String, dynamic> rideRow,
+      List<Map<String, dynamic>> paymentRows,
+    })
+  > ridePayments,
+}) {
+  final payments = <RidePayment>[];
+
+  for (final ridePayment in ridePayments) {
+    for (final paymentRow in ridePayment.paymentRows) {
+      payments.add(
+        RidePaymentModel.fromRpc(
+          paymentRow: paymentRow,
+          rideRow: ridePayment.rideRow,
+          driverId: _toIntInBackground(paymentRow['driver_id']),
+          riderId: riderId,
+          driverName: _nameFromRowInBackground(
+            paymentRow,
+            fallback: 'Conductor',
+          ),
+          riderName: 'Pasajero',
+          availableMethods: _paymentMethodsFromRpcInBackground(paymentRow),
+        ),
+      );
+    }
+  }
+
+  return payments;
+}
+
+String _nameFromRowInBackground(
+  Map<String, dynamic> row, {
+  required String fallback,
+}) {
+  final firstName = row['first_name']?.toString().trim() ?? '';
+  final lastName = row['last_name']?.toString().trim() ?? '';
+  final fullName = '$firstName $lastName'.trim();
+  return fullName.isEmpty ? fallback : fullName;
+}
+
+List<PaymentMethod> _paymentMethodsFromRpcInBackground(
+  Map<String, dynamic> row,
+) {
+  final rawMethods = row['payment_methods'];
+  if (rawMethods is! List) {
+    return const [];
+  }
+
+  return rawMethods
+      .map((rawMethod) {
+        if (rawMethod is! Map) {
+          return const PaymentMethod(id: 0, driverId: 0, type: '');
+        }
+
+        final method = Map<String, dynamic>.from(rawMethod);
+        return PaymentMethod(
+          id: _toIntInBackground(method['id']),
+          driverId: _toIntInBackground(row['driver_id']),
+          type: method['method_name']?.toString() ?? '',
+          numberAccount: method['number_account']?.toString(),
+        );
+      })
+      .where((method) => method.type.isNotEmpty)
+      .toList();
+}
+
+int _toIntInBackground(dynamic value) {
+  if (value is int) return value;
+  if (value is double) return value.toInt();
+  return int.tryParse(value?.toString() ?? '') ?? 0;
 }
