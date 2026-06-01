@@ -7,7 +7,7 @@ class ErrorHandler {
 
   static String getErrorMessage(DioException e) {
     if (isNetworkError(e)) {
-      return 'No tienes internet en este momento. Cuando vuelva la conexion podras crear o consultar tu viaje nuevamente.';
+      return 'No tienes internet en este momento. Cuando vuelva la conexion podras intentarlo nuevamente.';
     }
 
     final data = e.response?.data;
