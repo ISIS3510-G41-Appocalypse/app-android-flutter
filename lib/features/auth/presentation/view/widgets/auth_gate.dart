@@ -26,7 +26,11 @@ class _AuthGateState extends State<AuthGate> {
         if (state.status == AuthStatus.authenticated) {
           Navigator.pushReplacementNamed(context, AppRoutes.rideOffers);
         } else if (state.status == AuthStatus.unauthenticated) {
-          Navigator.pushReplacementNamed(context, AppRoutes.home);
+          Navigator.pushReplacementNamed(
+            context,
+            AppRoutes.home,
+            arguments: state.errorMessage,
+          );
         }
       },
       child: const Scaffold(

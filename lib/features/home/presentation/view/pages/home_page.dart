@@ -5,8 +5,36 @@ import '../widgets/hero_section.dart';
 import '../widgets/primary_action_button.dart';
 import '../../../../../../app/routes.dart';
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+class HomePage extends StatefulWidget {
+  final String? sessionMessage;
+
+  const HomePage({
+    super.key,
+    this.sessionMessage,
+  });
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  bool _messageShown = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_messageShown || widget.sessionMessage == null) {
+      return;
+    }
+
+    _messageShown = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(widget.sessionMessage!)),
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

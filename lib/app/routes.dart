@@ -27,7 +27,12 @@ class AppRoutes {
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case home:
-        return MaterialPageRoute(builder: (_) => const HomePage());
+        final message = settings.arguments;
+        return MaterialPageRoute(
+          builder: (_) => HomePage(
+            sessionMessage: message is String ? message : null,
+          ),
+        );
       case login:
         return MaterialPageRoute(builder: (_) => const LoginPage());
       case register:
